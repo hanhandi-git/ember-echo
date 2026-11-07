@@ -1,0 +1,17 @@
+name: ember-echo
+
+services:
+  web:
+    image: ember-echo:${EMBER_ECHO_IMAGE_TAG:?Set EMBER_ECHO_IMAGE_TAG to the deployed Git commit}
+    build:
+      context: ${EMBER_ECHO_BUILD_CONTEXT:-.}
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3012:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3

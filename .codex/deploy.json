@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "enabled": true,
+  "git": { "remote": "origin", "branch": "main" },
+  "server": { "host": "42.192.38.33", "user": "ubuntu", "root": "/home/ubuntu/code" },
+  "compose": {
+    "project": "ember-echo",
+    "directory": "/home/ubuntu/code/ember-echo",
+    "files": ["/home/ubuntu/code/ember-echo/compose.yaml"],
+    "services": ["web"],
+    "require_health": true
+  },
+  "release": {
+    "directory": "/home/ubuntu/code/ember-echo/releases",
+    "image_repository": "ember-echo",
+    "dockerfile": "Dockerfile",
+    "tag_variable": "EMBER_ECHO_IMAGE_TAG",
+    "build_context_variable": "EMBER_ECHO_BUILD_CONTEXT"
+  },
+  "route": {
+    "public_url": "https://hanhandi.cn/ember_echo/",
+    "prefix": "/ember_echo/",
+    "strip_prefix": true,
+    "upstream": "http://127.0.0.1:3012",
+    "health_url": "https://hanhandi.cn/ember_echo/healthz",
+    "proxy_file": "/opt/1panel/www/sites/hanhandi/proxy/ember_echo.conf"
+  },
+  "checks": [{ "cwd": ".", "argv": ["npm", "test"] }]
+}
