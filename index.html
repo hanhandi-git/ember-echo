@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>余烬回响 · Ember Echo</title>
+<meta name="description" content="余烬回响 — 一个用 pixelfx 素材驱动的像素动作 RPG Demo。WASD 移动，J K L U I O 施法。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%2307060d'/%3E%3Crect x='5' y='3' width='6' height='10' fill='%23ff7a3c'/%3E%3Crect x='7' y='5' width='4' height='7' fill='%23ffd36a'/%3E%3Crect x='8' y='7' width='2' height='4' fill='%23fff6d8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <main id="stage" aria-label="余烬回响 游戏画面">
+    <div id="view">
+      <canvas id="game" width="320" height="180" aria-label="战斗区域"></canvas>
+
+      <div id="hud" class="hud" aria-hidden="true">
+        <div class="hud-top">
+          <section class="hero-card">
+            <div class="portrait"><canvas id="portrait" width="26" height="40"></canvas></div>
+            <div class="hero-meta">
+              <div class="hero-line"><strong id="hero-name">余烬剑士</strong><em id="hero-level">Lv.1</em></div>
+              <div class="bar hp"><i id="hp-fill"></i><span id="hp-text">100 / 100</span></div>
+              <div class="bar mp"><i id="mp-fill"></i><span id="mp-text">60 / 60</span></div>
+              <div class="bar xp"><i id="xp-fill"></i></div>
+            </div>
+          </section>
+
+          <section class="stage-card">
+            <div class="stage-act" id="stage-act">第一幕</div>
+            <div class="stage-name" id="stage-name">苔痕遗迹</div>
+            <div class="stage-wave" id="stage-wave">月下的旧圣所</div>
+            <div class="acts" id="acts" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+          </section>
+
+          <section class="top-tools">
+            <button id="mute" class="tool" type="button" title="静音 (M)" aria-label="静音">♪</button>
+            <div class="kills"><b id="kills">0</b><span>击破</span></div>
+          </section>
+        </div>
+
+        <div id="boss-wrap" class="boss-wrap hidden">
+          <div class="boss-line"><span id="boss-name">冥河守卫</span><em id="boss-phase">相位 I</em></div>
+          <div class="boss-bar"><i id="boss-fill"></i></div>
+        </div>
+
+        <div id="pickup-toast" class="pickup-toast"></div>
+      </div>
+
+      <div class="fx-scan" aria-hidden="true"></div>
+
+      <div id="banner" class="banner" aria-live="polite">
+        <div class="banner-kicker" id="banner-kicker"></div>
+        <div class="banner-title" id="banner-title"></div>
+        <div class="banner-sub" id="banner-sub"></div>
+      </div>
+
+      <div id="touch" class="touch" aria-hidden="true">
+        <div class="dpad">
+          <button data-key="a" class="tbtn">A</button>
+          <button data-key="w" class="tbtn">W</button>
+          <button data-key="s" class="tbtn">S</button>
+          <button data-key="d" class="tbtn">D</button>
+        </div>
+        <div class="tcast">
+          <button data-key="j" class="tbtn">J</button><button data-key="k" class="tbtn">K</button><button data-key="l" class="tbtn">L</button>
+          <button data-key="u" class="tbtn">U</button><button data-key="i" class="tbtn">I</button><button data-key="o" class="tbtn">O</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="command" class="command">
+      <div class="combo" id="combo"><b id="combo-n">0</b><span>连击</span></div>
+      <div class="skills" id="skills" aria-label="技能栏"></div>
+      <div class="command-side">
+        <div class="hint" id="hint">WASD 移动 · J K L U I O 施法 · ESC 暂停 · M 静音</div>
+        <div class="sigil" aria-hidden="true">余烬不熄</div>
+      </div>
+    </div>
+
+    <div id="overlay" class="overlay">
+      <div id="overlay-card" class="overlay-card"></div>
+    </div>
+  </main>
+</div>
+<script type="module" src="game.js"></script>
+</body>
+</html>
