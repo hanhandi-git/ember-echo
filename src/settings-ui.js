@@ -122,8 +122,8 @@ export function createSettingsUI(game) {
   function applyText() { panel.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(game.language, el.dataset.i18n); }); panel.querySelector(".close-settings")?.setAttribute("aria-label", t(game.language, "close")); }
   function render() { applyText(); renderLoadout(); renderProfile(); renderSettings(); panel.querySelectorAll(".settings-content").forEach((el) => { el.hidden = el.dataset.content !== tab; }); panel.querySelectorAll(".settings-tab").forEach((el) => el.classList.toggle("is-active", el.dataset.tab === tab)); }
   function setLanguage(code) { if (!LANG[code]) return; game.language = code; localStorage.setItem("ember-echo-language", code); document.documentElement.lang = code === "zh" ? "zh-CN" : code; render(); }
-  function open(nextTab = tab) { tab = nextTab; render(); panel.hidden = false; }
-  function close() { panel.hidden = true; }
+  function open(nextTab = tab) { tab = nextTab; render(); panel.hidden = false; panel.parentElement.classList.add("menu-open"); }
+  function close() { panel.hidden = true; panel.parentElement.classList.remove("menu-open"); }
   function handleKey(key) { if (game.state !== "inventory") return false; if (key === "escape" || key === "tab") { game.toggleInventory(); return true; } if (key === "1") { tab = "loadout"; render(); return true; } if (key === "2") { tab = "profile"; render(); return true; } if (key === "3") { tab = "settings"; render(); return true; } return false; }
 
   panel.addEventListener("click", (event) => {

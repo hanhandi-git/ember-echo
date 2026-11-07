@@ -24,7 +24,7 @@ const args = [
   "--outfile=" + join(HERE, "game.js"),
   "--loader:.js=js",
   "--log-level=warning",
-  ...(process.argv.includes("--watch") ? ["--watch"] : []),
+  ...(process.argv.includes("--watch") ? ["--watch"] : ["--minify"]),
 ];
 
 console.log("bundling with", ESBUILD);

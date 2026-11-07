@@ -4,6 +4,9 @@ import { boot } from "./game.js";
 import { castSkill } from "./skills.js";
 import { createSettingsUI } from "./settings-ui.js";
 import { createTouchControls } from "./touch-controls.js";
+import { installGameViewport } from "./viewport.js";
+
+installGameViewport(document.querySelector("#stage"));
 
 const game = boot();
 game.domUi = createSettingsUI(game);

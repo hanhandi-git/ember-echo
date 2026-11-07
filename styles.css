@@ -2,21 +2,29 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
+  width: 100%;
   height: 100%;
   background: #030308;
   overflow: hidden;
   overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 body {
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: var(--app-width, 100%);
+  height: var(--app-height, 100%);
   display: grid;
   place-items: center;
   background: radial-gradient(ellipse 80% 70% at 50% 45%, #181222 0%, #07060d 58%, #020204 100%);
-  height: 100svh;
 }
-#stage { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+#stage { position: relative; width: 100%; height: 100%; display: grid; place-items: center; overflow: hidden; touch-action: none; }
+#stage.menu-open { touch-action: pan-y; }
+button { touch-action: manipulation; }
 #game {
   display: block;
-  width: min(100vw, calc(100svh * 16 / 9));
+  width: min(100%, calc(var(--app-height, 100svh) * 16 / 9));
   aspect-ratio: 16 / 9;
   height: auto;
   image-rendering: pixelated;
@@ -65,12 +73,13 @@ body {
 }
 
 .settings-panel {
+  --panel-padding: clamp(16px, 4vw, 48px);
   position: absolute;
   inset: 0;
   z-index: 5;
   display: grid;
   place-items: center;
-  padding: clamp(16px, 4vw, 48px);
+  padding: var(--panel-padding);
   background: rgba(3, 3, 10, .78);
   font-family: "Courier New", ui-monospace, monospace;
   color: #f4edc7;
@@ -79,8 +88,11 @@ body {
 .settings-panel[hidden] { display: none; }
 .settings-shell {
   width: min(960px, 100%);
-  max-height: min(760px, 92vh);
+  max-height: min(760px, calc(var(--app-height, 100svh) - var(--panel-padding) * 2));
   overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   border: 3px solid #c88416;
   border-radius: 0;
   background: #29233a;
