@@ -1,0 +1,166 @@
+// Game facade: session state, stage bootstrap, and pointer routing. Systems live under ./systems/.
+
+import { createFrame, createFx } from "../../../pixelfx/src/core/index.js";
+import { STAGES, FX } from "../data.js";
+import { Hero } from "../hero.js";
+import { castSkill } from "../skills.js";
+import { UI } from "../ui.js";
+import { AudioEngine } from "../audio.js";
+import { SKILL_RECTS, RESUME_BUTTON, contains } from "../controls.js";
+import { stageAct, stageName, stageSub } from "../copy.js";
+import { SW, SH, WORLD_W, PALETTE } from "./constants.js";
+
+export class Game {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d", { alpha: false });
+    this.frame = createFrame(SW, SH);
+    this.uiFrame = createFrame(SW, SH);
+    this.img = this.ctx.createImageData(SW, SH);
+    this.audio = new AudioEngine();
+    this.fx = FX;
+    this.ui = new UI(this);
+    this.hero = new Hero();
+    this.keys = new Set();
+    this.touchMove = { x: 0, y: 0 };
+    this.state = "title";
+    this.time = 0;
+    this.runTime = 0;
+    this.hitStop = 0;
+    this.enemies = [];
+    this.effects = [];
+    this.projectiles = [];
+    this.pickups = [];
+    this.numbers = [];
+    this.motes = [];
+    this.dashTrails = [];
+    this.telegraphs = [];
+    this.timers = [];
+    this.spawnQueue = [];
+    this.kills = 0;
+    this.combo = { count: 0, timer: 0 };
+    this.shakeState = { amp: 0, t: 0, dur: 0 };
+    this.flashState = { color: PALETTE.white, a: 0, max: 0.3 };
+    this.fade = 0;
+    this.stageIndex = 0;
+    this.waveIndex = 0;
+    this.phase = "title";
+    this.phaseT = 0;
+    this.clearT = 0;
+    this.hold = 0;
+    this.bossRef = null;
+    this.bossDefeated = false;
+    this.portal = null;
+    this.deathT = 0;
+    this.stage = STAGES[0];
+    this.language = typeof localStorage !== "undefined" ? (localStorage.getItem("ember-echo-language") || "zh") : "zh";
+    this.mapFx = null;
+    this.mapFxTiles = [];
+    this.mapTileFrames = [];
+    this.worldW = WORLD_W;
+    this.cameraX = 0;
+    this.loadStage(2, true);
+    this.loadPersistedProfile?.();
+  }
+
+  loadStage(index, title = false) {
+    this.stageIndex = index;
+    this.stage = STAGES[index];
+    this.mapFxTiles = [0, 320].map((x) => createFx(this.stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
+    this.mapFx = this.mapFxTiles[0];
+    this.mapTileFrames = this.mapFxTiles.map(() => createFrame(320, 180));
+    this.ui.reset();
+    this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
+    this.cameraX = 0;
+    this.enemies = [];
+    this.effects = [];
+    this.projectiles = [];
+    this.pickups = [];
+    this.numbers = [];
+    this.motes = [];
+    this.telegraphs = [];
+    this.timers = [];
+    this.spawnQueue = [];
+    this.dashTrails = [];
+    this.portal = null;
+    this.bossRef = null;
+    this.bossDefeated = false;
+    this.waveIndex = 0;
+    this.phaseT = 0;
+    this.clearT = 0;
+    this.hold = 0;
+    this.deathT = 0;
+    this.combo = { count: 0, timer: 0 };
+    this.phase = title ? "title" : "intro";
+    this.state = title ? "title" : "playing";
+    this.fade = title ? 0 : 1;
+    if (!title) {
+      this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));
+      this.audio.play("ui");
+    }
+  }
+
+  togglePause() {
+    if (this.state === "playing") {
+      this.state = "paused";
+      this.keys.clear();
+      this.shakeState = { amp: 0, t: 0, dur: 0 };
+    } else if (this.state === "paused") {
+      this.state = "playing";
+    }
+  }
+
+  toggleInventory() {
+    if (this.state === "playing" && this.phase !== "travel" && this.hero.alive) {
+      this.state = "inventory";
+      this.keys.clear();
+      this.ui.inventorySkillPick = null;
+      this.domUi?.open("loadout");
+      this.audio.play("ui");
+    } else if (this.state === "inventory") {
+      this.state = "playing";
+      this.ui.inventorySkillPick = null;
+      this.domUi?.close();
+      this.audio.play("ui");
+    }
+  }
+
+  handlePointer(x, y) {
+    if (this.state === "inventory") return this.ui.handlePointer(x, y);
+    if (this.state === "paused" && contains(RESUME_BUTTON, x, y)) {
+      this.togglePause();
+      this.audio.play("ui");
+      return "resume";
+    }
+    if (this.ui.handleAutoPointer(x, y)) return "auto";
+    if (this.state !== "playing") return null;
+    const slot = this.touchUi ? -1 : SKILL_RECTS.findIndex((rect) => contains(rect, x, y));
+    if (slot >= 0) {
+      this.cast(this.hero.skillSlots[slot]);
+      return "skill";
+    }
+    return null;
+  }
+
+  banner(kicker, title, sub, kind) {
+    this.ui.banner(kicker, title, sub, kind);
+  }
+
+  toggleMute() {
+    this.audio.unlock();
+    this.audio.setMuted(!this.audio.muted);
+  }
+
+  /** Test/debug: run a skill by id without the keyboard. */
+  cast(id) {
+    return castSkill(this, id);
+  }
+}
+
+export function boot() {
+  const canvas = document.querySelector("#game");
+  const game = new Game(canvas);
+  window.__EMBER__ = game;
+  Hero.prepare();
+  return game;
+}

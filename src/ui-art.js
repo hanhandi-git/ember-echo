@@ -7,6 +7,7 @@ import * as card from "../../pixelfx/src/fx/ui/loadout-card.js";
 import * as panel from "../../pixelfx/src/fx/ui/loadout-panel.js";
 import { cutPlate, tone, GOLD, SILVER } from "../../pixelfx/src/fx/ui/_ember.js";
 import { MELEE_SHAPES, THROWN_SHAPES } from "../../pixelfx/src/core/weapons.js";
+import { STASH_FX } from "./content/stash-catalog.js";
 
 const modules = { action, skill, card, panel }, sprites = new Map(), images = new Map();
 const views = new WeakMap();
@@ -95,6 +96,39 @@ export function weaponArtUrl(weapon) {
   }
   const url = canvas.toDataURL(); images.set(key, url); return url;
 }
+/** Renders a stash pickup loop frame into a square HUD icon (settings → 收藏). */
+export function stashPickupArtUrl(id) {
+  const key = `stash:${id}`;
+  if (images.has(key)) return images.get(key);
+  const mod = STASH_FX[id];
+  if (!mod?.draw || !mod.meta) return artUrl("skill", { icon: "none", hud: true });
+  const [w, h] = mod.meta.size;
+  const frame = createFrame(w, h);
+  const opts = { ...mod.meta.options };
+  const t = (mod.meta.duration ?? 2.4) * 0.38;
+  const p = painterFor(frame).place(...mod.meta.origin);
+  if (mod.drawBack) mod.drawBack(p, t, opts);
+  mod.draw(p, t, opts);
+  const layer = document.createElement("canvas");
+  layer.width = w;
+  layer.height = h;
+  const lctx = layer.getContext("2d");
+  const img = lctx.createImageData(w, h);
+  composite(frame, img.data, null);
+  lctx.putImageData(img, 0, 0);
+  const out = document.createElement("canvas");
+  const size = 72;
+  out.width = out.height = size;
+  const ctx = out.getContext("2d");
+  const scale = Math.min(size / w, size / h) * 0.9;
+  const dw = w * scale;
+  const dh = h * scale;
+  ctx.drawImage(layer, (size - dw) / 2, (size - dh) / 2, dw, dh);
+  const url = out.toDataURL();
+  images.set(key, url);
+  return url;
+}
+
 function legacyWeapon(id) {
   if (id === "scythe") return [[30, 45], [40, 15], [50, 14], [62, 22], [62, 40], [55, 27], [45, 23], [34, 48]];
   if (id === "claw") return [[25, 51], [39, 19], [37, 42], [48, 17], [45, 43], [58, 21], [50, 49], [31, 57]];

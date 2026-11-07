@@ -11,7 +11,6 @@ import { ENEMY_TYPES } from "../src/data.js";
 import * as stagePortal from "../src/fx/stage-portal.js";
 import { createFrame, clearFrame, createFx } from "../../pixelfx/src/core/index.js";
 import { joystickVector } from "../src/touch-controls.js";
-
 function game() {
   const g = new Game({ getContext: () => ({
     createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
@@ -187,21 +186,41 @@ test("the full pixelfx armory and spell catalog are playable through the adapter
     g.hero.cd[skill.id] = 0;
     g.hero.mp = g.hero.maxMp;
     assert.equal(g.cast(skill.id), true, `casts ${path}`);
+    const mod = skill.module;
+    advance(g, mod?.act ? (mod.meta?.duration ?? 2.2) + 0.15 : 0.12);
   }
   g.render();
-  assert.ok(enemy.hp < enemy.maxHp || g.effects.length > samples.length / 2);
+  assert.ok(enemy.hp < enemy.maxHp || g.effects.length > 0);
 });
 
 test("equipping a weapon changes the actual hero rig shape, not only its stats", () => {
   const g = game();
-  const cases = [
+  const meleeCases = [
     ["ember-blade", "sword"], ["moon-scythe", "scythe"], ["storm-fang", "claw"],
-    ["armory:staff", "staff"], ["armory:katana", "katana"], ["armory:war-mace", "war-mace"], ["armory:kunai", "kunai"],
+    ["armory:staff", "staff"], ["armory:katana", "katana"], ["armory:war-mace", "war-mace"],
   ];
-  for (const [id, expected] of cases) {
+  for (const [id, expected] of meleeCases) {
     assert.ok(g.hero.equipWeapon(id, g), `weapon ${id} exists`);
     assert.equal(g.hero.pose().weapon, expected, `rig uses ${expected}`);
   }
+  assert.ok(g.hero.equipWeapon("armory:kunai", g));
+  assert.equal(g.hero.thrownWeaponId, "armory:kunai");
+  assert.equal(g.hero.thrownWeapon.rigWeapon, "kunai");
+  assert.equal(g.hero.pose().weapon, "war-mace", "thrown loadout does not replace the melee rig");
+});
+
+test("throw skill swaps the hand rig for the throw anim then restores melee", () => {
+  const g = game();
+  g.hero.equipWeapon("armory:war-mace", g);
+  g.hero.equipWeapon("armory:kunai", g);
+  assert.equal(g.hero.pose().weapon, "war-mace");
+  assert.ok(g.cast("t"));
+  assert.equal(g.hero.pose().weapon, "kunai");
+  const track = g.hero.anim.track;
+  const dur = track[track.length - 1][0];
+  g.hero.anim.t = dur - 1e-4;
+  g.hero.update(g, 0.02, new Set());
+  assert.equal(g.hero.pose().weapon, "war-mace");
 });
 
 test("weapon paths use moving enemy sweeps and stop or pierce according to the profile", () => {

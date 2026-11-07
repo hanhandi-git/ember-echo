@@ -281,6 +281,7 @@ export class Enemy {
     g.kills++;
     g.hero.gainXp(g, this.xp);
     g.dropLoot(this.x, this.y, this.typeId);
+    g.tryStashDrop?.(this.x, this.y);
     g.audio.play("death");
     g.shake(1.6, 0.12);
   }

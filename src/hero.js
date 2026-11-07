@@ -2,8 +2,14 @@
 // bitmap), so walking, sword swings and spell casts all read as one person holding one sword.
 
 import { posed, poseAt, painterFor, STAND, READY, hex, clamp } from "../../pixelfx/src/core/index.js";
-import { HERO_LOOK, WEAPONS, DEFAULT_SKILL_SLOTS } from "./data.js";
+import {
+  HERO_LOOK_DEFAULT, HERO_LOOKS, loadHeroLook, WEAPONS, DEFAULT_SKILL_SLOTS,
+  DEFAULT_MELEE_WEAPON_ID, DEFAULT_THROWN_WEAPON_ID,
+} from "./data.js";
 import { uiCopy, weaponLabel } from "./copy.js";
+import { QUICK_MOVE_AP_COST } from "./save.js";
+import { stashItem, stashLabel } from "./content/stash-catalog.js";
+import { weaponEquipKind } from "./weapons-util.js";
 import { createMovementTrail } from "./movement-fx.js";
 import { COMBAT_SCALE, HERO_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
 
@@ -56,7 +62,7 @@ const P = {
 
 export class Hero {
   constructor() {
-    this.look = HERO_LOOK;
+    this.look = loadHeroLook();
     this.combatScale = COMBAT_SCALE;
     this.renderScale = HERO_RENDER_SCALE;
     this.reset();
@@ -73,12 +79,20 @@ export class Hero {
     this.hp = 110;
     this.maxMp = 70;
     this.mp = 70;
+    this.maxAp = 100;
+    this.ap = 100;
+    this.apRegen = 22;
+    this.stash = { ...(this.stash ?? {}) };
     this.xp = 0;
     this.xpNext = XP_STEPS[1];
     this.dmgMul = 1;
     this.speed = 64;
-    this.weaponId = WEAPONS[0].id;
-    this.weapon = WEAPONS[0];
+    const melee = WEAPONS.find((w) => w.id === DEFAULT_MELEE_WEAPON_ID) ?? WEAPONS[0];
+    const thrown = WEAPONS.find((w) => w.id === DEFAULT_THROWN_WEAPON_ID) ?? WEAPONS.find((w) => w.class === "thrown");
+    this.meleeWeapon = melee;
+    this.meleeWeaponId = melee?.id;
+    this.thrownWeapon = thrown ?? melee;
+    this.thrownWeaponId = this.thrownWeapon?.id;
     this.inventory = [...WEAPONS];
     this.skillSlots = [...DEFAULT_SKILL_SLOTS];
     this.skillCursor = 0;
@@ -98,30 +112,90 @@ export class Hero {
     this.shieldT = 0;
     this.regen = 0;
     this.regenT = 0;
-    this.cd = { j: 0, k: 0, l: 0, u: 0, i: 0, o: 0 };
+    this.cd = { j: 0, k: 0, l: 0, u: 0, i: 0, o: 0, t: 0, e: 0 };
+    this.applyMeleeStats();
     this.comboIndex = 0;
     this.comboTimer = 0;
     this.healGlow = 0;
     this.anim = { kind: "idle", t: 0, track: TRACKS.idle, loop: true, dur: 2.8 };
     this.stepT = 0;
     this.lunge = 0;
+    this.rigWeaponOverride = null;
+    this.actPose = null;
+  }
+
+  get weapon() {
+    return this.meleeWeapon;
+  }
+
+  get weaponId() {
+    return this.meleeWeaponId;
+  }
+
+  applyMeleeStats() {
+    const weapon = this.meleeWeapon;
+    if (!weapon) return;
+    this.dmgMul = weapon.dmgMul * (1 + (this.level - 1) * 0.12);
+    this.speed = weapon.speed;
+    this.dashMax = 1.15 * weapon.dashCdMul;
   }
 
   equipWeapon(id, g = null) {
     const weapon = this.inventory.find((item) => item.id === id);
     if (!weapon) return false;
-    this.weaponId = weapon.id;
-    this.weapon = weapon;
-    this.dmgMul = weapon.dmgMul * (1 + (this.level - 1) * 0.12);
-    this.speed = weapon.speed;
-    this.dashMax = 1.15 * weapon.dashCdMul;
-    if (g) g.ui.toast(uiCopy(g).equipped(weaponLabel(g, weapon)), "gold");
+    const kind = weaponEquipKind(weapon);
+    if (kind === "thrown") {
+      this.thrownWeapon = weapon;
+      this.thrownWeaponId = weapon.id;
+    } else {
+      this.meleeWeapon = weapon;
+      this.meleeWeaponId = weapon.id;
+      this.applyMeleeStats();
+    }
+    if (g) {
+      g.ui.toast(uiCopy(g).equipped(weaponLabel(g, weapon)), "gold");
+      g.persistSave?.();
+    }
     return true;
+  }
+
+  addStash(id, amount = 1, g = null) {
+    if (!id || amount <= 0) return 0;
+    this.stash[id] = (this.stash[id] ?? 0) + amount;
+    if (g) {
+      const def = stashItem(id);
+      const name = def ? stashLabel(g, def) : id;
+      g.ui.toast(uiCopy(g).stashGain(name), "gold");
+      g.persistSave?.();
+    }
+    return this.stash[id];
+  }
+
+  stashCount(id) {
+    return this.stash[id] ?? 0;
+  }
+
+  isWeaponEquipped(id) {
+    return this.meleeWeaponId === id || this.thrownWeaponId === id;
   }
 
   swapSkill(slot, id) {
     if (slot < 0 || slot >= this.skillSlots.length) return false;
     this.skillSlots[slot] = id;
+    return true;
+  }
+
+  equipLook(id, g = null) {
+    const look = HERO_LOOKS.find((c) => c.id === id);
+    if (!look) return false;
+    this.look = look.id;
+    if (typeof localStorage !== "undefined") localStorage.setItem("ember-echo-look", look.id);
+    for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, look.id);
+    if (g) {
+      const name = g.language === "zh" ? look.label : look.name;
+      g.ui.toast(uiCopy(g).equipped(name), "gold");
+      g.persistSave?.();
+    }
     return true;
   }
 
@@ -159,6 +233,12 @@ export class Hero {
 
   tryQuickMove(g, dir = null) {
     if (!this.alive || this.dashT > 0 || g.state !== "playing" || g.phase === "travel") return false;
+    if (this.ap < QUICK_MOVE_AP_COST) {
+      g.ui.toast(uiCopy(g).apLow, "mp");
+      g.audio.play("ui");
+      return false;
+    }
+    this.ap = Math.max(0, this.ap - QUICK_MOVE_AP_COST);
     const d = dir ?? this.moveDirection(g);
     const len = Math.hypot(d.x, d.y) || 1;
     this.dashDir = { x: d.x / len, y: d.y / len };
@@ -192,15 +272,30 @@ export class Hero {
   get alive() { return !this.dead && this.hp > 0; }
 
   startAnim(kind, track, loop = false) {
+    if (kind !== "castK") this.clearThrowRig();
     this.anim = { kind, t: 0, track, loop, dur: track[track.length - 1][0] };
   }
 
+  /** While throwing, the rig briefly shows the thrown weapon instead of the melee one. */
+  setThrowRig(rigWeapon) {
+    this.rigWeaponOverride = rigWeapon ?? null;
+  }
+
+  clearThrowRig() {
+    this.rigWeaponOverride = null;
+  }
+
+  activeRigWeapon() {
+    return this.rigWeaponOverride ?? this.meleeWeapon?.rigWeapon ?? "sword";
+  }
+
   pose() {
+    if (this.actPose) {
+      return { ...this.actPose, weapon: this.activeRigWeapon() };
+    }
     const a = this.anim;
     const pose = poseAt(a.track, a.loop ? a.t % a.dur : Math.min(a.t, a.dur));
-    // Tracks describe timing and body motion; the equipped item supplies the actual rig shape.
-    // This keeps every animation (idle, walk, attack, hurt and death) visually in sync with loadout.
-    pose.weapon = this.weapon?.rigWeapon ?? "sword";
+    pose.weapon = this.activeRigWeapon();
     return pose;
   }
 
@@ -229,17 +324,26 @@ export class Hero {
       this.regenT -= dt;
     }
     this.mp = Math.min(this.maxMp, this.mp + (this.alive ? 4.2 * dt : 0));
+    if (g.state === "playing" && g.phase !== "travel" && this.alive) {
+      this.ap = Math.min(this.maxAp, this.ap + this.apRegen * dt);
+    }
 
     if (this.dead) {
       this.anim.t += dt;
       return;
     }
 
+    if (this.actPose) {
+      this.anim.t += dt;
+      this.vx = this.vy = 0;
+      return;
+    }
+
     // movement: transient animations only slow the duelist down, never lock him in place
     let ix = 0, iy = 0;
     if (g.state === "playing" && g.phase !== "travel") {
-      ix = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0) + (g.touchMove?.x ?? 0);
-      iy = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0) + (g.touchMove?.y ?? 0);
+      ix = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0) + (g.touchMove?.x ?? 0) + (g.autoMove?.x ?? 0);
+      iy = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0) + (g.touchMove?.y ?? 0) + (g.autoMove?.y ?? 0);
     }
     const len = Math.max(1, Math.hypot(ix, iy));
     ix /= len; iy /= len;
@@ -288,6 +392,7 @@ export class Hero {
         this.startAnim("idle", TRACKS.idle, true);
       }
     } else if (this.anim.t >= this.anim.dur) {
+      if (this.rigWeaponOverride && this.anim.kind === "castK") this.clearThrowRig();
       this.startAnim(moving ? "walk" : "idle", moving ? TRACKS.walk : TRACKS.idle, true);
     }
   }
@@ -403,7 +508,7 @@ export class Hero {
       this.maxMp += 8;
       this.hp = Math.min(this.maxHp, this.hp + 34);
       this.mp = Math.min(this.maxMp, this.mp + 18);
-      this.dmgMul = this.weapon.dmgMul * (1 + (this.level - 1) * 0.12);
+      this.applyMeleeStats();
       g.addFx(g.fx.levelUp, { x: this.x, y: this.y, light: 1 });
       const c = uiCopy(g);
       g.banner(c.levelUp, `${c.level} ${this.level} · ${c.levelUpSub}`, c.levelUpSub);
@@ -414,21 +519,25 @@ export class Hero {
 
   /** Warm the pose cache so the first swing does not hitch. */
   static prepare() {
-    for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, HERO_LOOK);
+    const warm = new Set([HERO_LOOK_DEFAULT, loadHeroLook()]);
+    for (const c of HERO_LOOKS) {
+      if (!warm.has(c.id)) continue;
+      for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, c.id);
+    }
   }
 }
 
 export { TRACKS as HERO_TRACKS };
 
 /** Draw a small standing portrait into a canvas (used by the HUD card). */
-export function drawHeroPortrait(canvas, weapon = "sword") {
+export function drawHeroPortrait(canvas, weapon = "sword", look = loadHeroLook()) {
   const w = 112, h = 88;
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   const img = ctx.createImageData(w, h);
   const out = new Uint32Array(img.data.buffer);
-  const r = posed({ ...IDLE, weapon }, HERO_LOOK);
+  const r = posed({ ...IDLE, weapon }, look);
   for (let i = 0; i < r.n; i++) {
     const x = 42 + r.xs[i], y = h - 14 + r.ys[i];
     if (x < 0 || y < 0 || x >= w || y >= h) continue;

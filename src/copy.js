@@ -53,6 +53,17 @@ export const CANVAS = {
     bossPhase3: "灰烬吞噬",
     hp: "生命",
     mp: "法力",
+    ap: "行动",
+    apLow: "行动力不足",
+    stashGain: (name) => `获得 ${name}`,
+    continueSave: "继续存档",
+    autoBattle: "自动战斗",
+    autoLoot: "自动拾取",
+    autoBattleHud: "战斗",
+    autoLootHud: "拾取",
+    autoOn: "自动",
+    autoBattleHint: "自动寻敌、普攻与技能轮转。",
+    autoLootHint: "靠近掉落物并拾取生命/法力/经验。",
     guardianFallen: "守卫陨落",
     wardenAsh: "守门人成灰",
     lootHp: "生命 +18",
@@ -60,6 +71,11 @@ export const CANVAS = {
     lootXp: "经验 +8",
     equipped: (name) => `${name} 已装备`,
     skillReady: (name) => `${name} 就位`,
+    weapons: "武器",
+    meleeWeapons: "近战",
+    thrownWeapons: "投掷",
+    inventoryHint: "1–3 近战 · 4–6 投掷 · 方向键选槽",
+    inventoryReturn: "配好后返回战斗",
   },
   en: {
     duelist: "DUELIST",
@@ -92,11 +108,27 @@ export const CANVAS = {
     wardenAsh: "THE WARDEN IS ASH",
     hp: "HP",
     mp: "MP",
+    ap: "AP",
+    apLow: "NOT ENOUGH AP",
+    stashGain: (name) => `+ ${name}`,
+    continueSave: "CONTINUE SAVE",
+    autoBattle: "Auto battle",
+    autoLoot: "Auto loot",
+    autoBattleHud: "FIGHT",
+    autoLootHud: "LOOT",
+    autoOn: "AUTO",
+    autoBattleHint: "Chase foes and rotate skills.",
+    autoLootHint: "Run to pickups when useful.",
     lootHp: "HP +18",
     lootMp: "MP +24",
     lootXp: "XP +8",
     equipped: (name) => `${name} EQUIPPED`,
     skillReady: (name) => `${name} READY`,
+    weapons: "WEAPONS",
+    meleeWeapons: "MELEE",
+    thrownWeapons: "THROWN",
+    inventoryHint: "1–3 MELEE · 4–6 THROWN · ARROWS SLOT",
+    inventoryReturn: "RETURN TO FIGHT",
   },
   ja: {
     duelist: "DUELIST",
@@ -129,16 +161,43 @@ export const CANVAS = {
     wardenAsh: "THE WARDEN IS ASH",
     hp: "HP",
     mp: "MP",
+    ap: "AP",
+    apLow: "行動力不足",
+    stashGain: (name) => `${name} 獲得`,
+    continueSave: "セーブ続行",
+    autoBattle: "自動戦闘",
+    autoLoot: "自動拾得",
+    autoBattleHud: "戦闘",
+    autoLootHud: "拾得",
+    autoOn: "AUTO",
+    autoBattleHint: "敵を追尾しスキルを使用します。",
+    autoLootHint: "ドロップに近づいて取得します。",
     lootHp: "HP +18",
     lootMp: "MP +24",
     lootXp: "XP +8",
     equipped: (name) => `${name} EQUIPPED`,
     skillReady: (name) => `${name} READY`,
+    weapons: "武器",
+    meleeWeapons: "近接",
+    thrownWeapons: "投擲",
+    inventoryHint: "1–3 近接 · 4–6 投擲 · 矢印でスロット",
+    inventoryReturn: "戦闘に戻る",
   },
 };
 
 export function weaponLabel(g, weapon) {
+  if (!weapon) return "";
   return pick(g, weapon.nameEn, weapon.name, weapon.nameJa ?? weapon.nameEn);
+}
+
+export function weaponDesc(g, weapon) {
+  if (!weapon) return "";
+  return pick(g, weapon.descEn ?? weapon.nameEn, weapon.desc ?? weapon.name, weapon.descJa ?? weapon.nameJa ?? weapon.nameEn);
+}
+
+export function skillLabel(g, skill) {
+  if (!skill) return "";
+  return pick(g, skill.nameEn, skill.name, skill.nameJa ?? skill.nameEn);
 }
 
 export function uiCopy(g) {

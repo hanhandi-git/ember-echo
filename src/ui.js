@@ -12,9 +12,12 @@ import * as bannerFx from "../../pixelfx/src/fx/ui/banner.js";
 import * as toastFx from "../../pixelfx/src/fx/ui/toast.js";
 import * as questFx from "../../pixelfx/src/fx/ui/quest-complete.js";
 import * as comboFx from "../../pixelfx/src/fx/ui/combo-counter.js";
-import { SKILL_META, WEAPONS, STAGES } from "./data.js";
-import { gameLang, stageAct, stageName, uiCopy } from "./copy.js";
-import { RESUME_BUTTON, SKILL_RECTS } from "./controls.js";
+import * as hudToggleFx from "../../pixelfx/src/fx/ui/hud-toggle.js";
+import { SKILL_META, STAGES, MELEE_WEAPONS, THROWN_WEAPONS } from "./data.js";
+import { gameLang, skillLabel, stageAct, stageName, uiCopy, weaponLabel } from "./copy.js";
+import {
+  RESUME_BUTTON, SKILL_RECTS, SKILL_KEYS, AUTO_TOGGLE_RECTS, AUTO_TOGGLE_SIZE, AUTO_TOGGLE_X, contains,
+} from "./controls.js";
 
 const SW = 320, SH = 180;
 /** Milestone = normal floater × 1.5³ (crit is ×1.5 on floats). */
@@ -47,6 +50,9 @@ function slot(p, t, x, y, opts) {
 }
 function card(p, t, x, y, opts) {
   withPlace(p, x, y, () => dialogFx.draw(p, t, opts));
+}
+function hudToggle(p, t, x, y, opts) {
+  withPlace(p, x, y, () => hudToggleFx.draw(p, t, opts));
 }
 
 export class UI {
@@ -136,14 +142,16 @@ export class UI {
     p.text(c.level + " " + h.level, 116, 8, C.gold2, { align: "right", outline: C.ink });
     meter(p, t, 64, 21, { label: c.hp, value: h.hp / h.maxHp, text: `${Math.ceil(h.hp)}/${h.maxHp}`, tone: "hp", width: 108, height: 9, cells: 10 });
     meter(p, t, 64, 32, { label: c.mp, value: h.mp / h.maxMp, text: `${Math.floor(h.mp)}/${h.maxMp}`, tone: "mp", width: 108, height: 8, cells: 10 });
-    meter(p, t, 64, 41, { label: "", value: h.xp / h.xpNext, text: "", tone: "xp", width: 108, height: 3, cells: 10 });
+    meter(p, t, 64, 41, { label: c.ap, value: h.ap / h.maxAp, text: `${Math.floor(h.ap)}/${h.maxAp}`, tone: "gold", width: 108, height: 8, cells: 10 });
+    meter(p, t, 64, 50, { label: "", value: h.xp / h.xpNext, text: "", tone: "xp", width: 108, height: 3, cells: 10 });
+    this.drawAutoToggles(g, p, t, c);
 
     // stage card
     p.text(stageAct(g, g.stage), 186, 8, C.gold, { align: "center", outline: C.ink });
     p.text(stageName(g, g.stage), 186, 15, C.gold2, { align: "center", font: "big", outline: C.ink });
     const boss = g.bossRef && !g.bossRef.dead;
     const phaseLine = g.phase === "clear" ? c.enterGate : g.phase === "travel" ? c.travelling : boss ? c.boss : c.wave(g.waveIndex + 1, g.stage.waves.length);
-    p.text(phaseLine, 186, 27, C.muted, { align: "center", outline: C.ink, font: "mini", scale: phaseLine.length > 12 ? 0.92 : 1 });
+    p.text(phaseLine, 186, 27, C.muted, { align: "center", outline: C.ink, font: "mini" });
     for (let i = 0; i < STAGES.length; i++) {
       const x = 160 + i * 8, y = 36, on = i === g.stageIndex;
       p.px(x, y - 1, on ? C.gold2 : C.muted); p.px(x, y + 1, on ? C.gold2 : C.muted);
@@ -154,13 +162,41 @@ export class UI {
     // kills
     p.text(c.kills, 290, 9, C.gold, { align: "center", outline: C.ink });
     p.text(String(g.kills), 290, 18, C.gold2, { align: "center", font: "big", outline: C.ink });
-
     // boss bar
     if (boss) {
       p.text(uiCopy(g).bossWarden, 160, 46, C.boss, { align: "center", outline: C.ink });
       p.text(["PHASE I", "PHASE II", "PHASE III"][g.bossRef.phase - 1] ?? "", 312, 46, C.boss, { align: "right", outline: C.ink });
       meter(p, t, 160, 57, { label: "", value: g.bossRef.hp / g.bossRef.maxHp, text: "", tone: "boss", width: 200, height: 9, cells: 20 });
     }
+  }
+
+  drawAutoToggles(g, p, t, c = uiCopy(g)) {
+    const r = AUTO_TOGGLE_RECTS;
+    const half = Math.floor(AUTO_TOGGLE_SIZE / 2);
+    const rows = [
+      { key: "battle", icon: "battle", label: c.autoBattleHud, on: g.autoBattle, y: r.battle.y + half },
+      { key: "loot", icon: "loot", label: c.autoLootHud, on: g.autoLoot, y: r.loot.y + half },
+    ];
+    for (const row of rows) {
+      const cx = AUTO_TOGGLE_X + half;
+      hudToggle(p, t, cx, row.y, { on: row.on, icon: row.icon, size: AUTO_TOGGLE_SIZE });
+      p.text(row.label, AUTO_TOGGLE_X + AUTO_TOGGLE_SIZE + 4, row.y - 2, row.on ? C.gold2 : C.muted, { outline: C.ink });
+      p.text(row.on ? "ON" : "OFF", AUTO_TOGGLE_X + AUTO_TOGGLE_SIZE + 34, row.y - 2, row.on ? C.gold : C.muted, { outline: C.ink });
+    }
+  }
+
+  handleAutoPointer(x, y) {
+    const g = this.g;
+    if (g.state !== "playing" && g.state !== "paused") return false;
+    for (const [key, rect] of Object.entries(AUTO_TOGGLE_RECTS)) {
+      if (!contains(rect, x, y)) continue;
+      if (key === "battle") g.setAutoBattle?.(!g.autoBattle);
+      else g.setAutoLoot?.(!g.autoLoot);
+      g.persistSave?.();
+      g.audio.play("ui");
+      return true;
+    }
+    return false;
   }
 
   drawCommand(g, p, t) {
@@ -176,7 +212,7 @@ export class UI {
       p.ellipse(294, y, 9, 9, C.ink, 0.92);
       p.ring(294, y, 9, 2, color, 0.9);
       p.text(s.glyph, 294, y - 4, color, { align: "center", font: "big", outline: C.ink });
-      p.text(["J", "K", "L", "U", "I", "O"][i], 307, y - 3, C.gold2, { align: "center", font: "mini", outline: C.ink });
+      p.text(SKILL_KEYS[i] ?? String(i + 1), 307, y - 3, C.gold2, { align: "center", font: "mini", outline: C.ink });
       if (cd > 0.001) {
         p.ellipse(294, y, 8, 8, C.ink, Math.min(0.8, cd * 0.75));
         p.text(left >= 1 ? String(Math.ceil(left)) : left.toFixed(1), 294, y - 2, C.gold2, { align: "center", font: "mini", outline: C.ink });
@@ -189,66 +225,79 @@ export class UI {
 
   drawInventory(g, p, t) {
     const h = g.hero;
+    const hud = uiCopy(g);
     p.rect(0, 0, SW, SH, C.ink, 0.76);
     plate(p, t, 160, 120, 304, 208, { ornament: true });
     p.text("SATCHEL", 16, 22, C.gold, { outline: C.ink, font: "big" });
     p.text("TAB / ESC CLOSE", 304, 22, C.muted, { align: "right", outline: C.ink });
-    p.text("WEAPONS", 18, 43, C.gold2, { outline: C.ink });
-    WEAPONS.forEach((w, i) => {
-      const x = 58 + i * 101, active = h.weaponId === w.id;
-      p.rect(x - 45, 50, 90, 34, active ? C.gold : C.muted, active ? 0.28 : 0.12);
-      p.rect(x - 43, 52, 86, 30, C.ink, 0.88);
-      p.text(w.glyph, x - 32, 62, active ? C.gold2 : C.text, { font: "big", outline: C.ink });
-      p.text(w.nameEn, x + 3, 59, active ? C.gold2 : C.text, { align: "center", outline: C.ink, font: "mini" });
-      p.text(`${w.dmgMul > 1 ? "+" : ""}${Math.round((w.dmgMul - 1) * 100)}% DMG`, x + 3, 68, C.muted, { align: "center", outline: C.ink, font: "mini" });
-      p.text(`${w.speed} SPD`, x + 3, 76, C.muted, { align: "center", outline: C.ink, font: "mini" });
+    p.text(hud.meleeWeapons, 18, 38, C.gold2, { outline: C.ink });
+    MELEE_WEAPONS.slice(0, 3).forEach((w, i) => {
+      const x = 58 + i * 96, active = h.meleeWeaponId === w.id;
+      p.rect(x - 42, 44, 84, 30, active ? C.gold : C.muted, active ? 0.28 : 0.12);
+      p.rect(x - 40, 46, 80, 26, C.ink, 0.88);
+      p.text(w.glyph, x - 30, 56, active ? C.gold2 : C.text, { font: "big", outline: C.ink });
+      p.text(weaponLabel(g, w).slice(0, 8), x + 2, 54, active ? C.gold2 : C.text, { align: "center", outline: C.ink, font: "mini" });
+      p.text(String(i + 1), x - 36, 48, C.muted, { outline: C.ink, font: "mini" });
     });
-    p.text("LOADOUT", 18, 96, C.gold2, { outline: C.ink });
+    p.text(hud.thrownWeapons, 18, 78, C.gold2, { outline: C.ink });
+    THROWN_WEAPONS.slice(0, 3).forEach((w, i) => {
+      const x = 58 + i * 96, active = h.thrownWeaponId === w.id;
+      p.rect(x - 42, 84, 84, 30, active ? C.gold : C.muted, active ? 0.28 : 0.12);
+      p.rect(x - 40, 86, 80, 26, C.ink, 0.88);
+      p.text(w.glyph, x - 30, 96, active ? C.gold2 : C.text, { font: "big", outline: C.ink });
+      p.text(weaponLabel(g, w).slice(0, 8), x + 2, 94, active ? C.gold2 : C.text, { align: "center", outline: C.ink, font: "mini" });
+      p.text(String(i + 4), x - 36, 88, C.muted, { outline: C.ink, font: "mini" });
+    });
+    p.text("LOADOUT", 18, 120, C.gold2, { outline: C.ink });
     p.text(this.inventorySkillPick == null ? "CLICK A SLOT, THEN PICK A SKILL" : "PICK A SKILL", 302, 96, C.muted, { align: "right", outline: C.ink, font: "mini" });
     h.skillSlots.forEach((id, i) => {
       const s = SKILL_META.find((x) => x.id === id) ?? SKILL_META[0];
       const active = this.inventorySkillPick === i;
-      const x = 38 + i * 47;
-      p.rect(x - 21, 103, 42, 31, active ? C.gold2 : C.muted, active ? 0.36 : 0.16);
-      p.rect(x - 19, 105, 38, 27, C.ink, 0.9);
-      p.text(String(i + 1), x - 14, 109, C.muted, { outline: C.ink, font: "mini" });
-      p.text(s.glyph, x + 3, 108, s.tint ? hex(s.tint) : C.gold2, { align: "center", font: "big", outline: C.ink });
-      p.text(s.nameEn, x + 3, 123, C.text, { align: "center", outline: C.ink, font: "mini" });
+      const x = 14 + i * 41;
+      p.rect(x - 18, 126, 38, 28, active ? C.gold2 : C.muted, active ? 0.36 : 0.16);
+      p.rect(x - 16, 128, 34, 24, C.ink, 0.9);
+      p.text(SKILL_KEYS[i] ?? String(i + 1), x - 12, 130, C.muted, { outline: C.ink, font: "mini" });
+      p.text(s.glyph, x + 2, 130, s.tint ? hex(s.tint) : C.gold2, { align: "center", font: "big", outline: C.ink });
+      p.text(skillLabel(g, s).slice(0, 6), x + 2, 143, C.text, { align: "center", outline: C.ink, font: "mini" });
     });
-    p.text("SKILLS", 18, 147, C.gold2, { outline: C.ink });
+    p.text("SKILLS", 18, 160, C.gold2, { outline: C.ink });
     SKILL_META.forEach((s, i) => {
-      const x = 18 + i * 42;
+      const x = 10 + i * 42;
       const selected = this.inventorySkillPick != null && h.skillSlots[this.inventorySkillPick] === s.id;
-      p.rect(x, 153, 36, 29, selected ? C.gold : C.muted, selected ? 0.3 : 0.1);
-      p.rect(x + 2, 155, 32, 25, C.ink, 0.9);
-      p.text(s.key, x + 6, 158, C.muted, { outline: C.ink, font: "mini" });
-      p.text(s.glyph, x + 18, 158, s.tint ? hex(s.tint) : C.gold2, { align: "center", font: "big", outline: C.ink });
-      p.text(s.nameEn.slice(0, 7), x + 18, 172, C.text, { align: "center", outline: C.ink, font: "mini" });
+      p.rect(x, 166, 36, 26, selected ? C.gold : C.muted, selected ? 0.3 : 0.1);
+      p.rect(x + 2, 168, 32, 22, C.ink, 0.9);
+      p.text(s.key, x + 6, 170, C.muted, { outline: C.ink, font: "mini" });
+      p.text(s.glyph, x + 18, 170, s.tint ? hex(s.tint) : C.gold2, { align: "center", font: "big", outline: C.ink });
+      p.text(skillLabel(g, s).slice(0, 6), x + 18, 181, C.text, { align: "center", outline: C.ink, font: "mini" });
     });
-    p.text("1–3 EQUIP WEAPON   ARROWS PICK SLOT   Z/X CHANGE SKILL", 160, 194, C.muted, { align: "center", outline: C.ink, font: "mini" });
-    p.text("EQUIP A BUILD, THEN RETURN TO THE FIGHT", 160, 207, C.gold, { align: "center", outline: C.ink, font: "mini" });
+    p.text(hud.inventoryHint, 160, 194, C.muted, { align: "center", outline: C.ink, font: "mini" });
+    p.text(hud.inventoryReturn, 160, 205, C.gold, { align: "center", outline: C.ink, font: "mini" });
   }
 
   handlePointer(x, y) {
     const g = this.g, h = g.hero;
     if (g.state !== "inventory") return false;
     if (y < 34) { g.toggleInventory(); return true; }
-    if (y >= 48 && y <= 88) {
-      const i = Math.floor((x + 43) / 101);
-      const w = WEAPONS[i];
+    if (y >= 42 && y <= 76) {
+      const i = Math.floor((x + 38) / 96);
+      const w = MELEE_WEAPONS[i];
       if (w) { h.equipWeapon(w.id, g); return true; }
     }
-    if (y >= 100 && y <= 137) {
-      const i = Math.floor((x + 9) / 47);
+    if (y >= 82 && y <= 116) {
+      const i = Math.floor((x + 38) / 96);
+      const w = THROWN_WEAPONS[i];
+      if (w) { h.equipWeapon(w.id, g); return true; }
+    }
+    if (y >= 124 && y <= 156) {
+      const i = Math.floor((x + 4) / 41);
       if (i >= 0 && i < h.skillSlots.length) { this.inventorySkillPick = i; g.audio.play("ui"); return true; }
     }
-    if (y >= 150 && y <= 184 && this.inventorySkillPick != null) {
-      const i = Math.floor((x - 18) / 42);
+    if (y >= 162 && y <= 192 && this.inventorySkillPick != null) {
+      const i = Math.floor((x - 10) / 42);
       const s = SKILL_META[i];
       if (s) {
-        const name = gameLang(g) === "zh" ? s.name : gameLang(g) === "ja" ? (s.nameJa ?? s.nameEn) : s.nameEn;
         h.swapSkill(this.inventorySkillPick, s.id);
-        this.toast(uiCopy(g).skillReady(name), "gold");
+        this.toast(uiCopy(g).skillReady(skillLabel(g, s)), "gold");
         this.inventorySkillPick = null;
         return true;
       }
@@ -260,7 +309,14 @@ export class UI {
     const g = this.g, h = g.hero;
     if (g.state !== "inventory") return false;
     if (key === "escape" || key === "tab") { g.toggleInventory(); return true; }
-    if (["1", "2", "3"].includes(key)) { h.equipWeapon(WEAPONS[Number(key) - 1].id, g); return true; }
+    if (["1", "2", "3"].includes(key)) {
+      const w = MELEE_WEAPONS[Number(key) - 1];
+      if (w) { h.equipWeapon(w.id, g); return true; }
+    }
+    if (["4", "5", "6"].includes(key)) {
+      const w = THROWN_WEAPONS[Number(key) - 4];
+      if (w) { h.equipWeapon(w.id, g); return true; }
+    }
     if (key === "arrowleft" || key === "arrowright") {
       const d = key === "arrowright" ? 1 : -1;
       this.inventorySkillPick = (this.inventorySkillPick == null ? 0 : (this.inventorySkillPick + d + h.skillSlots.length) % h.skillSlots.length);
@@ -291,7 +347,8 @@ export class UI {
           "TAB BAG   Q/SHIFT DODGE   SPACE QUICK",
           `ESC PAUSE   ${g.audio.muted ? "M SOUND OFF" : "M SOUND ON"}`,
         ],
-        prompt: "PRESS ENTER", width: 272, height: 140, tone: "gold",
+        prompt: g.canContinueSave?.() ? uiCopy(g).continueSave : "PRESS ENTER",
+        width: 272, height: 140, tone: "gold",
       });
     } else if (g.state === "paused") {
       card(p, this.t, 160, 90, {

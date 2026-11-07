@@ -6,6 +6,7 @@ import { createFx, clamp } from "../../pixelfx/src/core/index.js";
 import { FX, SKILL_META } from "./data.js";
 import { HERO_TRACKS } from "./hero.js";
 import { COMBAT_SCALE, combatDistance as size } from "./combat-scale.js";
+import { castActSpell, interruptSpellActs } from "./spell-act.js";
 
 export const SKILLS = SKILL_META.map((s) => ({ ...s, cast: null }));
 
@@ -41,23 +42,50 @@ function rollCrit(extra = 0) {
   return Math.random() < 0.1 + extra;
 }
 
-function castWeaponProjectile(g, combo, profile) {
+function castWeaponProjectile(g, combo, profile, weapon = null) {
   const h = g.hero, aim = aimPoint(g, profile.range ?? 240);
+  const w = weapon ?? h.meleeWeapon ?? h.weapon;
   faceTo(h, aim.x);
   h.startAnim("castK", HERO_TRACKS.castK, false);
   const sx = h.x + h.facing * 12 * COMBAT_SCALE, sy = h.y - 22 * COMBAT_SCALE;
   const dx = aim.x - sx, dy = aim.y - sy, len = Math.hypot(dx, dy) || 1;
   const speed = profile.speed ?? 220;
-  const module = h.weapon?.module;
+  const module = w?.module;
   const fx = module ? createFx(module, { x: sx, y: sy, flip: dx < 0, seed: 800 + combo, light: 1 }) : createFx(FX.plasmaShot, { x: sx, y: sy, flip: dx < 0, seed: 800 + combo });
+  const base = profile.dmg ?? [12, 16, 25][combo] ?? 14;
   g.projectiles.push({
     x: sx, y: sy, vx: dx / len * speed, vy: dy / len * speed, prevX: sx, prevY: sy,
-    r: size(profile.radius ?? 4), dmg: [12, 16, 25][combo] * h.dmgMul, team: "hero", fx,
+    r: size(profile.radius ?? 4), dmg: base * h.dmgMul, team: "hero", fx,
     life: ((profile.range ?? 240) / speed + 0.45) * COMBAT_SCALE, kind: "weapon", color: "#fff0c0",
-    pierce: !!profile.pierce, maxHits: profile.maxHits ?? 1, response: profile.response,
+    pierce: !!profile.pierce, maxHits: profile.maxHits ?? 1, response: profile.response ?? (w?.id === "armory:boomerang" ? "return" : undefined),
     returnSpeed: profile.returnSpeed, blastRadius: size(profile.blastRadius ?? 0), status: profile.status, statusTime: profile.statusTime,
+    knock: profile.knock ?? 22, crit: profile.crit ?? false,
   });
-  g.audio.play("slash");
+  g.audio.play(w?.class === "thrown" ? "quick" : "slash");
+}
+
+// ------------------------------------------------------------------------------------------------
+// T — 投掷: fires the equipped thrown weapon.
+// ------------------------------------------------------------------------------------------------
+function castT(g) {
+  const h = g.hero;
+  const w = h.thrownWeapon;
+  if (!w) return;
+  const t = nearest(g, 120);
+  if (t) faceTo(h, t.x);
+  const attack = w.attack ?? { kind: "projectile", range: 70, radius: 8 };
+  const profile = {
+    ...attack,
+    kind: "projectile",
+    range: attack.range ?? 70,
+    speed: w.class === "thrown" ? 210 : 200,
+    dmg: 15 * (w.dmgMul ?? 1),
+    pierce: attack.pierce,
+    maxHits: attack.maxHits,
+    knock: 26,
+  };
+  h.setThrowRig(w.rigWeapon);
+  castWeaponProjectile(g, 0, profile, w);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -70,7 +98,7 @@ function castJ(g) {
   if (t) faceTo(h, t.x);
   const mods = [FX.swordSlash, FX.doubleSlash, FX.heavyCleave];
   const tracks = [HERO_TRACKS.attack1, HERO_TRACKS.attack2, HERO_TRACKS.attack3];
-  const profile = h.weapon?.attack ?? { kind: "line", range: [60, 68, 80][c], radius: 11, pierce: false };
+  const profile = h.meleeWeapon?.attack ?? { kind: "line", range: [60, 68, 80][c], radius: 11, pierce: false };
   // Weapon geometry is scaled once by Game.weaponStrike; keep these combo modifiers in art units.
   const scaledProfile = { ...profile, range: (profile.range ?? 60) * [1, 1.04, 1.12][c], radius: (profile.radius ?? 11) + c * 1.5 };
   const dmg = [11, 14, 24][c];
@@ -85,7 +113,7 @@ function castJ(g) {
   h.comboIndex = (c + 1) % 3;
   h.comboTimer = 0.95;
   h.vx += h.facing * size([18, 26, 44][c]);
-  const weaponFx = h.weapon?.module;
+  const weaponFx = h.meleeWeapon?.module;
   const attackFx = weaponFx
     ? g.addFx(weaponFx, { x: h.x, y: h.y, flip: h.facing < 0, seed: 200 + c, light: c === 2 ? 1.15 : 0.95 }, { life: weaponFx.meta?.loop ? 0.9 : 0 })
     : g.addFx(mods[c], { x: h.x, y: h.y, flip: h.facing < 0, light: c === 2 ? 1.15 : 0.95 });
@@ -273,6 +301,10 @@ function castE(g) {
 // This keeps the library's own choreography intact instead of duplicating 100+ spell files here.
 function castGeneric(g, sk) {
   const h = g.hero, mod = sk.module;
+  if (mod?.act) {
+    castActSpell(g, sk, mod);
+    return;
+  }
   const target = nearest(g, 240);
   const x = target ? target.x : g.clampX(h.x + h.facing * size(72), 26);
   const y = target ? target.y : h.y;
@@ -309,7 +341,7 @@ function castGeneric(g, sk) {
   });
 }
 
-const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO, e: castE };
+const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO, e: castE, t: castT };
 for (const s of SKILLS) s.cast = CASTS[s.id] ?? ((g) => castGeneric(g, s));
 
 /** Try to cast. Returns true when the skill actually fired. */
@@ -317,6 +349,7 @@ export function castSkill(g, id) {
   const sk = SKILLS.find((s) => s.id === id);
   if (!sk || g.state !== "playing" || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
   const h = g.hero;
+  interruptSpellActs(g);
   if (h.cd[id] > 0) {
     g.audio.play("deny");
     return false;

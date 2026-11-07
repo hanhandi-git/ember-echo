@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { installGameViewport, viewportSize } from "../src/viewport.js";
+import { installGameViewport, viewportSize, gameCanvasScale, layoutGameCanvas } from "../src/viewport.js";
 
 function fixture() {
   const target = () => ({
@@ -27,12 +27,27 @@ function fixture() {
     setTimeout(fn) { timers.set(++id, fn); return id; }, clearTimeout(key) { timers.delete(key); },
   });
   const panel = { hidden: true };
+  const gameCanvas = { closest: () => null, style: {} };
   const canvas = { closest: () => null }, disabledButton = { closest: () => ({}) }, gap = {};
-  const stage = { ownerDocument: doc, querySelector: () => panel, contains: (node) => [canvas, disabledButton, gap].includes(node) };
+  const stage = {
+    ownerDocument: doc,
+    querySelector: (sel) => (sel === "#settings-panel" ? panel : sel === "#game" ? gameCanvas : null),
+    contains: (node) => [canvas, disabledButton, gap].includes(node),
+  };
   const dispose = installGameViewport(stage, win);
   const flush = () => { const pending = [...frames.values()]; frames.clear(); pending.forEach((fn) => fn()); };
   return { win, doc, viewport, panel, canvas, disabledButton, gap, values, frames, timers, flush, dispose };
 }
+
+test("game canvas uses an integer upscale so HUD pixels are not softened", () => {
+  assert.equal(gameCanvasScale(844, 390), 2);
+  assert.equal(gameCanvasScale(1280, 800), 4);
+  assert.equal(gameCanvasScale(400, 225), 1);
+  const canvas = { style: {} };
+  assert.equal(layoutGameCanvas(canvas, 844, 390), 2);
+  assert.equal(canvas.style.width, "640px");
+  assert.equal(canvas.style.height, "360px");
+});
 
 test("viewport sizing accounts for browser chrome without feeding pinch zoom back into layout", () => {
   assert.deepEqual(viewportSize({ innerWidth: 844, innerHeight: 390 }), { width: 844, height: 390 });

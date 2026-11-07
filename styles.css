@@ -32,9 +32,11 @@ body {
 button { touch-action: manipulation; }
 #game {
   display: block;
-  width: min(100%, calc(var(--app-height, 100svh) * 16 / 9));
-  aspect-ratio: 16 / 9;
-  height: auto;
+  /* Width/height set in JS (integer multiples of 320×180) so pixel HUD text stays crisp. */
+  width: 320px;
+  height: 180px;
+  max-width: 100%;
+  max-height: 100%;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   cursor: pointer;
@@ -61,7 +63,7 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 .touch-joystick::before { top: 50%; left: 12%; right: 12%; height: 1px; }
 .touch-joystick::after { top: 12%; bottom: 12%; left: 50%; width: 1px; }
 .touch-joystick span { position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); border: 2px solid rgba(255, 211, 106, 0.55); border-radius: 50%; background: rgba(56, 77, 101, 0.45); box-shadow: 0 0 12px rgba(255, 122, 60, 0.12); }
-.touch-skills { position: absolute; bottom: max(78px, calc(env(safe-area-inset-bottom) + 78px)); right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(3, 60px); gap: 8px; }
+.touch-skills { position: absolute; bottom: max(78px, calc(env(safe-area-inset-bottom) + 78px)); right: max(12px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(4, 60px); gap: 8px; }
 .touch-skill { position: relative; display: grid; grid-template-rows: 54px auto; justify-items: center; align-content: center; gap: 2px; width: 60px; height: 74px; padding: 2px; border: 0; background: transparent; color: var(--hud-text); cursor: pointer; font: 700 10px/1.2 ui-sans-serif, system-ui, sans-serif; touch-action: none; pointer-events: auto; }
 .touch-skill canvas { width: 54px; height: 54px; }
 .touch-skill small, .touch-glyph { display: block; max-width: 58px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; line-height: 1.2; font-weight: 800; color: var(--hud-gold2); text-shadow: 1px 0 var(--hud-ink), -1px 0 var(--hud-ink), 0 1px var(--hud-ink), 0 -1px var(--hud-ink); }
@@ -70,9 +72,13 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 .touch-skill.is-pressed canvas, .touch-actions .is-pressed canvas { transform: translateY(2px); }
 .touch-controls.is-touch .touch-skill:nth-child(-n+3) { grid-row: 2; }
 .touch-controls.is-touch .touch-skill:nth-child(n+4) { grid-row: 1; }
-.touch-controls.is-touch .touch-skill:nth-child(3n+1) { grid-column: 1; }
-.touch-controls.is-touch .touch-skill:nth-child(3n+2) { grid-column: 2; }
-.touch-controls.is-touch .touch-skill:nth-child(3n) { grid-column: 3; }
+.touch-controls.is-touch .touch-skill:nth-child(1) { grid-column: 1; }
+.touch-controls.is-touch .touch-skill:nth-child(2) { grid-column: 2; }
+.touch-controls.is-touch .touch-skill:nth-child(3) { grid-column: 3; }
+.touch-controls.is-touch .touch-skill:nth-child(4) { grid-column: 1; }
+.touch-controls.is-touch .touch-skill:nth-child(5) { grid-column: 2; }
+.touch-controls.is-touch .touch-skill:nth-child(6) { grid-column: 3; }
+.touch-controls.is-touch .touch-skill:nth-child(7) { grid-column: 4; }
 .touch-controls.is-touch .touch-key { display: none; }
 .touch-actions { position: absolute; right: max(18px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); display: flex; gap: 12px; align-items: center; }
 .touch-actions button { display: grid; gap: 2px; align-content: center; width: 68px; height: 74px; padding: 3px; justify-items: center; border: 0; background: transparent; color: #f5eddf; cursor: pointer; font-family: inherit; touch-action: none; pointer-events: auto; }
@@ -81,7 +87,7 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 .touch-controls:not(.is-touch) .touch-joystick, .touch-controls:not(.is-touch) .touch-actions { display: none; }
 @media (max-height: 440px) and (orientation: landscape) {
   .touch-joystick { width: 96px; height: 96px; }
-  .touch-skills { bottom: max(80px, calc(env(safe-area-inset-bottom) + 72px)); gap: 4px; grid-template-columns: repeat(3, 54px); }
+  .touch-skills { bottom: max(80px, calc(env(safe-area-inset-bottom) + 72px)); gap: 4px; grid-template-columns: repeat(4, 52px); }
   .touch-skill { width: 54px; height: 63px; grid-template-rows: 46px auto; }
   .touch-skill canvas { width: 46px; height: 46px; }
   .touch-skill small { max-width: 52px; font-size: 9px; }
@@ -108,6 +114,12 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 .section-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin: 0 0 14px; color: #f5eddf; font-size: 15px; font-weight: 650; }
 .section-caption { color: #8d9db2; font-size: 12px; font-weight: 400; }
 .loadout-overview { position: relative; width: min(430px, 100%); aspect-ratio: 220 / 92; margin-bottom: 24px; }
+.loadout-overview--dual .overview-weapons { position: absolute; left: 38%; right: 6%; top: 14%; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.loadout-overview--dual .overview-weapon { display: grid; gap: 4px; justify-items: start; }
+.loadout-overview--dual .overview-weapon img { width: 40px; height: 40px; object-fit: contain; }
+.loadout-overview--dual .overview-weapon span { color: #d9ad65; font-size: 10px; font-weight: 700; }
+.loadout-overview--dual .overview-weapon strong { font-size: 14px; line-height: 1.25; }
+.loadout-overview--dual .overview-copy { top: auto; bottom: 8%; left: 38%; }
 .overview-art { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
 .overview-icon { position: absolute; left: 6%; top: 13%; width: 27%; image-rendering: pixelated; pointer-events: none; }
 .overview-copy { position: absolute; left: 38%; right: 6%; top: 16%; display: grid; gap: 8px; }
@@ -122,12 +134,39 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 .item-icon img { display: block; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
 .item-name { min-width: 0; max-width: 100%; color: var(--hud-gold2); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; font-weight: 700; }
 .item-meta { color: var(--hud-muted); font-size: 11px; line-height: 1.5; }
+.stash-grid .stash-card { cursor: default; }
+.stash-grid .stash-card:hover,
+.stash-grid .stash-card:active { filter: none; border-image-source: var(--frame-steel); }
+.stash-card.is-muted .item-icon img { filter: grayscale(1) brightness(0.48) contrast(0.9); opacity: 0.78; }
+.stash-card.is-muted .item-name,
+.stash-card.is-muted .item-meta { color: var(--hud-muted); }
+.stash-card.has-count .item-meta { color: var(--hud-gold2); }
 .item-badge { padding: 2px 7px; background: transparent; border: 1px solid var(--hud-line); color: var(--hud-gold); font-size: 10px; line-height: 1.4; }
 .skill-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 .skill-grid .item-card { padding: 5px 0; border-width: 5px; border-image-width: 5px; }
 .skill-grid .item-icon { width: 66px; height: 66px; }
 .skill-grid .item-name { font-size: 11px; }
 .skill-grid .item-meta { font-size: 10px; }
+.skill-attr-tabs { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+.skill-attr-tab { min-height: 32px; border: 1px solid var(--hud-line); padding: 5px 12px; background: transparent; color: var(--hud-muted); cursor: pointer; font: 700 12px/1.3 system-ui, sans-serif; }
+.skill-attr-tab.is-active { border-color: var(--hud-gold); color: var(--hud-gold2); background: rgba(255, 211, 106, 0.1); }
+.skill-attr-tab:disabled, .skill-attr-tab[aria-disabled="true"] { opacity: 0.35; cursor: default; }
+.appearance-overview { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; padding: 14px 16px; border: 6px solid transparent; border-image: var(--frame-steel) 12 / 6px / 0 stretch; background: rgba(7, 6, 13, 0.28); }
+.appearance-portrait { flex-shrink: 0; width: 168px; height: auto; image-rendering: pixelated; }
+.appearance-copy { display: grid; gap: 6px; }
+.appearance-copy span { color: var(--hud-gold); font-size: 11px; font-weight: 700; }
+.appearance-copy strong { color: var(--hud-gold2); font-size: 20px; line-height: 1.3; }
+.appearance-copy small { color: var(--hud-muted); font-size: 12px; line-height: 1.5; }
+.hero-look-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+.hero-look-card .item-icon { width: 100%; height: auto; }
+.hero-look-card .hero-look-preview { display: block; width: 100%; height: auto; image-rendering: pixelated; pointer-events: none; }
+.settings-toggle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px; }
+.settings-toggle { display: grid; gap: 4px; min-height: 76px; padding: 10px 12px; border: 6px solid transparent; border-image: var(--frame-steel) 12 / 6px / 0 stretch; background: rgba(7, 6, 13, 0.28); color: var(--hud-text); cursor: pointer; font-family: inherit; text-align: left; }
+.settings-toggle.is-on { border-image-source: var(--frame-selected); }
+.settings-toggle-label { color: var(--hud-gold2); font-size: 13px; font-weight: 700; }
+.settings-toggle-state { color: var(--hud-muted); font-size: 11px; letter-spacing: 0.06em; }
+.settings-toggle.is-on .settings-toggle-state { color: var(--hud-gold); }
+.settings-toggle small { color: var(--hud-muted); font-size: 10px; line-height: 1.45; }
 .language-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .language-card { display: flex; align-items: center; gap: 12px; min-height: 76px; border: 6px solid transparent; border-image: var(--frame-steel) 12 / 6px / 0 stretch; padding: 10px; background: rgba(7, 6, 13, 0.28); color: var(--hud-text); cursor: pointer; font-family: inherit; text-align: left; }
 .language-card.is-active { border-image-source: var(--frame-selected); }
@@ -154,7 +193,7 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 @media (max-width: 720px) {
   .settings-header, .settings-content, .settings-footer { padding-left: 12px; padding-right: 12px; }
   .settings-tabs { padding-left: 12px; padding-right: 12px; }
-  .settings-tab { min-width: 0; flex: 1; padding: 8px 12px; }
+  .settings-tab { min-width: 0; flex: 1; padding: 8px 6px; font-size: 12px; }
   .item-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .skill-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .language-grid { grid-template-columns: 1fr; }

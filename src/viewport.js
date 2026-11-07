@@ -1,5 +1,24 @@
 // Safari can resize its visual viewport for browser chrome OR page zoom. Normalize zoom
 // out of the measurements so a gesture never feeds a smaller viewport back into canvas layout.
+
+import { SW, SH } from "./game/constants.js";
+
+/** Largest integer scale so the 320×180 frame fits without fractional CSS upscaling (keeps HUD text sharp). */
+export function gameCanvasScale(viewW, viewH, gw = SW, gh = SH) {
+  if (viewW <= 0 || viewH <= 0) return 1;
+  return Math.max(1, Math.min(Math.floor(viewW / gw), Math.floor(viewH / gh)));
+}
+
+export function layoutGameCanvas(canvas, viewW, viewH) {
+  if (!canvas) return 1;
+  const scale = gameCanvasScale(viewW, viewH);
+  const w = SW * scale;
+  const h = SH * scale;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  return scale;
+}
+
 export function viewportSize(win) {
   const viewport = win.visualViewport;
   const scale = viewport?.scale > 0 ? viewport.scale : 1;
@@ -11,6 +30,7 @@ export function viewportSize(win) {
 
 export function installGameViewport(stage, win = window) {
   const doc = stage.ownerDocument;
+  const canvas = stage.querySelector("#game");
   const panel = stage.querySelector("#settings-panel");
   let frame = null, rotationTimer = null, lastTap = null;
   const subscriptions = [];
@@ -27,6 +47,7 @@ export function installGameViewport(stage, win = window) {
     for (const [key, value] of [["--app-width", `${width}px`], ["--app-height", `${height}px`]]) {
       if (style.getPropertyValue(key) !== value) style.setProperty(key, value);
     }
+    layoutGameCanvas(canvas, width, height);
   }
   function schedule() { if (frame == null) frame = win.requestAnimationFrame(update); }
   function rotate() {

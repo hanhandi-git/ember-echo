@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "余烬回响 — a pixelfx action RPG demo. WASD to move, J K L U I O to cast.",
+  "description": "余烬回响 — a pixelfx action RPG demo. WASD to move, J K L U I O T to cast.",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "build": "node build.mjs",

@@ -1,4 +1,6 @@
 import { SKILL_META } from "./data.js";
+import { SKILL_KEYS } from "./controls.js";
+import { skillLabel } from "./copy.js";
 import { paintUiArt } from "./ui-art.js";
 
 const COPY = {
@@ -153,8 +155,8 @@ export function createTouchControls(game) {
       renderedKit = kit;
       skills.innerHTML = game.hero.skillSlots.map((id, index) => {
         const skill = SKILL_META.find((s) => s.id === id) ?? SKILL_META[0];
-        const name = language === "ja" ? skill.nameJa ?? skill.nameEn : language === "en" ? skill.nameEn : skill.name;
-        const key = ["J", "K", "L", "U", "I", "O"][index];
+        const name = skillLabel(game, skill);
+        const key = SKILL_KEYS[index] ?? String(index + 1);
         return `<button type="button" class="touch-skill" style="--skill-color:${skill.tint ?? "#ffe7a5"}" data-touch-slot="${index}" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)} · ${key}"><canvas class="ui-art" aria-hidden="true"></canvas><small class="touch-glyph">${escapeHtml(skill.glyph ?? name.slice(0, 1))}</small><span class="touch-key" aria-hidden="true">${key}</span><span class="touch-cooldown" aria-hidden="true"></span></button>`;
       }).join("");
       slotButtons = [...skills.querySelectorAll("button")];
