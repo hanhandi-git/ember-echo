@@ -11,12 +11,12 @@
 <body>
 <main id="stage">
   <canvas id="game" width="320" height="180" aria-label="余烬回响 · Ember Echo"></canvas>
-  <section id="settings-panel" class="settings-panel" hidden aria-label="游戏设置">
+  <section id="settings-panel" class="settings-panel" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="settings-shell">
       <header class="settings-header">
         <div>
           <p class="eyebrow" data-i18n="menu.kicker">余烬回响 / LOADOUT</p>
-          <h1 data-i18n="menu.title">背包与设置</h1>
+          <h1 id="settings-title" data-i18n="menu.title">背包与设置</h1>
           <p class="settings-subtitle" data-i18n="menu.subtitle">选择你的武器、技能组合和语言。</p>
         </div>
         <button class="icon-button close-settings" type="button" aria-label="关闭" data-action="close">×</button>
@@ -36,15 +36,15 @@
     </div>
   </section>
   <nav id="game-tools" class="game-tools" hidden aria-label="游戏菜单">
-    <button type="button" data-game-action="bag" aria-label="背包" title="背包 · Tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7V5a4 4 0 0 1 8 0v2M5 7h14l1 14H4L5 7Z"/></svg></button>
-    <button type="button" data-game-action="pause" aria-label="暂停" title="暂停 · P"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
+    <button type="button" data-game-action="bag" aria-label="背包" title="背包 · Tab"><canvas class="game-tool-face ui-art" aria-hidden="true"></canvas></button>
+    <button type="button" data-game-action="pause" aria-label="暂停" title="暂停 · P"><canvas class="game-tool-face ui-art" aria-hidden="true"></canvas></button>
   </nav>
   <section id="touch-controls" class="touch-controls" hidden aria-label="触屏控制">
     <div class="touch-joystick" data-touch-joystick aria-label="移动摇杆"><span></span></div>
     <div class="touch-skills" data-touch-skills></div>
     <div class="touch-actions">
-      <button type="button" data-touch-action="quick" aria-label="快速移动"><span>↗</span><small>快移</small></button>
-      <button type="button" data-touch-action="dodge" aria-label="闪避"><span>✦</span><small>闪避</small></button>
+      <button type="button" data-touch-action="quick" aria-label="快速移动"><canvas class="ui-art" aria-hidden="true"></canvas><small>快移</small></button>
+      <button type="button" data-touch-action="dodge" aria-label="闪避"><canvas class="ui-art" aria-hidden="true"></canvas><small>闪避</small></button>
     </div>
   </section>
 </main>

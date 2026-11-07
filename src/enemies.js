@@ -4,6 +4,7 @@
 import { createFx, painterFor, posed, poseAt, STAND, hex, clamp, TAU } from "../../pixelfx/src/core/index.js";
 import { ENEMY_TYPES, BOSS_LOOK } from "./data.js";
 import { COMBAT_SCALE, BOSS_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
+import { uiCopy } from "./copy.js";
 
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, barBack: hex("#1a0d18"), bar: hex("#d8422f"),
@@ -613,7 +614,8 @@ export class Boss {
   transition(g, phase) {
     this.phase = phase;
     this.phaseLock = 1.25;
-    g.banner(phase === 2 ? "PHASE II" : "PHASE III", "THE WARDEN", phase === 2 ? "THE RIVER SEAL OPENS" : "ASH CONSUMES HIM");
+    const c = uiCopy(g);
+    g.banner(phase === 2 ? c.phase2 : c.phase3, c.bossWarden, phase === 2 ? c.bossPhase2 : c.bossPhase3);
     g.flashScreen(phase === 2 ? "#c9a8ff" : "#ff9a5c", 0.3);
     g.shake(6, 0.6);
     g.audio.play("phase");
@@ -646,7 +648,8 @@ export class Boss {
     g.bossDefeated = true;
     g.bossRef = null;
     g.hold = 2.4;
-    g.banner("GUARDIAN FALLEN", "THE WARDEN IS ASH", "");
+    const c = uiCopy(g);
+    g.banner(c.guardianFallen, c.wardenAsh, "");
     // the warden's summons unmake themselves when he falls
     g.after(0.5, () => {
       for (const e of g.enemies) if (e !== this && !e.dead && !e.boss) e.hurt(g, 9999, { silent: true, crit: false });

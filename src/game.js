@@ -13,13 +13,16 @@ import { drawMovementTrail } from "./movement-fx.js";
 import { SKILL_RECTS, RESUME_BUTTON, contains } from "./controls.js";
 import { GATE_PALETTES } from "./fx/stage-portal.js";
 import { projectileSweep } from "./collision.js";
-import { COMBAT_SCALE } from "./combat-scale.js";
+import { COMBAT_SCALE, PICKUP_RENDER_SCALE } from "./combat-scale.js";
+import { stageAct, stageName, stageSub, uiCopy, lootLabel } from "./copy.js";
 
 const SW = 320, SH = 180, BH = 180, WORLD_W = 480;
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, bg: hex("#05060c"),
   warn: hex("#ff8a5a"), warnLit: hex("#ffd36a"), gold: hex("#ffd36a"), green: hex("#a8ff9a"),
 };
+/** Floating hit numbers: normal 1×, crit 1.5× (milestone combo UI is separate). */
+const NUM_FONT_SCALE = { normal: 1, crit: 1.5 };
 
 export class Game {
   constructor(canvas) {
@@ -64,6 +67,7 @@ export class Game {
     this.portal = null;
     this.deathT = 0;
     this.stage = STAGES[0];
+    this.language = typeof localStorage !== "undefined" ? (localStorage.getItem("ember-echo-language") || "zh") : "zh";
     this.mapFx = null;
     this.mapFxTiles = [];
     this.mapTileFrames = [];
@@ -107,7 +111,7 @@ export class Game {
     this.state = title ? "title" : "playing";
     this.fade = title ? 0 : 1;
     if (!title) {
-      this.banner(this.stage.actEn, this.stage.nameEn, this.stage.subEn, "STAGE");
+      this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));
       this.audio.play("ui");
     }
   }
@@ -160,7 +164,8 @@ export class Game {
       color: hex(palette[5]),
       fx: createFx(this.fx.stagePortal, { x, y, palette, reveal: 0, seed: 910 + this.stageIndex }),
     };
-    this.ui.toast(exit ? "ESCAPE GATE OPEN" : finalGate ? "FINAL STAGE GATE OPEN" : "PORTAL OPEN - MOVE RIGHT");
+    const c = uiCopy(this);
+    this.ui.toast(exit ? c.portalEscape : finalGate ? c.portalFinal : c.portalOpen);
     this.audio.play("portal");
   }
 
@@ -205,7 +210,7 @@ export class Game {
       this.togglePause(); this.audio.play("ui"); return "resume";
     }
     if (this.state !== "playing") return null;
-    const slot = SKILL_RECTS.findIndex((rect) => contains(rect, x, y));
+    const slot = this.touchUi ? -1 : SKILL_RECTS.findIndex((rect) => contains(rect, x, y));
     if (slot >= 0) { this.cast(this.hero.skillSlots[slot]); return "skill"; }
     return null;
   }
@@ -421,8 +426,9 @@ export class Game {
     wave.forEach((spec, n) => this.spawnQueue.push({ ...spec, delay: n * 0.28 }));
     if (i > 0) {
       const boss = wave.some((s) => s.type === "boss");
-      if (boss) this.banner("BOSS", "THE WARDEN", "ACHERON");
-      else this.banner("WAVE " + (i + 1), this.stage.nameEn, "MORE SHADOWS GATHER");
+      const c = uiCopy(this);
+      if (boss) this.banner(c.boss, c.bossWarden, c.bossSub);
+      else this.banner(c.wave(i + 1, this.stage.waves.length), stageName(this, this.stage), c.waveGather);
     }
   }
 
@@ -449,7 +455,7 @@ export class Game {
     this.phaseT = 0;
     this.ui.stageClear();
     this.audio.play("level");
-    this.hero.heal(this, Math.round(this.hero.maxHp * 0.22), { big: true });
+    this.hero.heal(this, Math.round(this.hero.maxHp * 0.22));
     this.hero.mp = Math.min(this.hero.maxMp, this.hero.mp + 24);
     this.projectiles = [];
     this.spawnQueue = [];
@@ -684,11 +690,12 @@ export class Game {
   }
 
   number(x, y, text, opts = {}) {
+    const tier = opts.crit ? "crit" : "normal";
     this.numbers.push({
       x: x + (Math.random() * 8 - 4), y, text,
-      t: 0, life: opts.crit ? 1.05 : 0.8,
-      color: hex(opts.color ?? "#fff0d0"), crit: !!opts.crit, small: !!opts.small,
-      vy: opts.crit ? -34 : -24,
+      t: 0, life: tier === "crit" ? 1.05 : 0.8,
+      color: hex(opts.color ?? "#fff0d0"), tier, small: !!opts.small,
+      vy: tier === "crit" ? -34 : -24,
     });
   }
 
@@ -805,13 +812,17 @@ export class Game {
   collect(p) {
     this.addFx(FX.collectBurst, { x: p.x, y: p.y, light: 0.9, seed: 90 + Math.floor(Math.random() * 20) });
     this.audio.play("pickup");
-    if (p.kind === "heart") this.hero.heal(this, 18, { big: true });
-    else if (p.kind === "potion") {
+    if (p.kind === "heart") {
+      this.hero.heal(this, 18);
+    } else if (p.kind === "potion") {
       const n = Math.min(24, this.hero.maxMp - this.hero.mp);
       this.hero.mp += n;
       this.number(p.x, p.y - 20, "+" + Math.round(n) + " MP", { color: "#8fd0ff", small: true });
-    } else this.hero.gainXp(this, 8);
-    this.ui.toast(p.label);
+      this.ui.toast(lootLabel(this, "potion"));
+    } else {
+      this.hero.gainXp(this, 8);
+      this.ui.toast(lootLabel(this, "xp"));
+    }
   }
 
   // ------------------------------------------------------------------ render
@@ -849,7 +860,7 @@ export class Game {
     actors.sort((a, b) => a.y - b.y || (a.kind === "hero" ? 1 : -1));
     for (const a of actors) {
       if (a.kind === "pickup") {
-        a.ref.fx.draw(f);
+        this.drawScaledFx(a.ref.fx, a.ref.x, a.ref.y, PICKUP_RENDER_SCALE);
         p = painterFor(f);
       } else if (a.kind === "enemy") {
         a.ref.draw(this, painterFor(f));
@@ -883,8 +894,10 @@ export class Game {
     // numbers are world-space, so they shake with the stage
     for (const n of this.numbers) {
       const a = 1 - n.t / n.life;
+      const tier = n.tier ?? (n.crit ? "crit" : "normal");
+      const scale = (NUM_FONT_SCALE[tier] ?? 1) * (n.small ? 0.92 : 1);
       p.text(n.text, n.x, n.y, n.color, {
-        font: n.crit ? "big" : "mini", scale: n.crit ? 1 : 1, align: "center",
+        font: "mini", scale, align: "center",
         outline: C.ink, a: Math.min(1, a * 1.6),
       });
     }

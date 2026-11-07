@@ -1,8 +1,10 @@
 import { SKILL_META, WEAPONS } from "./data.js";
+import { artUrl, weaponArtUrl, installUiFrames } from "./ui-art.js";
+import { drawHeroPortrait } from "./hero.js";
 
 const LANG = {
   zh: {
-    "menu.kicker": "余烬回响 / LOADOUT", "menu.title": "背包与设置", "menu.subtitle": "选择你的武器、技能组合和语言。",
+    "menu.kicker": "余烬回响", "menu.title": "背包与设置", "menu.subtitle": "选择武器、技能与语言。",
     "tabs.loadout": "装备", "tabs.profile": "人物", "tabs.settings": "设置", "loadout.weapons": "武器", "loadout.skills": "技能槽",
     "loadout.weaponHint": "点击卡片立即装备", "loadout.skillHint": "先选择槽位，再选择技能", "loadout.slot": "槽位",
     "loadout.equipped": "已装备", "loadout.ready": "可用", "loadout.replace": "替换", "settings.language": "语言",
@@ -31,20 +33,8 @@ const LANGUAGES = [
   ["zh", "🇨🇳", "中文", "简体中文"], ["en", "🇬🇧", "English", "English"], ["ja", "🇯🇵", "日本語", "日本語"],
 ];
 
-function iconSvg(kind = "slash") {
-  const shapes = {
-    weapon: '<path d="M8 28 25 11l4 4L12 32M22 8l4-4 4 4-4 4M6 30h7"/>',
-    scythe: '<path d="M8 30c7-6 10-13 10-22 8 4 12 10 10 17-2 6-8 7-13 3M18 8v23M13 31h10"/>',
-    fang: '<path d="M25 5c-9 2-14 7-14 15 0 5 3 8 7 8 4 0 7-3 7-7 0-5-4-7-8-5 3-4 5-7 8-11Z"/>',
-    slash: '<path d="M8 30 26 8M5 27 8 30l4-2M22 8h7"/>',
-    fire: '<path d="M18 31c-7-2-8-8-4-13 1 4 4 4 4 0 4 3 8 7 4 12-1-3-3-4-4-6-1 4-1 5 0 7Z"/>',
-    frost: '<path d="M18 4v28M6 11l24 14M30 11 6 25M10 7l8 5 8-5M10 29l8-5 8 5"/>',
-    bolt: '<path d="M20 3 8 20h9l-2 13 12-18h-9Z"/>',
-    mend: '<path d="M18 5v26M5 18h26"/>',
-    meteor: '<path d="m7 27 19-19M6 23l-2 5 5-2M18 6l5-2-2 5M25 24a5 5 0 1 0-7-7 5 5 0 0 0 7 7Z"/>',
-    burst: '<path d="M18 3 21 13 31 11 24 18 31 25 21 23 18 33 15 23 5 25 12 18 5 11 15 13Z"/>',
-  };
-  return `<svg viewBox="0 0 36 36" aria-hidden="true">${shapes[kind] ?? shapes.slash}</svg>`;
+function skillIcon(icon, selected = false) {
+  return `<img src="${artUrl("skill", { icon, selected, hud: true })}" alt="" aria-hidden="true" draggable="false">`;
 }
 
 function t(code, key) { return LANG[code]?.[key] ?? LANG.zh[key] ?? key; }
@@ -57,7 +47,9 @@ export function createSettingsUI(game) {
   const settings = panel.querySelector('[data-content="settings"]');
   const lang = localStorage.getItem("ember-echo-language") || "zh";
   game.language = LANG[lang] ? lang : "zh";
-  let tab = "loadout";
+  let tab = "loadout", returnFocus = null;
+  installUiFrames(panel.parentElement);
+  document.documentElement.lang = game.language === "zh" ? "zh-CN" : game.language;
 
   const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const skillName = (skill) => game.language === "zh" ? skill.name : game.language === "ja" ? (skill.nameJa ?? skill.nameEn) : skill.nameEn;
@@ -67,9 +59,8 @@ export function createSettingsUI(game) {
     const h = game.hero;
     const weapons = WEAPONS.map((w) => {
       const equipped = h.weaponId === w.id;
-      const icon = w.id === "moon-scythe" ? "scythe" : w.id === "storm-fang" ? "fang" : "weapon";
-      return `<button class="item-card ${equipped ? "is-equipped" : ""}" data-weapon="${w.id}" data-kind="weapon-${w.id}" aria-label="${escapeHtml(weaponName(w))}">
-        <span class="item-icon">${iconSvg(icon)}</span><span class="item-name">${escapeHtml(weaponName(w))}</span>
+      return `<button class="item-card ${equipped ? "is-equipped" : ""}" data-weapon="${w.id}" data-kind="weapon-${w.id}" aria-pressed="${equipped}" aria-label="${escapeHtml(weaponName(w))}">
+        <span class="item-icon"><img src="${weaponArtUrl(w)}" alt="" aria-hidden="true" draggable="false"></span><span class="item-name">${escapeHtml(weaponName(w))}</span>
         <span class="item-meta">${t(game.language, "stats.damage")} ${w.dmgMul > 1 ? "+" : ""}${Math.round((w.dmgMul - 1) * 100)}% · ${t(game.language, "stats.speed")} ${w.speed}</span>
         ${equipped ? `<span class="item-badge">${t(game.language, "loadout.equipped")}</span>` : ""}</button>`;
     }).join("");
@@ -77,18 +68,19 @@ export function createSettingsUI(game) {
     const skills = SKILL_META.map((s) => {
       const selected = activeSlot != null && h.skillSlots[activeSlot] === s.id;
       const equipped = h.skillSlots.includes(s.id);
-      return `<button class="item-card ${selected ? "is-selected" : ""}" data-skill="${s.id}" data-kind="${s.icon}" aria-label="${escapeHtml(skillName(s))}">
-        <span class="item-icon">${iconSvg(s.icon)}</span><span class="item-name">${escapeHtml(skillName(s))}</span>
+      return `<button class="item-card ${selected ? "is-selected" : ""}" data-skill="${s.id}" data-kind="${s.icon}" aria-pressed="${equipped}" aria-label="${escapeHtml(skillName(s))}">
+        <span class="item-icon">${skillIcon(s.icon, selected)}</span><span class="item-name">${escapeHtml(skillName(s))}</span>
         <span class="item-meta">${t(game.language, "stats.cost")} ${s.cost} · ${t(game.language, "stats.cooldown")} ${s.cd}s</span>
         ${equipped ? `<span class="item-badge">${selected ? t(game.language, "loadout.replace") : t(game.language, "loadout.ready")}</span>` : ""}</button>`;
     }).join("");
     const slots = h.skillSlots.map((id, i) => {
       const s = SKILL_META.find((skill) => skill.id === id) ?? SKILL_META[0];
       const selected = activeSlot === i;
-      return `<button class="item-card ${selected ? "is-selected" : ""}" data-slot="${i}" data-kind="${s.icon}" aria-label="${t(game.language, "loadout.slot")} ${i + 1}: ${escapeHtml(skillName(s))}">
-        <span class="item-icon">${iconSvg(s.icon)}</span><span class="item-name">${i + 1}. ${escapeHtml(skillName(s))}</span><span class="item-meta">${s.key}</span></button>`;
+      return `<button class="item-card ${selected ? "is-selected" : ""}" data-slot="${i}" data-kind="${s.icon}" aria-pressed="${selected}" aria-label="${t(game.language, "loadout.slot")} ${i + 1}: ${escapeHtml(skillName(s))}">
+        <span class="item-icon">${skillIcon(s.icon, selected)}</span><span class="item-name">${i + 1}. ${escapeHtml(skillName(s))}</span><span class="item-meta">${["J", "K", "L", "U", "I", "O"][i]}</span></button>`;
     }).join("");
-    loadout.innerHTML = `<section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.weapons")} <span class="section-caption">${t(game.language, "loadout.weaponHint")}</span></h2><div class="item-grid">${weapons}</div></section>
+    const equippedArt = artUrl("card", { title: "", type: "", level: "", detail: "", glyph: "none", rarity: "legendary", equipped: false, selected: true });
+    loadout.innerHTML = `<div class="loadout-overview"><img class="overview-art" src="${equippedArt}" alt="" aria-hidden="true"><img class="overview-icon" src="${weaponArtUrl(h.weapon)}" alt="" aria-hidden="true"><div class="overview-copy"><span>${t(game.language, "loadout.equipped")}</span><strong>${escapeHtml(weaponName(h.weapon))}</strong><small>${t(game.language, "stats.damage")} ${Math.round(h.dmgMul * 100)}% · ${t(game.language, "stats.speed")} ${h.speed}</small></div></div><section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.weapons")} <span class="section-caption">${t(game.language, "loadout.weaponHint")}</span></h2><div class="item-grid">${weapons}</div></section>
       <section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.skills")} <span class="section-caption">${t(game.language, "loadout.skillHint")}</span></h2><div class="skill-grid">${slots}</div><div class="skill-grid" style="margin-top:12px">${skills}</div></section>`;
   }
 
@@ -104,28 +96,60 @@ export function createSettingsUI(game) {
     profile.innerHTML = `<section class="profile-panel">
       <div class="profile-heading"><span class="profile-kicker">${t(game.language, "profile.title")}</span><span class="profile-level">${t(game.language, "profile.level")} ${h.level}</span></div>
       <div class="profile-body">
-        <div class="profile-portrait"><svg viewBox="0 0 160 180" aria-label="hero portrait"><path class="hero-shadow" d="M28 155c12-25 27-34 52-36 26 2 42 11 53 36v15H28Z"/><path class="hero-cape" d="M42 106 24 160h112l-17-54-28 17-22-17Z"/><path class="hero-armor" d="M50 92c8-13 50-13 60 0l10 45H40Z"/><circle class="hero-face" cx="80" cy="61" r="28"/><path class="hero-helm" d="M48 63c0-34 14-49 32-49s32 15 32 49l-13-10-19 6-19-6Z"/><circle class="hero-gem" cx="80" cy="35" r="8"/><path class="hero-sword" d="M112 107 151 53l9 8-39 57Z"/></svg></div>
+        <div class="profile-portrait"><canvas data-hero-portrait role="img" aria-label="${t(game.language, "profile.title")}"></canvas></div>
         <div class="profile-stats">
           ${stat("♥", "profile.hp", `${Math.ceil(h.hp)} / ${h.maxHp}`, "hp")}
-          ${stat("✦", "profile.mp", `${Math.floor(h.mp)} / ${h.maxMp}`, "mp")}
-          ${stat("⚔", "profile.attack", `${Math.round(24 * h.dmgMul)}`, "attack")}
-          ${stat("✚", "profile.defense", `${Math.round(8 + h.shield)}`, "defense")}
-          ${stat("↯", "profile.speed", `${h.speed}`, "speed")}
-          ${stat("✹", "profile.crit", "10%", "crit")}
-          ${stat("⌁", "profile.weapon", escapeHtml(weaponName(weapon)), "weapon")}
-          ${stat("✧", "profile.skill", escapeHtml(skillName(active)), "skill")}
+          ${stat(skillIcon("burst"), "profile.mp", `${Math.floor(h.mp)} / ${h.maxMp}`, "mp")}
+          ${stat(skillIcon("slash"), "profile.attack", `${Math.round(24 * h.dmgMul)}`, "attack")}
+          ${stat(skillIcon("mend"), "profile.defense", `${Math.round(8 + h.shield)}`, "defense")}
+          ${stat(`<img src="${artUrl("action", { icon: "quick" })}" alt="">`, "profile.speed", `${h.speed}`, "speed")}
+          ${stat(skillIcon("bolt"), "profile.crit", "10%", "crit")}
+          ${stat(`<img src="${weaponArtUrl(weapon)}" alt="">`, "profile.weapon", escapeHtml(weaponName(weapon)), "weapon")}
+          ${stat(skillIcon(active.icon), "profile.skill", escapeHtml(skillName(active)), "skill")}
         </div>
       </div>
     </section>`;
+    drawHeroPortrait(profile.querySelector("[data-hero-portrait]"), weapon.rigWeapon);
   }
 
   function applyText() { panel.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(game.language, el.dataset.i18n); }); panel.querySelector(".close-settings")?.setAttribute("aria-label", t(game.language, "close")); }
-  function render() { applyText(); renderLoadout(); renderProfile(); renderSettings(); panel.querySelectorAll(".settings-content").forEach((el) => { el.hidden = el.dataset.content !== tab; }); panel.querySelectorAll(".settings-tab").forEach((el) => el.classList.toggle("is-active", el.dataset.tab === tab)); }
+  function render() {
+    const scroller = panel.querySelector(".settings-content:not([hidden])");
+    const scrollTop = scroller?.scrollTop ?? 0;
+    const focused = document.activeElement;
+    const focusId = focused?.closest("button")?.getAttributeNames().find(name => ["data-weapon", "data-skill", "data-slot", "data-language"].includes(name));
+    const focusValue = focusId ? focused.getAttribute(focusId) : null;
+    applyText(); renderLoadout(); renderProfile(); renderSettings();
+    panel.querySelectorAll(".settings-content").forEach(el => { el.hidden = el.dataset.content !== tab; });
+    panel.querySelectorAll(".settings-tab").forEach(el => {
+      const selected = el.dataset.tab === tab;
+      el.classList.toggle("is-active", selected); el.setAttribute("role", "tab"); el.setAttribute("aria-selected", selected);
+    });
+    const current = panel.querySelector(".settings-content:not([hidden])");
+    if (current === scroller) current.scrollTop = scrollTop;
+    if (focusId) [...panel.querySelectorAll(`[${focusId}]`)].find(el => el.getAttribute(focusId) === focusValue)?.focus({ preventScroll: true });
+  }
   function setLanguage(code) { if (!LANG[code]) return; game.language = code; localStorage.setItem("ember-echo-language", code); document.documentElement.lang = code === "zh" ? "zh-CN" : code; render(); }
-  function open(nextTab = tab) { tab = nextTab; render(); panel.hidden = false; panel.parentElement.classList.add("menu-open"); }
-  function close() { panel.hidden = true; panel.parentElement.classList.remove("menu-open"); }
+  function open(nextTab = tab) {
+    returnFocus = document.activeElement;
+    tab = nextTab; render(); panel.hidden = false; panel.parentElement.classList.add("menu-open");
+    panel.querySelector(".close-settings").focus({ preventScroll: true });
+  }
+  function close() {
+    panel.hidden = true; panel.parentElement.classList.remove("menu-open");
+    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+  }
   function handleKey(key) { if (game.state !== "inventory") return false; if (key === "escape" || key === "tab") { game.toggleInventory(); return true; } if (key === "1") { tab = "loadout"; render(); return true; } if (key === "2") { tab = "profile"; render(); return true; } if (key === "3") { tab = "settings"; render(); return true; } return false; }
 
+  panel.addEventListener("keydown", event => {
+    if (event.key !== "Tab") return;
+    // Keep keyboard focus within the visible modal, including its scrollable item list.
+    event.stopPropagation();
+    const buttons = [...panel.querySelectorAll("button:not(:disabled)")].filter(el => el.getClientRects().length);
+    const first = buttons[0], last = buttons.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
   panel.addEventListener("click", (event) => {
     const closeButton = event.target.closest('[data-action="close"]');
     if (closeButton) { game.toggleInventory(); return; }

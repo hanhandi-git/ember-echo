@@ -13,9 +13,13 @@ import * as toastFx from "../../pixelfx/src/fx/ui/toast.js";
 import * as questFx from "../../pixelfx/src/fx/ui/quest-complete.js";
 import * as comboFx from "../../pixelfx/src/fx/ui/combo-counter.js";
 import { SKILL_META, WEAPONS, STAGES } from "./data.js";
+import { gameLang, stageAct, stageName, uiCopy } from "./copy.js";
 import { RESUME_BUTTON, SKILL_RECTS } from "./controls.js";
 
 const SW = 320, SH = 180;
+/** Milestone = normal floater × 1.5³ (crit is ×1.5 on floats). */
+const HIT_NUMBER_STEP = 1.5;
+const COMBO_MILESTONE_TEXT_SCALE = HIT_NUMBER_STEP ** 3;
 const C = {
   ink: hex("#07060d"), gold: hex("#ffd36a"), gold2: hex("#fff2b8"),
   text: hex("#efe6d4"), muted: hex("#9a8fae"), boss: hex("#d9a6ff"), red: hex("#ff6a5a"),
@@ -76,10 +80,21 @@ export class UI {
 
   // screen-space pixelfx UI effects
   play(mod, opts) { this.fx.push(createFx(mod, opts)); }
-  banner(kicker, text, sub = "") { this.play(bannerFx, { x: 160, y: 86, kicker, text, sub }); }
-  toast(text, tone = "gold") { this.play(toastFx, { x: 160, y: 154, text, tone }); }
-  stageClear() { this.play(questFx, { x: 160, y: 96, text: "STAGE CLEAR", palette: UI_GOLD }); }
-  comboMilestone(n) { this.play(comboFx, { x: 214, y: 104, count: n, label: "COMBO", palette: UI_GOLD }); }
+  banner(kicker, text, sub = "") {
+    this.play(bannerFx, { x: 160, y: 86, kicker, text, sub, plate: false });
+  }
+  toast(text, tone = "gold") { this.play(toastFx, { x: 160, y: 154, text, tone, plate: false }); }
+  stageClear() {
+    const c = uiCopy(this.g);
+    this.play(questFx, { x: 160, y: 96, text: c.stageClear, palette: UI_GOLD });
+  }
+  comboMilestone(n) {
+    const c = uiCopy(this.g);
+    this.play(comboFx, {
+      x: 214, y: 104, count: n, label: c.combo, palette: UI_GOLD,
+      textScale: COMBO_MILESTONE_TEXT_SCALE,
+    });
+  }
 
   pulseSkill(id) { this.pulse[id] = 0.26; }
   deny(id) { this.deny[id] = 0.22; }
@@ -102,7 +117,7 @@ export class UI {
       this.drawMenu(g, p, 0.62);
       const r = RESUME_BUTTON;
       plate(p, t, r.x + r.w / 2, r.y + r.h / 2, r.w, r.h);
-      p.text("CONTINUE  [P]", r.x + r.w / 2, r.y + 7, C.gold2, { align: "center", outline: C.ink });
+      p.text(uiCopy(g).continue, r.x + r.w / 2, r.y + 7, C.gold2, { align: "center", outline: C.ink });
     }
     else if (g.state === "gameover") this.drawMenu(g, p, 0.7);
     else if (g.state === "victory") this.drawMenu(g, p, 0.7);
@@ -110,25 +125,25 @@ export class UI {
 
   drawHud(g, p, t) {
     const h = g.hero;
-    // hero card
-    plate(p, t, 62, 24, 116, 40);
-    p.ellipse(23, 25, 18, 18, C.ink, 0.9);
+    // hero card (no HUD plate — text and bars float over the scene)
+    p.ellipse(23, 25, 18, 18, C.ink, 0.55);
     p.ring(23, 25, 17, 2, C.gold, 0.9);
     p.ellipse(23, 23, 8, 9, hex("#b47650"), 1);
     p.arc(23, 21, 10, 3, Math.PI, Math.PI * 2, hex("#302235"), 1);
     p.dot(20, 23, C.gold2); p.dot(26, 23, C.gold2); p.dot(23, 19, hex("#6ce1c8"));
-    p.text("DUELIST", 47, 8, C.gold, { outline: C.ink });
-    p.text("LV " + h.level, 116, 8, C.gold2, { align: "right", outline: C.ink });
-    meter(p, t, 64, 21, { label: "HP", value: h.hp / h.maxHp, text: `${Math.ceil(h.hp)}/${h.maxHp}`, tone: "hp", width: 108, height: 9, cells: 10 });
-    meter(p, t, 64, 32, { label: "MP", value: h.mp / h.maxMp, text: `${Math.floor(h.mp)}/${h.maxMp}`, tone: "mp", width: 108, height: 8, cells: 10 });
+    const c = uiCopy(g);
+    p.text(c.duelist, 47, 8, C.gold, { outline: C.ink });
+    p.text(c.level + " " + h.level, 116, 8, C.gold2, { align: "right", outline: C.ink });
+    meter(p, t, 64, 21, { label: c.hp, value: h.hp / h.maxHp, text: `${Math.ceil(h.hp)}/${h.maxHp}`, tone: "hp", width: 108, height: 9, cells: 10 });
+    meter(p, t, 64, 32, { label: c.mp, value: h.mp / h.maxMp, text: `${Math.floor(h.mp)}/${h.maxMp}`, tone: "mp", width: 108, height: 8, cells: 10 });
     meter(p, t, 64, 41, { label: "", value: h.xp / h.xpNext, text: "", tone: "xp", width: 108, height: 3, cells: 10 });
 
     // stage card
-    plate(p, t, 186, 24, 120, 40);
-    p.text(g.stage.actEn, 186, 8, C.gold, { align: "center", outline: C.ink });
-    p.text(g.stage.nameEn, 186, 15, C.gold2, { align: "center", font: "big", outline: C.ink });
+    p.text(stageAct(g, g.stage), 186, 8, C.gold, { align: "center", outline: C.ink });
+    p.text(stageName(g, g.stage), 186, 15, C.gold2, { align: "center", font: "big", outline: C.ink });
     const boss = g.bossRef && !g.bossRef.dead;
-    p.text(g.phase === "clear" ? "ENTER THE GATE" : g.phase === "travel" ? "TRAVELLING" : boss ? "BOSS" : `WAVE ${g.waveIndex + 1}/${g.stage.waves.length}`, 186, 27, C.muted, { align: "center", outline: C.ink });
+    const phaseLine = g.phase === "clear" ? c.enterGate : g.phase === "travel" ? c.travelling : boss ? c.boss : c.wave(g.waveIndex + 1, g.stage.waves.length);
+    p.text(phaseLine, 186, 27, C.muted, { align: "center", outline: C.ink, font: "mini", scale: phaseLine.length > 12 ? 0.92 : 1 });
     for (let i = 0; i < STAGES.length; i++) {
       const x = 160 + i * 8, y = 36, on = i === g.stageIndex;
       p.px(x, y - 1, on ? C.gold2 : C.muted); p.px(x, y + 1, on ? C.gold2 : C.muted);
@@ -137,13 +152,12 @@ export class UI {
     }
 
     // kills
-    plate(p, t, 290, 24, 44, 40);
-    p.text("KILLS", 290, 9, C.gold, { align: "center", outline: C.ink });
+    p.text(c.kills, 290, 9, C.gold, { align: "center", outline: C.ink });
     p.text(String(g.kills), 290, 18, C.gold2, { align: "center", font: "big", outline: C.ink });
 
     // boss bar
     if (boss) {
-      p.text(g.bossRef.nameEn ?? "THE WARDEN", 160, 46, C.boss, { align: "center", outline: C.ink });
+      p.text(uiCopy(g).bossWarden, 160, 46, C.boss, { align: "center", outline: C.ink });
       p.text(["PHASE I", "PHASE II", "PHASE III"][g.bossRef.phase - 1] ?? "", 312, 46, C.boss, { align: "right", outline: C.ink });
       meter(p, t, 160, 57, { label: "", value: g.bossRef.hp / g.bossRef.maxHp, text: "", tone: "boss", width: 200, height: 9, cells: 20 });
     }
@@ -154,7 +168,7 @@ export class UI {
     // A vertical right-hand skill rail follows the reference layout: each skill is a compact
     // round node with a colored school, key label and cooldown veil.
     h.skillSlots.forEach((id, i) => {
-      if (g.touchUi?.active) return;
+      if (g.touchUi) return;
       const s = SKILL_META.find((skill) => skill.id === id) ?? SKILL_META[0];
       const left = h.cd[s.id] ?? 0, cd = left / s.cd;
       const r = SKILL_RECTS[i];
@@ -168,8 +182,9 @@ export class UI {
         p.text(left >= 1 ? String(Math.ceil(left)) : left.toFixed(1), 294, y - 2, C.gold2, { align: "center", font: "mini", outline: C.ink });
       }
     });
-    if (g.combo.count >= 2 && g.combo.timer > 0) p.text("COMBO x" + g.combo.count, 8, 172, C.gold2, { outline: C.ink });
-    if (g.portal) p.text("GATE >", 282, 172, g.portal.color, { align: "center", outline: C.ink });
+    const hud = uiCopy(g);
+    if (g.combo.count >= 2 && g.combo.timer > 0) p.text(hud.combo + " x" + g.combo.count, 8, 172, C.gold2, { outline: C.ink });
+    if (g.portal) p.text(hud.gate, 282, 172, g.portal.color, { align: "center", outline: C.ink });
   }
 
   drawInventory(g, p, t) {
@@ -230,7 +245,13 @@ export class UI {
     if (y >= 150 && y <= 184 && this.inventorySkillPick != null) {
       const i = Math.floor((x - 18) / 42);
       const s = SKILL_META[i];
-      if (s) { h.swapSkill(this.inventorySkillPick, s.id); this.toast(`${s.nameEn} READY`, "gold"); this.inventorySkillPick = null; return true; }
+      if (s) {
+        const name = gameLang(g) === "zh" ? s.name : gameLang(g) === "ja" ? (s.nameJa ?? s.nameEn) : s.nameEn;
+        h.swapSkill(this.inventorySkillPick, s.id);
+        this.toast(uiCopy(g).skillReady(name), "gold");
+        this.inventorySkillPick = null;
+        return true;
+      }
     }
     return false;
   }
@@ -274,7 +295,7 @@ export class UI {
       });
     } else if (g.state === "paused") {
       card(p, this.t, 160, 90, {
-        kicker: "PAUSED", title: "PAUSED", subtitle: "THE EMBERS REST",
+        kicker: uiCopy(g).pausedKicker, title: uiCopy(g).pausedTitle, subtitle: uiCopy(g).pausedSub,
         lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
         prompt: "ESC RESUME   R RESTART", width: 240, height: 150,
       });

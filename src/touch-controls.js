@@ -1,4 +1,5 @@
 import { SKILL_META } from "./data.js";
+import { paintUiArt } from "./ui-art.js";
 
 const COPY = {
   zh: { quick: "快移", dodge: "闪避", pause: "暂停", resume: "继续", bag: "背包" },
@@ -27,10 +28,14 @@ export function createTouchControls(game) {
   const knob = joystick.querySelector("span");
   const skills = root.querySelector("[data-touch-skills]");
   const coarsePointer = window.matchMedia("(pointer: coarse)");
+  // A public preview switch also lets desktop users try the touch layout.
+  const forceTouch = new URLSearchParams(window.location.search).get("controls") === "touch";
   let lastInputWasTouch = false, joystickId = null, renderedKit = "", renderedLanguage = "";
   let slotButtons = [];
+  const menuButtons = [...(tools?.querySelectorAll("button") ?? [])];
+  const actionButtons = [...root.querySelectorAll("[data-touch-action]")];
   const pressed = new Map();
-  const active = () => coarsePointer.matches || lastInputWasTouch;
+  const active = () => forceTouch || coarsePointer.matches || lastInputWasTouch;
   const playing = () => game.state === "playing" && game.hero.alive && game.phase !== "travel";
 
   function resetJoystick() {
@@ -64,6 +69,14 @@ export function createTouchControls(game) {
   for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
     joystick.addEventListener(type, (event) => { if (event.pointerId === joystickId) resetJoystick(); });
   }
+
+  root.addEventListener("click", event => {
+    // Keyboard activation generates a click without pointerdown.
+    const button = event.target.closest("[data-touch-slot]");
+    if (event.detail === 0 && button && !button.disabled && playing()) {
+      game.audio.unlock(); game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
+    }
+  });
   root.addEventListener("pointerdown", (event) => {
     const button = event.target.closest("button");
     if (!button || button.disabled || event.button !== 0 || !playing()) return;
@@ -83,22 +96,44 @@ export function createTouchControls(game) {
     });
   }
 
-  // Menu actions use click so mouse, touch and native keyboard button activation all work.
-  tools?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-game-action]");
-    if (!button) return;
+  function activateMenu(button) {
+    if (button.disabled) return;
     reset(); game.audio.unlock();
     if (button.dataset.gameAction === "bag" && game.state === "playing") game.toggleInventory();
     else if (button.dataset.gameAction === "pause" && ["playing", "paused"].includes(game.state)) game.togglePause();
     sync();
+  }
+  // Touch down is reliable even when another finger owns the joystick. Do not wait for
+  // Safari's compatibility click; suppress that click if it follows the same touch.
+  const pendingMenuClicks = new WeakSet();
+  tools?.addEventListener("pointerdown", (event) => {
+    const button = event.target.closest("[data-game-action]");
+    if (button && event.pointerType === "mouse") pendingMenuClicks.delete(button);
+    if (!["touch", "pen"].includes(event.pointerType) || event.button !== 0) return;
+    if (!button || button.disabled) return;
+    event.preventDefault();
+    pendingMenuClicks.add(button);
+    activateMenu(button);
+  });
+  tools?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-game-action]");
+    if (!button) return;
+    if (pendingMenuClicks.has(button) && (["touch", "pen"].includes(event.pointerType) || event.detail > 0)) {
+      pendingMenuClicks.delete(button);
+      event.preventDefault();
+      return;
+    }
+    activateMenu(button);
   });
 
   function sync() {
     const language = game.language ?? "zh", copy = COPY[language] ?? COPY.zh;
-    root.hidden = !active() || !playing();
+    root.hidden = !playing();
+    root.classList.toggle("is-touch", active());
+    tools?.classList.toggle("is-touch", active());
     if (!playing() || !active()) reset();
     if (tools) {
-      tools.hidden = !active() || !["playing", "paused"].includes(game.state);
+      tools.hidden = !["playing", "paused"].includes(game.state);
       const pause = tools.querySelector('[data-game-action="pause"]');
       const label = game.state === "paused" ? copy.resume : copy.pause;
       pause.setAttribute("aria-label", label); pause.title = `${label} · P`;
@@ -119,7 +154,8 @@ export function createTouchControls(game) {
       skills.innerHTML = game.hero.skillSlots.map((id, index) => {
         const skill = SKILL_META.find((s) => s.id === id) ?? SKILL_META[0];
         const name = language === "ja" ? skill.nameJa ?? skill.nameEn : language === "en" ? skill.nameEn : skill.name;
-        return `<button type="button" class="touch-skill" style="--skill-color:${skill.tint ?? "#ffe7a5"}" data-touch-slot="${index}" aria-label="${escapeHtml(name)}"><span class="touch-glyph">${escapeHtml(skill.glyph)}</span><small>${escapeHtml(name)}</small><span class="touch-cooldown"></span></button>`;
+        const key = ["J", "K", "L", "U", "I", "O"][index];
+        return `<button type="button" class="touch-skill" style="--skill-color:${skill.tint ?? "#ffe7a5"}" data-touch-slot="${index}" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)} · ${key}"><canvas class="ui-art" aria-hidden="true"></canvas><small class="touch-glyph">${escapeHtml(skill.glyph ?? name.slice(0, 1))}</small><span class="touch-key" aria-hidden="true">${key}</span><span class="touch-cooldown" aria-hidden="true"></span></button>`;
       }).join("");
       slotButtons = [...skills.querySelectorAll("button")];
     }
@@ -133,6 +169,31 @@ export function createTouchControls(game) {
     const dodge = root.querySelector('[data-touch-action="dodge"]');
     // A tap during cooldown is buffered for the next ready frame, so mobile timing is forgiving.
     dodge.disabled = !playing() || game.hero.dashT > 0;
+    // Shared cached artwork animates at 10 fps; input continues at the game's full frame rate.
+    const time = game.ui.t;
+    for (const button of menuButtons) {
+      if (tools.hidden) continue;
+      const icon = button.dataset.gameAction === "pause" && game.state === "paused" ? "resume" : button.dataset.gameAction;
+      paintUiArt(button.querySelector("canvas"), "action", { icon, disabled: button.disabled, hud: true }, time);
+    }
+    if (root.hidden) return;
+    slotButtons.forEach((button, index) => {
+      const id = game.hero.skillSlots[index], s = SKILL_META.find(s => s.id === id) ?? SKILL_META[0];
+      const left = game.hero.cd[id] ?? 0, lacksMana = game.hero.mp < s.cost;
+      paintUiArt(button.querySelector("canvas"), "skill", {
+        icon: s.icon, hud: true, cooldown: Math.round(Math.min(1, left / s.cd) * 20) / 20,
+        disabled: lacksMana, mana: lacksMana ? 0 : 1, pressed: button.classList.contains("is-pressed"),
+        selected: (game.ui.pulse[id] ?? 0) > 0,
+      }, time);
+    });
+    if (active()) for (const button of actionButtons) {
+      const icon = button.dataset.touchAction;
+      paintUiArt(button.querySelector("canvas"), "action", {
+        icon, hud: true, cooldown: icon === "dodge" ? Math.round(game.hero.dashCd / game.hero.dashMax * 20) / 20 : 0,
+        disabled: button.disabled, pressed: button.classList.contains("is-pressed"),
+        flash: game.ui.actionPulse.id === icon && game.ui.actionPulse.t > 0,
+      }, time);
+    }
   }
   window.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "touch") { lastInputWasTouch = true; sync(); }

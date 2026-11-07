@@ -1,6 +1,6 @@
 # 余烬回响 · Ember Echo
 
-一个用 **pixelfx** 的像素素材与特效模块搭起来的动作 RPG Demo：三幕关卡、六种技能、八种小怪、一个三阶段 Boss。战斗画面和全部 UI 都由代码实时绘制，没有贴图文件，也没有 DOM HUD。
+一个用 **pixelfx** 的像素素材与特效模块搭起来的动作 RPG Demo：七幕关卡、22 把武器、199 个技能、八种小怪与三阶段 Boss。战斗画面和 UI 素材来自 pixelfx，菜单文字和触摸输入由 HTML 处理。
 
 ![标题画面](preview-title.png)
 
@@ -63,8 +63,8 @@ node build.mjs
 - **语言**：设置页支持中文（默认）、English、日本語，选择会保存在本机。
 - **战斗手感**：三段连击、会心、受击白闪、击退、命中停顿、屏幕震动、技能冷却与法力门槛、连击计数；快速移动和闪避会留下不同颜色的残影与拖尾。
 - **关卡流程**：每幕清场后会在长场景右侧打开传送门，走入传送门才会进入下一幕；最终关卡的传送门使用赤红色终焉配色。
-- **UI**：战斗 HUD 保持 320×240 像素画布和像素反馈；`TAB` 背包/设置使用清晰的 HTML 面板，武器和技能用 SVG 图标卡片选择，设置页提供中文（默认）、English、日本語。
-- **HUD 排布**：左上是圆形头像与生命/法力，右侧是竖排技能节点，底部是移动摇杆和快速移动/闪避/背包/暂停动作区；人物页展示头像、武器、技能和核心属性。
+- **UI**：战斗按钮、技能槽、装备卡片和背包钢框直接使用 pixelfx 的 Ember UI 素材；冷却遮罩、按下、高光和缺蓝状态由实际游戏状态驱动。HTML 菜单使用清晰的系统字体，并保留中文（默认）、English、日本語。武器图标使用各武器的造型，人物页显示游戏中的真实角色。
+- **HUD 排布**：左上是头像与生命/法力，右下是两排技能节点。触屏时显示左下摇杆、右下快移/闪避、右上背包/暂停；前后三个技能槽的视觉上下排颠倒，槽位和键位仍对应。背包/暂停图标为 42px，点击区为 64px，相邻热区间隔 12px。
 - **H5 触屏**：桌面端不绘制底部控制条；检测到触屏后显示 DOM 虚拟摇杆、技能按钮、快速移动、闪避、背包和暂停按钮。摇杆支持圆形死区、对角线归一化、多指同时操作，并处理松手、切后台和暂停复位。
 - **声音**：WebAudio 现场合成，无音频文件；首次点击或按键后启动。
 
@@ -76,14 +76,14 @@ node build.mjs
 - 怪物：`critters/slime`、`snake`、`frog`、`bat`、`wisp`、`ghost`、`eyeball`、`flying-skull`
 - 技能：`melee/sword-slash`、`double-slash`、`heavy-cleave`、`fire/fireball`、`meteor`、`ice/frost-nova`、`lightning/lightning-strike`、`holy/heal-aoe`、`divine-shield`、`blessing`
 - 反馈：`impacts/hit-spark`、`crit-hit`、`explosions/small-explosion`、`spawn/poof`、`spawn/shatter-death`、`spawn/spawn-portal`、`pickups/*`、`status/frozen`、`burning`、`stunned`、`ui/level-up`、`ui/combo-counter`、`arcane/rune-circle`；关卡传送门使用游戏内的 `stage-portal` 动态特效。
-- UI：`ui/panel`、`ui/status-bar`、`ui/skill-slot`、`ui/dialog`、`ui/banner`、`ui/toast`，以及复用的 `ui/quest-complete`、`ui/combo-counter`、`ui/level-up`
+- UI：`ui/touch-action-button`、`ui/skill-node`、`ui/loadout-card`、`ui/loadout-panel`、`ui/panel`、`ui/status-bar`、`ui/skill-slot`、`ui/dialog`、`ui/banner`、`ui/toast`，以及复用的 `ui/quest-complete`、`ui/combo-counter`、`ui/level-up`
 - 角色：`src/core/characters.js` 的 `ember-duelist`（主角）与 `styx-warden`（Boss），由 `src/core/rig.js` 的骨骼/姿势系统绘制。
 
 ## 代码结构
 
 ```
-index.html          只有一个 320×240 canvas
-styles.css          页面外框：居中、4:3 缩放、像素化
+index.html          320×180 战斗画布与菜单、触摸输入层
+styles.css          16:9 战斗画布、安全区与响应式菜单
 game.js             由 build.mjs 生成的单文件产物（可直接部署）
 build.mjs           esbuild 打包脚本
 server.mjs          零依赖静态服务器
@@ -93,6 +93,7 @@ src/hero.js         主角属性、移动、骨骼动画、受伤/升级、头�
 src/enemies.js      小怪 AI / Boss 三阶段 AI / 状态与血条
 src/skills.js       六个技能的施法与命中判定
 src/data.js         素材导入、敌人与关卡数据、技能元数据
+src/ui-art.js       pixelfx 素材到 DOM 的绘制与有界缓存
 src/ui.js           在 canvas 内绘制 HUD、技能栏、标题/暂停/失败/胜利、横幅与 Toast
 src/audio.js        WebAudio 合成音效
 ```
@@ -115,3 +116,9 @@ src/audio.js        WebAudio 合成音效
 - 这是一个单机 Demo，没有存档、技能树和联网；当前版本包含可在战斗中打开的背包、武器装备、技能槽替换、快速移动与闪避。
 - 主要按桌面键盘设计；点击画布也可以开始/继续/重开。
 - 打包依赖同级 `pixelfx` 仓库（素材、特效与 `src/fx/ui/` 像素 UI 效果）；`game.js` 已是自包含产物，部署时只需要 `index.html`、`styles.css`、`game.js`。
+
+## 新 UI 的本地验证
+
+`http://127.0.0.1:8123/?controls=touch` 可在桌面预览触屏布局。真实手机会自动识别触屏，无需参数。按钮图案、选中态和半透明冷却层来自 pixelfx 模块，装饰 Canvas 不接收指针事件，热区由真实按钮处理。
+
+界面素材随 `npm run build` 打包进 `game.js`，运行时不依赖 pixelfx Gallery 或 `records/` 图集，也无需额外复制资源到 Docker。只有可见战斗控件按 10 FPS 更新装饰，背包静态图标按配置缓存；菜单滚动、装备状态和键盘焦点独立处理。

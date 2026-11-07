@@ -3,6 +3,7 @@
 
 import { posed, poseAt, painterFor, STAND, READY, hex, clamp } from "../../pixelfx/src/core/index.js";
 import { HERO_LOOK, WEAPONS, DEFAULT_SKILL_SLOTS } from "./data.js";
+import { uiCopy, weaponLabel } from "./copy.js";
 import { createMovementTrail } from "./movement-fx.js";
 import { COMBAT_SCALE, HERO_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
 
@@ -100,6 +101,7 @@ export class Hero {
     this.cd = { j: 0, k: 0, l: 0, u: 0, i: 0, o: 0 };
     this.comboIndex = 0;
     this.comboTimer = 0;
+    this.healGlow = 0;
     this.anim = { kind: "idle", t: 0, track: TRACKS.idle, loop: true, dur: 2.8 };
     this.stepT = 0;
     this.lunge = 0;
@@ -113,7 +115,7 @@ export class Hero {
     this.dmgMul = weapon.dmgMul * (1 + (this.level - 1) * 0.12);
     this.speed = weapon.speed;
     this.dashMax = 1.15 * weapon.dashCdMul;
-    if (g) g.ui.toast(`${weapon.nameEn} EQUIPPED`, "gold");
+    if (g) g.ui.toast(uiCopy(g).equipped(weaponLabel(g, weapon)), "gold");
     return true;
   }
 
@@ -214,6 +216,7 @@ export class Hero {
       this.startDash(g, d);
     }
     this.hitFlash = Math.max(0, this.hitFlash - dt);
+    this.healGlow = Math.max(0, this.healGlow - dt);
     this.comboTimer = Math.max(0, this.comboTimer - dt);
     if (this.comboTimer <= 0) this.comboIndex = 0;
     if (this.shieldT > 0) {
@@ -301,6 +304,11 @@ export class Hero {
     p.ellipse(x, y - 1, size(10), size(3), hex("#ff9a4a"), 0.13 + 0.04 * Math.sin(performance.now() / 420));
     // shield: a second, brighter ring under the feet
     if (this.shield > 0) p.ellipse(x, y - 1, size(12), size(3.5), hex("#ffe9a0"), 0.35);
+    if (this.healGlow > 0) {
+      const k = this.healGlow / 0.42;
+      p.glow(x, y - size(22), size(26), hex("#8fff7a"), 0.18 + 0.42 * k);
+      p.glow(x, y - size(14), size(16), hex("#e8ffe0"), 0.12 + 0.28 * k);
+    }
     const blink = this.invuln > 0 && this.hitFlash <= 0 && Math.floor(this.invuln * 22) % 2 === 0;
     const a = this.dead ? 0.55 : blink ? 0.45 : 1;
     const white = this.hitFlash > 0;
@@ -370,7 +378,13 @@ export class Hero {
       this.regen = Math.max(this.regen, 3);
       this.regenT = Math.max(this.regenT, opts.linger);
     }
-    g.number(this.x, this.y - 48, "+" + Math.round(n), { color: "#a8ff9a", small: !opts.big });
+    this.healGlow = Math.max(this.healGlow, 0.42);
+    const healAmt = Math.round(n);
+    const hx = this.x, hy = this.y - size(44);
+    g.after(0.32, () => {
+      if (!this.alive) return;
+      g.number(hx, hy, "+" + healAmt, { color: "#6ee86a" });
+    });
     return n;
   }
 
@@ -391,7 +405,8 @@ export class Hero {
       this.mp = Math.min(this.maxMp, this.mp + 18);
       this.dmgMul = this.weapon.dmgMul * (1 + (this.level - 1) * 0.12);
       g.addFx(g.fx.levelUp, { x: this.x, y: this.y, light: 1 });
-      g.banner("LEVEL UP", `等级 ${this.level} · 生命与法力提升`, "LEVEL");
+      const c = uiCopy(g);
+      g.banner(c.levelUp, `${c.level} ${this.level} · ${c.levelUpSub}`, c.levelUpSub);
       g.flashScreen("#ffe6a0", 0.25);
       g.audio.play("level");
     }
@@ -406,16 +421,16 @@ export class Hero {
 export { TRACKS as HERO_TRACKS };
 
 /** Draw a small standing portrait into a canvas (used by the HUD card). */
-export function drawHeroPortrait(canvas) {
-  const w = 30, h = 42;
+export function drawHeroPortrait(canvas, weapon = "sword") {
+  const w = 112, h = 88;
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   const img = ctx.createImageData(w, h);
   const out = new Uint32Array(img.data.buffer);
-  const r = posed(IDLE, HERO_LOOK);
+  const r = posed({ ...IDLE, weapon }, HERO_LOOK);
   for (let i = 0; i < r.n; i++) {
-    const x = 16 + r.xs[i], y = h - 1 + r.ys[i];
+    const x = 42 + r.xs[i], y = h - 14 + r.ys[i];
     if (x < 0 || y < 0 || x >= w || y >= h) continue;
     out[y * w + x] = r.color[i];
   }

@@ -207,7 +207,7 @@ function castI(g) {
   g.addFx(FX.blessing, { x: h.x, y: h.y - size(12), seed: 62, light: 0.8 }, { life: 3.4, follow: () => h });
   g.audio.play("heal");
   g.after(0.18, () => {
-    h.heal(g, Math.min(48, h.maxHp * 0.32), { big: true, linger: 4 });
+    h.heal(g, Math.min(48, h.maxHp * 0.32), { linger: 4 });
     h.addShield(g, 30, 6.5);
     g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 1, seed: 63 }, { life: 6.5, follow: () => h });
     g.audio.play("shield");
