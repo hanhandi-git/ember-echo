@@ -33,7 +33,6 @@ import * as poof from "../../pixelfx/src/fx/spawn/poof.js";
 import * as shatterDeath from "../../pixelfx/src/fx/spawn/shatter-death.js";
 import * as spawnPortal from "../../pixelfx/src/fx/spawn/spawn-portal.js";
 import * as levelUp from "../../pixelfx/src/fx/ui/level-up.js";
-import * as comboCounter from "../../pixelfx/src/fx/ui/combo-counter.js";
 import * as runeCircle from "../../pixelfx/src/fx/arcane/rune-circle.js";
 import * as manaBurst from "../../pixelfx/src/fx/arcane/mana-burst.js";
 import * as frozen from "../../pixelfx/src/fx/status/frozen.js";
@@ -48,7 +47,7 @@ import * as collectBurst from "../../pixelfx/src/fx/pickups/collect-burst.js";
 export const FX = {
   swordSlash, doubleSlash, heavyCleave, scytheReap, fireball, meteor, frostNova,
   lightningStrike, thunderclap, healAoe, blessing, divineShield,
-  hitSpark, critHit, smallExplosion, poof, shatterDeath, spawnPortal, levelUp, comboCounter,
+  hitSpark, critHit, smallExplosion, poof, shatterDeath, spawnPortal, levelUp,
   runeCircle, manaBurst, frozen, burning, stunned, plasmaShot,
   heartPickup, potionPickup, xpOrb, collectBurst,
 };
@@ -60,6 +59,7 @@ export const BOSS_LOOK = "styx-warden";
 export const STAGES = [
   {
     act: "第一幕", name: "苔痕遗迹", sub: "月下的旧圣所", chapter: "I",
+    actEn: "STAGE I", nameEn: "MOSSY RUINS", subEn: "THE OLD SANCTUM",
     map: mapMossy,
     palette: "#8fd88a",
     waves: [
@@ -78,6 +78,7 @@ export const STAGES = [
   },
   {
     act: "第二幕", name: "幽火沼泽", sub: "亡者的灯", chapter: "II",
+    actEn: "STAGE II", nameEn: "WISP MARSH", subEn: "LANTERNS OF THE DEAD",
     map: mapMarsh,
     palette: "#8ed7bf",
     waves: [
@@ -96,6 +97,7 @@ export const STAGES = [
   },
   {
     act: "第三幕", name: "熔岩深窟", sub: "余烬的源头", chapter: "III",
+    actEn: "STAGE III", nameEn: "EMBER DEPTHS", subEn: "THE SOURCE OF ASH",
     map: mapEmber,
     palette: "#ff9a5c",
     waves: [
@@ -147,23 +149,23 @@ export const ENEMY_TYPES = {
     xp: 18, barH: 70, w: 17, fly: true, deathFx: poof,
   },
   boss: {
-    mod: null, name: "冥河守卫", hp: 360, speed: 23, dmg: 15, reach: 40, want: 27, windup: 0.8, cd: 2.1,
+    mod: null, name: "冥河守卫", nameEn: "THE WARDEN", hp: 360, speed: 23, dmg: 15, reach: 40, want: 27, windup: 0.8, cd: 2.1,
     xp: 120, barH: 0, w: 30, fly: false, boss: true, deathFx: shatterDeath, look: "styx-warden",
   },
 };
 
 /** loot table: chance, kind, effect */
 export const LOOT = [
-  { p: 0.12, kind: "heart", mod: heartPickup, label: "生命 +18", color: "#ff7a8a" },
-  { p: 0.13, kind: "potion", mod: potionPickup, label: "法力 +24", color: "#ff86e6" },
-  { p: 0.5, kind: "xp", mod: xpOrb, label: "经验 +8", color: "#c4f060" },
+  { p: 0.12, kind: "heart", mod: heartPickup, label: "HP +18", color: "#ff7a8a" },
+  { p: 0.13, kind: "potion", mod: potionPickup, label: "MP +24", color: "#ff86e6" },
+  { p: 0.5, kind: "xp", mod: xpOrb, label: "XP +8", color: "#c4f060" },
 ];
 
 export const SKILL_META = [
-  { id: "j", key: "J", name: "星刃斩", glyph: "斩", cost: 0, cd: 0.26, tint: "#ffe0a0", glow: "rgba(255, 190, 90, .55)", note: "三段连斩 · 无消耗" },
-  { id: "k", key: "K", name: "烈焰术", glyph: "火", cost: 10, cd: 1.1, tint: "#ffb05a", glow: "rgba(255, 120, 40, .6)", note: "火球 · 爆炸灼烧" },
-  { id: "l", key: "L", name: "霜环", glyph: "霜", cost: 18, cd: 5.0, tint: "#b8ecff", glow: "rgba(120, 210, 255, .6)", note: "身周冰环 · 冻结" },
-  { id: "u", key: "U", name: "雷罚", glyph: "雷", cost: 22, cd: 6.0, tint: "#d8c8ff", glow: "rgba(170, 140, 255, .65)", note: "落雷 · 眩晕" },
-  { id: "i", key: "I", name: "圣愈", glyph: "愈", cost: 26, cd: 11.0, tint: "#c8ffb0", glow: "rgba(150, 240, 120, .55)", note: "治疗 · 护盾" },
-  { id: "o", key: "O", name: "陨星", glyph: "陨", cost: 40, cd: 15.0, tint: "#ffcf6a", glow: "rgba(255, 160, 50, .8)", note: "三重陨石 · 大范围" },
+  { id: "j", key: "J", name: "星刃斩", nameEn: "SLASH", icon: "slash", glyph: "斩", cost: 0, cd: 0.26, tint: "#ffe0a0", glow: "rgba(255, 190, 90, .55)", note: "三段连斩 · 无消耗" },
+  { id: "k", key: "K", name: "烈焰术", nameEn: "FIRE", icon: "fire", glyph: "火", cost: 10, cd: 1.1, tint: "#ffb05a", glow: "rgba(255, 120, 40, .6)", note: "火球 · 爆炸灼烧" },
+  { id: "l", key: "L", name: "霜环", nameEn: "FROST", icon: "frost", glyph: "霜", cost: 18, cd: 5.0, tint: "#b8ecff", glow: "rgba(120, 210, 255, .6)", note: "身周冰环 · 冻结" },
+  { id: "u", key: "U", name: "雷罚", nameEn: "BOLT", icon: "bolt", glyph: "雷", cost: 22, cd: 6.0, tint: "#d8c8ff", glow: "rgba(170, 140, 255, .65)", note: "落雷 · 眩晕" },
+  { id: "i", key: "I", name: "圣愈", nameEn: "MEND", icon: "mend", glyph: "愈", cost: 26, cd: 11.0, tint: "#c8ffb0", glow: "rgba(150, 240, 120, .55)", note: "治疗 · 护盾" },
+  { id: "o", key: "O", name: "陨星", nameEn: "METEOR", icon: "meteor", glyph: "陨", cost: 40, cd: 15.0, tint: "#ffcf6a", glow: "rgba(255, 160, 50, .8)", note: "三重陨石 · 大范围" },
 ];

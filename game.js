@@ -172,9 +172,9 @@ function cycle(t, period, count, seed, life, fn) {
   for (let i = 0; i < count; i++) {
     const g = rng(seed, i, 911);
     const born = g.next() * period;
-    const L3 = typeof life === "function" ? life(g) : life;
+    const L4 = typeof life === "function" ? life(g) : life;
     let age = ((t - born) % period + period) % period;
-    for (; age < L3; age += period) fn(age, L3, rng(seed, i), i);
+    for (; age < L4; age += period) fn(age, L4, rng(seed, i), i);
   }
 }
 
@@ -272,21 +272,21 @@ function fromMask(mask, x = 0, y = 0) {
   const { w, h, data } = mask;
   if (!Number.isInteger(w) || w < 1 || !Number.isInteger(h) || h < 1 || !data || data.length !== w * h)
     throw new TypeError("mask needs positive integer w,h and w*h data cells");
-  const W8 = w + 2, H5 = h + 2, inside2 = new Uint8Array(W8 * H5);
+  const W7 = w + 2, H4 = h + 2, inside2 = new Uint8Array(W7 * H4);
   let count = 0;
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++)
     if (data[j * w + i]) {
-      inside2[(j + 1) * W8 + i + 1] = 1;
+      inside2[(j + 1) * W7 + i + 1] = 1;
       count++;
     }
   if (!count) return () => Infinity;
-  const toInside = distanceTransform(inside2, W8, H5);
-  const toOutside = distanceTransform(inside2.map((v) => 1 - v), W8, H5);
+  const toInside = distanceTransform(inside2, W7, H4);
+  const toOutside = distanceTransform(inside2.map((v) => 1 - v), W7, H4);
   const distances = Float32Array.from(inside2, (v, i) => v ? 0.5 - Math.sqrt(toOutside[i]) : Math.sqrt(toInside[i]) - 0.5);
   return (px, py) => {
     const ix = Math.floor(px - x) + 1, iy = Math.floor(py - y) + 1;
-    const sx = Math.max(0, Math.min(W8 - 1, ix)), sy = Math.max(0, Math.min(H5 - 1, iy));
-    return distances[sy * W8 + sx] + Math.hypot(ix - sx, iy - sy);
+    const sx = Math.max(0, Math.min(W7 - 1, ix)), sy = Math.max(0, Math.min(H4 - 1, iy));
+    return distances[sy * W7 + sx] + Math.hypot(ix - sx, iy - sy);
   };
 }
 function toMask(shape2, w, h, x = 0, y = 0) {
@@ -462,8 +462,8 @@ var Particles = class {
           break;
         }
         case P.STREAK: {
-          const L3 = clamp(sp / 30, 1, 7);
-          for (let d = L3; d >= 0; d -= 0.5) p.dot(x - ux * d, y - uy * d, d < 1 ? WHITE : d < L3 * 0.5 ? q.col : scale(q.col, 0.6), d < L3 * 0.5 ? 1 : 1.2 - d / L3);
+          const L4 = clamp(sp / 30, 1, 7);
+          for (let d = L4; d >= 0; d -= 0.5) p.dot(x - ux * d, y - uy * d, d < 1 ? WHITE : d < L4 * 0.5 ? q.col : scale(q.col, 0.6), d < L4 * 0.5 ? 1 : 1.2 - d / L4);
           p.glow(x, y, 4, q.col, 0.4);
           break;
         }
@@ -661,11 +661,11 @@ function sparkle(p, x, y, arm, c, tip = c, k = 0.6) {
   p.px(X, Y, WHITE);
   p.glow(x, y, 4 + n * 2, c, k);
 }
-function flare(p, x, y, L3, k, ramp2) {
-  if (L3 < 1) return;
+function flare(p, x, y, L4, k, ramp2) {
+  if (L4 < 1) return;
   const R4 = ramp2.map(hex), n = R4.length;
   for (let i = 0; i < 8; i++) {
-    const an = i * Math.PI / 4, len2 = i % 4 === 0 ? L3 : i % 2 === 0 ? L3 * 0.6 : L3 * 0.3, ca = Math.cos(an), sa = Math.sin(an);
+    const an = i * Math.PI / 4, len2 = i % 4 === 0 ? L4 : i % 2 === 0 ? L4 * 0.6 : L4 * 0.3, ca = Math.cos(an), sa = Math.sin(an);
     for (let d = 0; d <= len2; d += 0.5) {
       const u = d / len2;
       p.dot(x + ca * d, y + sa * d, u < 0.35 ? WHITE : u < 0.7 ? R4[n - 2] : R4[n - 3], u < 0.6 ? 1 : k * 1.5 * (1 - u) + 0.2);
@@ -686,7 +686,7 @@ function band(p, cx, cy, r, sy, th, k, ramp2, keep2 = () => true, hot = false) {
 }
 function crystal(p, x, base, h, w, lean, ramp2, opts = {}) {
   if (h < 1.5) return;
-  const R4 = ramp2.map(hex), n = R4.length, C4 = (i) => R4[Math.max(0, n - 1 - i)];
+  const R4 = ramp2.map(hex), n = R4.length, C5 = (i) => R4[Math.max(0, n - 1 - i)];
   const a = opts.a ?? 1, top = base - h, ridge0 = x - w * 0.14, glint2 = opts.glint ?? -1;
   const inside2 = (px, py) => {
     const u = (base - (py + 0.5)) / h;
@@ -703,11 +703,11 @@ function crystal(p, x, base, h, w, lean, ramp2, opts = {}) {
         continue;
       }
       const u = (base - (py + 0.5)) / h, rx = ridge0 + (x + lean - ridge0) * u, c = x + lean * u, hw = w / 2 * (1 - u) + 0.35, fx = px + 0.5;
-      let col = u > 0.9 ? WHITE : Math.abs(fx - rx) < 0.55 ? C4(1) : fx < rx ? fx - (c - hw) < 1 ? C4(1) : (fx - (c - hw)) / Math.max(1, rx - (c - hw)) > 0.55 ? C4(2) : C4(3) : c + hw - fx < 1.2 ? C4(Math.min(n - 2, 6)) : (fx - rx) / Math.max(1, c + hw - rx) > 0.5 ? C4(5) : C4(4);
+      let col = u > 0.9 ? WHITE : Math.abs(fx - rx) < 0.55 ? C5(1) : fx < rx ? fx - (c - hw) < 1 ? C5(1) : (fx - (c - hw)) / Math.max(1, rx - (c - hw)) > 0.55 ? C5(2) : C5(3) : c + hw - fx < 1.2 ? C5(Math.min(n - 2, 6)) : (fx - rx) / Math.max(1, c + hw - rx) > 0.5 ? C5(5) : C5(4);
       if (glint2 >= 0 && fx <= rx + 0.6) {
         const g = Math.abs(u - glint2);
         if (g < 0.05) col = WHITE;
-        else if (g < 0.1) col = C4(1);
+        else if (g < 0.1) col = C5(1);
       }
       p.dot(px, py, col, a);
     }
@@ -1344,7 +1344,7 @@ var Painter = class {
   sprite(rows, pal, x, y, opts = {}) {
     let s = sprites.get(rows);
     if (!s) sprites.set(rows, s = rows.map((r) => [...r]));
-    const k = opts.scale ?? 1, a = opts.a ?? 1, W8 = s[0]?.length ?? 0, cache = {};
+    const k = opts.scale ?? 1, a = opts.a ?? 1, W7 = s[0]?.length ?? 0, cache = {};
     for (let r = 0; r < s.length; r++)
       for (let q = 0; q < s[r].length; q++) {
         const ch = s[r][q];
@@ -1355,7 +1355,7 @@ var Painter = class {
           if (c === void 0) c = cache[ch] = pal[ch] === void 0 ? 0 : hex(pal[ch]);
         }
         if (!c) continue;
-        const col = opts.flip ? W8 - 1 - q : q, row = opts.flipY ? s.length - 1 - r : r;
+        const col = opts.flip ? W7 - 1 - q : q, row = opts.flipY ? s.length - 1 - r : r;
         if (k === 1) this.dot(x + col, y + row, c, a);
         else this.rect(x + col * k, y + row * k, k, k, c, a);
       }
@@ -1647,16 +1647,67 @@ var CHARACTERS = Object.freeze([
     bone: ["#ffffff", "#ece6dc", "#c0b6a8", "#7a7068"],
     lining: ["#ff9a90", "#e04848", "#a02434", "#551624"],
     glow: ["#e8f4ff", "#a8d4ff", "#5a9ae8", "#2a5a9f"]
+  },
+  {
+    id: "amaterasu",
+    name: "Amaterasu",
+    label: "\u5929\u7167\u547D",
+    role: "\u65E5\u8F6E \xB7 \u516B\u54AB\u955C",
+    accent: "#f0c24c",
+    style: "sun-goddess",
+    desc: "A gold sun disc behind her head, black hair past the waist, a white haori over a vermilion hakama and the Yata mirror at her chest.",
+    skin: ["#ffe8cc", "#e8bd94", "#b38668", "#664b48"],
+    cloth: ["#fff4de", "#e6d3ae", "#bda681", "#7a6a55"],
+    hair: ["#4c5268", "#2c3044", "#1b1e2d", "#0d0f18"],
+    gold: ["#fff2b8", "#efc75f", "#b8862e", "#6b4a1a"],
+    leather: ["#c07a54", "#8a4a34", "#5c2c26", "#2f1718"],
+    bone: ["#fffdf4", "#ece0c8", "#bfae92", "#786a5c"],
+    lining: ["#f08060", "#c8402a", "#8a221c", "#4c1214"],
+    glow: ["#ffffff", "#fff6c8", "#ffd25c", "#c08a2e"]
+  },
+  {
+    id: "tsukuyomi",
+    name: "Tsukuyomi",
+    label: "\u6708\u8BFB\u547D",
+    role: "\u6708\u51A0 \xB7 \u84DD\u67D3\u675F\u5E26",
+    accent: "#9dc4e8",
+    style: "moon-god",
+    desc: "A tall black kanmuri crowned with a silver crescent, a straight mane to the waist, an indigo sokutai with wide sleeves and a white obi.",
+    skin: ["#fff2e6", "#e4c8bc", "#b39494", "#6a5560"],
+    cloth: ["#a8b6d8", "#5d6fa0", "#38466f", "#1e2746"],
+    hair: ["#6a7288", "#454c62", "#2b3044", "#161a28"],
+    gold: ["#f4f9ff", "#c8d8ea", "#8a9bb4", "#4d5a70"],
+    leather: ["#8a8fa6", "#5a5f78", "#3a3e52", "#1f2230"],
+    bone: ["#ffffff", "#e6ecf2", "#b8c2cc", "#707a88"],
+    lining: ["#f6fbff", "#d4e2f0", "#9fb4c8", "#5e7188"],
+    glow: ["#ffffff", "#e2f2ff", "#9dc4e8", "#4f7aa8"]
+  },
+  {
+    id: "susanoo",
+    name: "Susanoo",
+    label: "\u987B\u4F50\u4E4B\u7537",
+    role: "\u66B4\u98CE \xB7 \u6CE8\u8FDE\u7EF3",
+    accent: "#68e0cc",
+    style: "storm-god",
+    desc: "A wild mane, bare shoulders, a torn storm cloak, the shimenawa rope twisted across his chest and lightning still crawling on one arm.",
+    skin: ["#f0cfa8", "#cfa274", "#9a6e50", "#5c4038"],
+    cloth: ["#a8c0b8", "#5f8078", "#3a5656", "#1e3034"],
+    hair: ["#7a8a92", "#4a5a62", "#2c3a42", "#161e24"],
+    gold: ["#e8d4a0", "#c09a5c", "#8a6634", "#4e3620"],
+    leather: ["#a07a5c", "#6e4e3a", "#46302a", "#241a1a"],
+    bone: ["#fff8e6", "#e0d0b4", "#b09a7a", "#6a5844"],
+    lining: ["#f08a62", "#c8482a", "#8a2a1e", "#4c1416"],
+    glow: ["#ffffff", "#d4fff4", "#68e0cc", "#2a8a86"]
   }
 ]);
 var characterOf = (id) => CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0];
 
 // ../pixelfx/src/core/costume.js
 function costume(S, look2, api) {
-  const { ball, bone: bone2, panel } = api, { B: B3 } = S;
+  const { ball, bone: bone2, panel: panel2 } = api, { B: B3 } = S;
   const head4 = (v, r, m = 5) => ball("head", v, r, m);
   const line = (f, a, b, ra, rb, m) => bone2(f, a, b, ra, rb, m);
-  const face2 = (f, pts, m) => panel(f, pts, m);
+  const face2 = (f, pts, m) => panel2(f, pts, m);
   const cape = (length, spread, mat = 4) => {
     face2("chest", [[-2.5, 3, -4], [-2.5, 3, 4], [-7, -length + 2, spread], [-8.5, -length, 1], [-9, -length + 3, -spread]], mat);
     face2("chest", [[-2.7, 3, 1.8], [-7.1, -length + 2, spread - 0.5], [-8.6, -length, 1]], 10);
@@ -2006,6 +2057,96 @@ function costume(S, look2, api) {
       ball(f, [7.2, 0, 0], [1.35, 1.35, 1.35], 4);
       line(f, [5.8, 0, 0], [6.4, 0, 0], 1.4, 1.35, 10);
     }
+  } else if (look2.style === "sun-goddess") {
+    face2("head", [[-5, -6.4, -5.6], [-5, -6.4, 5.6], [-5, 0.4, 8], [-5, 8.6, 0], [-5, 0.4, -8]], 6);
+    face2("head", [[-4.8, -5, -4.2], [-4.8, -5, 4.2], [-4.8, 0.2, 6], [-4.8, 6.6, 0], [-4.8, 0.2, -6]], 4);
+    for (const a of [-2.4, -1.6, -0.8, 0, 0.8, 1.6, 2.4]) {
+      const cy = 1.6 + Math.sin(a) * 7.2, cz = Math.cos(a) * 9.2;
+      line("head", [-5, 1.6 + Math.sin(a) * 8.6, Math.cos(a) * 10.4], [-5, cy, cz], 0.22, 0.12, 6);
+    }
+    head4([-1, 1.7, 0], [2.9, 2.4, 3.05]);
+    for (const s of [-1, 1]) {
+      for (let i = 0; i < 9; i++)
+        head4([-3.5 - i * 0.12, -1.2 - i * 2.1, s * (1.4 + i * 0.14)], [1.5, 1.15, 1.3], 5);
+      line("head", [0.6, 2.3, s * 2.6], [-1.6, -1.2, s * 3.2], 0.9, 0.4, 5);
+      line("head", [2.1, 2.2, s * 2.2], [2.7, -0.6, s * 2.4], 0.7, 0.25, 5);
+    }
+    line("head", [-0.6, 3.6, -2.2], [2.2, 4.8, 0.4], 0.24, 0.16, 6);
+    line("head", [-0.6, 3.6, 2.2], [2.2, 4.8, -0.4], 0.24, 0.16, 6);
+    head4([2.08, 1.62, 0], [0.26, 0.42, 0.42], 10);
+    ball("chest", [3.7, 1.2, 0.4], [0.55, 1, 1], 6);
+    ball("chest", [3.95, 1.2, 0.4], [0.3, 0.72, 0.72], 8);
+    line("chest", [4.1, 0.4, 0.4], [4.1, 2, 0.4], 0.14, 0.14, 6);
+    line("neck", [0.6, 0.2, -1.4], [3.6, 2.1, 0.4], 0.14, 0.14, 6);
+    for (const f of ["upperN", "upperF"]) {
+      line(f, [0.8, 0, 0], [7.4, 0, 0], 1.9, 1.7, 4);
+      face2(f, [[0.8, -1.8, -2], [0.8, 2, 2], [6.4, 2.4, 2.6], [6.6, -4.6, -2.4]], 4);
+      line(f, [6.5, -4.4, -2.2], [6.5, 2.3, 2.4], 0.3, 0.3, 6);
+    }
+    line("chest", [3.2, 3.4, 0], [2.4, -2.2, 0.8], 0.28, 0.24, 9);
+    face2("pelvis", [[3.1, 1.2, -4.2], [3.1, 1.2, 4.2], [4.5, -11, 6.6], [4.8, -11.6, 0], [4.4, -11, -6.6]], 10);
+    for (const z of [-4.6, -1.6, 1.6, 4.6]) line("pelvis", [3.3, 0.9, z], [4.6, -10.8, z * 1.35], 0.2, 0.16, 6);
+    line("pelvis", [3.25, 1.2, -4.2], [3.35, 1.2, 4.2], 0.55, 0.55, 6);
+    for (const f of ["shinN", "shinF"]) line(f, [0.8, 0, 0], [7.8, 0, 0], 2.05, 1.55, 9);
+    for (const f of ["footN", "footF"]) line(f, [-1, -0.7, 0], [3.6, -1.1, 0], 1.6, 1.3, 7);
+  } else if (look2.style === "moon-god") {
+    face2("head", [[-0.6, 2.4, -1.9], [-0.6, 2.4, 1.9], [0.8, 7.6, 2.1], [0.8, 7.6, -2.1]], 5);
+    line("head", [0.9, 7.5, -2.2], [0.9, 7.5, 2.2], 0.32, 0.32, 6);
+    line("head", [-0.2, 2.3, -2], [-0.2, 2.3, 2], 0.3, 0.3, 6);
+    line("head", [1.2, 4.4, -1.7], [1.9, 6.1, 0], 0.34, 0.24, 8);
+    line("head", [1.9, 6.1, 0], [1.2, 7.8, 1.7], 0.3, 0.2, 8);
+    for (let i = 0; i <= 9; i++) {
+      const a = -1.35 + i / 9 * 2.7;
+      head4([-4.4, 2.6 + Math.sin(a) * 5.2, Math.cos(a) * 5.2], [0.5, 0.95, 0.95], 8);
+      if (i % 3 === 0) head4([-4.5, 2.6 + Math.sin(a) * 6.4, Math.cos(a) * 6.4], [0.3, 0.5, 0.5], 5);
+    }
+    face2("head", [[-3.4, 1.2, -3.4], [-3.4, 1.2, 3.4], [-4, -8, 3.2], [-4.2, -11, 0], [-4, -8, -3.2]], 5);
+    for (const s of [-1, 1]) line("head", [1, 2, s * 2.7], [0.2, -5.2, s * 3.2], 0.8, 0.3, 5);
+    line("chest", [1, 4.2, -2], [3.3, 1.2, 0], 0.3, 0.28, 10);
+    line("chest", [1, 4.2, 2], [3.3, 1.2, 0], 0.3, 0.28, 10);
+    line("chest", [3.3, 1.2, 0], [3.2, -2.4, 0], 0.26, 0.22, 10);
+    for (const f of ["upperN", "upperF"]) {
+      line(f, [1.2, 0, 0], [7.6, 0, 0], 2.05, 1.75, 4);
+      face2(f, [[1.2, -2, -2.2], [1.2, 2.4, 2.2], [6.8, 2.8, 2.6], [7, -5, -2.6]], 4);
+      line(f, [6.8, -4.6, -2.4], [6.8, 2.6, 2.5], 0.32, 0.32, 10);
+    }
+    face2("pelvis", [[3.1, 1.2, -4.2], [3.1, 1.2, 4.2], [4.6, -16, 7], [4.9, -16.8, 0], [4.5, -16, -7]], 4);
+    line("pelvis", [3.25, 1.2, -4.2], [3.35, 1.2, 4.2], 0.6, 0.6, 10);
+    ball("pelvis", [4.4, 0.2, 1.2], [0.4, 0.55, 0.55], 8);
+    ball("chest", [3.55, 1.6, -0.8], [0.32, 0.4, 0.4], 8);
+    for (const f of ["shinN", "shinF"]) line(f, [0.8, 0, 0], [7.8, 0, 0], 2, 1.5, 9);
+    for (const f of ["footN", "footF"]) line(f, [-1, -0.7, 0], [3.6, -1.1, 0], 1.6, 1.3, 7);
+  } else if (look2.style === "storm-god") {
+    head4([-1, 1.7, 0], [2.9, 2.3, 3.1]);
+    for (const [a, b, r] of [
+      [[0.4, 2.4, 0], [1.8, 5.8, 0.4], 1.3],
+      [[-1.2, 2.8, -0.4], [-2.8, 6, -1], 1.25],
+      [[-2.4, 2.2, 0.6], [-4.8, 4.4, 1.4], 1.1],
+      [[-0.2, 2.5, -2.4], [-0.8, 5, -3.6], 1],
+      [[0.4, 2.4, 2.3], [0.8, 4.6, 3.6], 0.95]
+    ]) line("head", a, b, r, 0.12, 5);
+    for (const s of [-1, 1]) {
+      line("head", [-2.6, 0.6, s * 2.2], [-4.2, -4.4, s * 2.8], 1.2, 0.5, 5);
+      line("head", [1.2, 1.6, s * 2.6], [0.4, -2.6, s * 3.1], 0.8, 0.3, 5);
+    }
+    line("chest", [2.6, 2.8, -2.6], [3.2, 1.2, 0], 0.35, 0.3, 3);
+    line("chest", [2.6, 2.8, 2.6], [3.2, 1.2, 0], 0.35, 0.3, 3);
+    line("chest", [1.8, 0.6, -2.2], [2.6, -1.4, 0], 0.25, 0.22, 3);
+    face2("chest", [[-2.6, 3, 1.6], [-2.6, 3, 4.6], [-7.4, -8.6, 6], [-8.4, -10, 2.4], [-7.6, -8.2, 1.2]], 4);
+    ball("upperF", [0.4, 0, 0], [2.6, 2.8, 3], 4);
+    line("chest", [3.4, 2.6, -3.4], [3.8, -1.6, 3.2], 0.7, 0.7, 10);
+    for (let i = 0; i < 4; i++) line("chest", [3.45, 2.2 - i * 1.1, -3.3], [3.85, 2 - i * 1.1, 3.1], 0.22, 0.22, 4);
+    line("chest", [3.9, -1, 2.8], [3.2, -6.4, 3.2], 0.45, 0.2, 10);
+    line("chest", [3.6, -0.6, 2.2], [2.6, -5.4, 2.6], 0.4, 0.18, 10);
+    for (const f of ["foreN", "foreF"]) line(f, [1, 0, 0], [7, 0, 0], 1.65, 1.4, 7);
+    face2("pelvis", [[3.1, 1.2, -4.4], [3.1, 1.2, 4.4], [4.4, -7.4, 6.2], [4.8, -8, 0], [4.3, -7.4, -6.2]], 4);
+    line("pelvis", [3.25, 1.2, -4.4], [3.35, 1.2, 4.4], 0.65, 0.65, 10);
+    line("pelvis", [3.4, 0.8, 1.4], [3, -4.6, 2], 0.3, 0.22, 10);
+    for (const f of ["shinN", "shinF"]) line(f, [0.8, 0, 0], [7.8, 0, 0], 2.05, 1.6, 7);
+    for (const f of ["footN", "footF"]) line(f, [-1, -0.7, 0], [3.6, -1.1, 0], 1.6, 1.3, 7);
+    line("upperF", [2, 1.4, 0], [4, 2.2, 0], 0.2, 0.18, 8);
+    line("upperF", [4, 2.2, 0], [5, 1.2, 0], 0.18, 0.16, 8);
+    line("upperF", [4, 2.2, 0], [4.6, 3.2, 0.4], 0.14, 0.12, 8);
   }
 }
 
@@ -2127,6 +2268,51 @@ var MELEE_SHAPES = {
     band2(T4, 24, 1, 6, C.gold, C.goldD);
     T4(25, -3, C.goldL);
   } },
+  kusanagi: { two: -7, draw(T4) {
+    wraps(T4, -7.6, 2, 0.85);
+    band2(T4, -8.2, 0.6, 1.1);
+    ring(T4, -8.8, 0, 1.25, C.gold);
+    T4(-8.8, 0, C.jade);
+    T4(-8.8, -0.6, C.goldL);
+    polygon(T4, [[2.2, -3.6], [3.6, -2.4], [3.6, 2.4], [2.2, 3.6]], C.gold);
+    for (const dy of [-2.8, 0, 2.8]) polygon(T4, [[2.7, dy - 1.1], [4.7, dy - 0.35], [4.7, dy + 0.35], [2.7, dy + 1.1]], C.goldL);
+    for (let i = 4; i < 37; i += 0.35) {
+      const u = (i - 4) / 33, w = u > 0.9 ? (1 - u) / 0.1 * 1.9 : 1.9;
+      for (let k = -w; k <= w; k += 0.4) T4(i, k, k < -1.2 ? C.white : k < -0.25 ? C.silver : k < 0.5 ? C.steel : C.edge);
+    }
+    for (let i = 5; i < 35; i += 0.7) T4(i, 0, C.cyan);
+    for (const dy of [-1.6, 1.6]) for (let i = 4.4; i < 7; i += 0.3) T4(i, dy, C.jade);
+    T4(-7.2, -1.2, C.cyan);
+  } },
+  totsuka: { two: -9, draw(T4) {
+    wraps(T4, -10, 2.4, 0.95);
+    band2(T4, -10.6, 0.6, 1.3, C.bronze, C.bronzeD);
+    polygon(T4, [[-11.4, -1.5], [-9.4, 0], [-11.4, 1.5]], C.gold);
+    polygon(T4, [[2.4, -5], [4.2, -3.2], [4.2, 3.2], [2.4, 5]], C.gold);
+    polygon(T4, [[3, -4.2], [4, -2.4], [4, 2.4], [3, 4.2]], C.goldD);
+    for (let i = 4.6; i < 46; i += 0.35) {
+      const u = (i - 4.6) / 41, w = u > 0.9 ? (1 - u) / 0.1 * 2.4 : 2.4;
+      for (let k = -w; k <= w; k += 0.4) T4(i, k, k < -1.5 ? C.white : k < -0.3 ? C.silver : k < 0.8 ? C.steel : C.edge);
+    }
+    for (let i = 6; i < 44; i += 0.5) T4(i, 0, C.violet);
+    for (const dy of [-1.4, 1.4]) for (let i = 5; i < 8.6; i += 0.3) T4(i, dy, C.violet);
+    T4(-9.7, 0, C.redL);
+  } },
+  "yata-mirror": { draw(T4) {
+    wraps(T4, -4.8, 0.4, 0.8);
+    band2(T4, -5, 0.6, 1.15, C.bronze, C.bronzeD);
+    ring(T4, 4, 0, 4.8, C.bronze);
+    ring(T4, 4, 0, 4.1, C.gold);
+    for (let y = -3.6; y <= 3.6; y += 0.4) for (let x = 0.8; x <= 7.2; x += 0.4) {
+      const d = (x - 4) ** 2 + y * y;
+      if (d <= 3.7 * 3.7) T4(x, y, y < -1 ? C.ivory : y < 0.9 ? C.goldL : C.gold);
+    }
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) T4(4 + Math.cos(a) * 2.4, Math.sin(a) * 2.4, C.bronzeD);
+    T4(4, 0, C.white);
+    T4(3, 0, C.white);
+    T4(5, 0, C.white);
+    for (let i = 0; i < 3; i++) T4(-5.6 - i * 0.4, -1.2 - i * 0.7, i & 1 ? C.red : C.redL);
+  } },
   rapier: { two: -3.5, draw(T4) {
     wraps(T4, -4, 2, 0.65);
     band2(T4, -5, 0.7, 1.1);
@@ -2247,6 +2433,9 @@ var ARMORY = Object.freeze([
   { id: "lance", label: "\u9A91\u58EB\u957F\u67AA", name: "Knight lance", fx: "melee/lance-thrust", tip: 62, family: "thrust", class: "melee" },
   { id: "holy-sword", label: "\u5723\u5251", name: "Holy sword", fx: "melee/holy-sword-cleave", tip: 40, family: "sweep", class: "melee" },
   { id: "katana", label: "\u592A\u5200", name: "Katana", fx: "melee/katana-draw", tip: 36, family: "sweep", class: "melee" },
+  { id: "kusanagi", label: "\u4E91\u4ECE\u5251", name: "Kusanagi", fx: "kami/ame-no-murakumo", tip: 36, family: "sweep", class: "melee" },
+  { id: "totsuka", label: "\u5341\u62F3\u5251", name: "Totsuka", fx: "kami/susanoo-thunder", tip: 44, family: "sweep", class: "melee" },
+  { id: "yata-mirror", label: "\u516B\u54AB\u955C", name: "Yata mirror", fx: "kami/amaterasu-sun", tip: 9, family: "slam", class: "melee" },
   { id: "war-mace", label: "\u91CD\u9489\u9524", name: "War mace", fx: "melee/mace-crush", tip: 35, family: "slam", class: "melee" },
   { id: "rapier", label: "\u523A\u5251", name: "Rapier", fx: "melee/rapier-lunge", tip: 38, family: "thrust", class: "melee" },
   { id: "kunai", label: "\u82E6\u65E0", name: "Kunai", fx: "thrown/kunai-throw", tip: 18, family: "throw", class: "thrown" },
@@ -2335,10 +2524,10 @@ function boneFrame(a, b, pole) {
 }
 var weaponOf = (name) => WEAPONS[name];
 function solve(pose4) {
-  const q = { ...STAND, ...pose4 }, lean = q.lean, W8 = q.weapon && weaponOf(q.weapon), OW = q.offWeapon && weaponOf(q.offWeapon);
+  const q = { ...STAND, ...pose4 }, lean = q.lean, W7 = q.weapon && weaponOf(q.weapon), OW = q.offWeapon && weaponOf(q.offWeapon);
   const sa = q.sa ?? 0, wl = q.wl ?? 1, axisZ = Math.sqrt(Math.max(0, 1 - wl * wl)) * (q.wz ?? 1);
   const axis = [Math.cos(sa) * wl, -Math.sin(sa) * wl, axisZ], side = [-Math.sin(sa), -Math.cos(sa), 0];
-  const two = !!(q.two && W8), nearZ = q.fz ?? (two ? 3 : 4.5);
+  const two = !!(q.two && W7), nearZ = q.fz ?? (two ? 3 : 4.5);
   const fwd = (q.fx - STAND.fx) / 24, farFwd = two ? 0 : (q.bx - STAND.bx) / 22;
   let turn = M.turn + (fwd >= 0 ? -44 * DEG * Math.min(1, fwd) : 28 * DEG * Math.min(1, -fwd * 1.8));
   turn += (farFwd > 0 ? 34 * DEG * Math.min(1, farFwd) : 0) + (q.twist ?? 0) * 4 * DEG;
@@ -2367,7 +2556,7 @@ function solve(pose4) {
     return add(base, mul(unit(to), Math.min(1.8, Math.max(0, d - 11) * 0.35)));
   };
   const nearT = [q.fx, -q.fy, nearZ];
-  const farT = two ? [q.fx + axis[0] * W8.two, -q.fy + axis[1] * W8.two, nearZ + axis[2] * W8.two] : [q.bx, -q.by, q.bz ?? (q.armsFront ? 5.5 : -4.5)];
+  const farT = two ? [q.fx + axis[0] * W7.two, -q.fy + axis[1] * W7.two, nearZ + axis[2] * W7.two] : [q.bx, -q.by, q.bz ?? (q.armsFront ? 5.5 : -4.5)];
   const sN = pick(1, nearT), sF = pick(-1, farT);
   const pole = (s, T4, shoulder, hold) => {
     const up = clamp01((T4[1] - shoulder[1] + 2) / 10);
@@ -2386,7 +2575,7 @@ function solve(pose4) {
     }
     return best;
   };
-  const holdN = W8 ? W8.across ? side : axis : null, holdF = two ? W8.across ? side : axis : OW ? [Math.cos(q.sb ?? Math.PI), -Math.sin(q.sb ?? Math.PI), 0] : null;
+  const holdN = W7 ? W7.across ? side : axis : null, holdF = two ? W7.across ? side : axis : OW ? [Math.cos(q.sb ?? Math.PI), -Math.sin(q.sb ?? Math.PI), 0] : null;
   const armN = ik(sN, nearT, M.upper, M.fore, pole(1, nearT, sN, holdN)), armF = ik(sF, farT, M.upper, M.fore, pole(-1, farT, sF, holdF));
   const kneePole = (s) => mv(Rp, [1, 0, s * 0.35]);
   const hipN = hipAt(1), hipF = hipAt(-1);
@@ -2412,7 +2601,7 @@ function solve(pose4) {
   };
   B3.footN = frame(legN.end, mm(rotY(-Math.atan2(footDir(1)[2], footDir(1)[0])), rotZ(q.toeF ? -55 * DEG : 0)));
   B3.footF = frame(legF.end, mm(rotY(-Math.atan2(footDir(-1)[2], footDir(-1)[0])), rotZ(q.toeB ? -55 * DEG : 0)));
-  return { B: B3, W: W8, OW, q, axis, side, armN, armF, legN, legF, sN, sF, hipN, hipF, turn };
+  return { B: B3, W: W7, OW, q, axis, side, armN, armF, legN, legF, sN, sF, hipN, hipF, turn };
 }
 var BW = 300;
 var BH = 240;
@@ -2498,12 +2687,12 @@ function drawBody(S) {
   useFrame("head");
   ellipsoid(F_("head").t, F_("head").R, [3, 3.3, 2.8], PART.head, 0);
   ellipsoid(add(F_("head").t, mv(F_("head").R, [0.85, -0.45, 0])), F_("head").R, [2.4, 2.7, 2.35], PART.face, 0);
-  const arm = (far, A2, sh, up, el2, fo, ha, nameU, nameF) => {
+  const arm = (far, A2, sh, up, el, fo, ha, nameU, nameF) => {
     curDim = far ? 1 : 0;
     useFrame(nameU);
     sphere(sh, 2.5, up, 0);
     sweep(sh, A2.joint, 2.1, 1.6, up, 0);
-    sphere(A2.joint, 1.45, el2, 1);
+    sphere(A2.joint, 1.45, el, 1);
     useFrame(nameF);
     sweep(A2.joint, A2.end, 1.6, 1.2, fo, 0, 0.15);
     sphere(A2.end, 1.9, ha, 0);
@@ -2511,12 +2700,12 @@ function drawBody(S) {
   };
   arm(false, armN, sN, PART.upperN, PART.elbowN, PART.foreN, PART.handN, "upperN", "foreN");
   arm(true, armF, sF, PART.upperF, PART.elbowF, PART.foreF, PART.handF, "upperF", "foreF");
-  const leg = (far, L3, hip, th, kn, sh, fo, nameT, nameS, nameFt) => {
+  const leg = (far, L4, hip, th, kn, sh, fo, nameT, nameS, nameFt) => {
     useFrame(nameT);
-    sweep(hip, L3.joint, 3.2, 2.2, th, 0);
-    sphere(L3.joint, 1.9, kn, 1);
+    sweep(hip, L4.joint, 3.2, 2.2, th, 0);
+    sphere(L4.joint, 1.9, kn, 1);
     useFrame(nameS);
-    sweep(L3.joint, L3.end, 2.15, 1.4, sh, 0, 0.4);
+    sweep(L4.joint, L4.end, 2.15, 1.4, sh, 0, 0.4);
     useFrame(nameFt);
     const R4 = F_(nameFt).R, a = F_(nameFt).t;
     sweep(add(a, mv(R4, [-1.5, -0.6, 0])), add(a, mv(R4, [4.6, -1.1, 0])), 1.7, 1.25, fo, 0);
@@ -2565,24 +2754,24 @@ function drawCharacter(S, look2) {
   bone2("neck", [0, 0, 0], [0, 1.6, 0], 1.15, 1.05, 3);
   ball("head", [0, 0, 0], [2.7, 3, 2.6], 3);
   ball("head", [0.65, -0.5, 0], [2.2, 2.4, 2.2], 3);
-  const arm = (A2, sh, up, el2, fo, ha, U, F) => {
+  const arm = (A2, sh, up, el, fo, ha, U, F) => {
     const cloth = heavy || robed;
     useFrame(U);
     sphere(sh, heavy ? 2.6 : 2, up, cloth ? 4 : 3);
     sweep(sh, A2.joint, heavy ? 2.2 : 1.65, 1.25, up, cloth ? 4 : 3);
-    sphere(A2.joint, 1.2, el2, cloth ? 4 : 3);
+    sphere(A2.joint, 1.2, el, cloth ? 4 : 3);
     useFrame(F);
     sweep(A2.joint, A2.end, 1.45, 1.05, fo, heavy ? 4 : 3);
     sphere(A2.end, 1.5, ha, 3);
   };
   arm(armN, sN, PART.upperN, PART.elbowN, PART.foreN, PART.handN, "upperN", "foreN");
   arm(armF, sF, PART.upperF, PART.elbowF, PART.foreF, PART.handF, "upperF", "foreF");
-  const leg = (L3, hip, th, kn, sh, ft, T4, F, foot) => {
+  const leg = (L4, hip, th, kn, sh, ft, T4, F, foot) => {
     useFrame(T4);
-    sweep(hip, L3.joint, heavy ? 3 : 2.5, 1.7, th, look2.style === "ranger" ? 3 : 4);
-    sphere(L3.joint, 1.5, kn, heavy ? 6 : 3);
+    sweep(hip, L4.joint, heavy ? 3 : 2.5, 1.7, th, look2.style === "ranger" ? 3 : 4);
+    sphere(L4.joint, 1.5, kn, heavy ? 6 : 3);
     useFrame(F);
-    sweep(L3.joint, L3.end, heavy ? 2 : 1.7, 1.15, sh, heavy ? 4 : 7);
+    sweep(L4.joint, L4.end, heavy ? 2 : 1.7, 1.15, sh, heavy ? 4 : 7);
     bone2(foot, [-1.2, -0.6, 0], [4, -1.1, 0], 1.4, 1, 7);
   };
   leg(legN, hipN, PART.thighN, PART.kneeN, PART.shinN, PART.footN, "thighN", "shinN", "footN");
@@ -2592,10 +2781,10 @@ function drawCharacter(S, look2) {
     mesh(B3[f], points, PART[f] ?? PART.chest, mat);
   } });
 }
-function along(H5, axis, side, part) {
+function along(H4, axis, side, part) {
   const n = cross(axis, side);
   const T4 = (i, k, c, lift2 = 0) => {
-    const x = H5[0] + axis[0] * i + side[0] * k + n[0] * lift2, y = H5[1] + axis[1] * i + side[1] * k + n[1] * lift2, z = H5[2] + axis[2] * i + side[2] * k + n[2] * lift2;
+    const x = H4[0] + axis[0] * i + side[0] * k + n[0] * lift2, y = H4[1] + axis[1] * i + side[1] * k + n[1] * lift2, z = H4[2] + axis[2] * i + side[2] * k + n[2] * lift2;
     const wx = Math.round(x), wy = Math.round(y);
     if (clipWeapon && wy < 0) return;
     const idx = (OY - wy) * BW + (OX + wx);
@@ -2603,7 +2792,7 @@ function along(H5, axis, side, part) {
     curFrameIndex = -1;
     plot(idx, z + 0.05, 2, part, 2, wx, wy, c);
   };
-  T4.at = (i, k) => [H5[0] + axis[0] * i + side[0] * k, H5[1] + axis[1] * i + side[1] * k, H5[2] + axis[2] * i + side[2] * k];
+  T4.at = (i, k) => [H4[0] + axis[0] * i + side[0] * k, H4[1] + axis[1] * i + side[1] * k, H4[2] + axis[2] * i + side[2] * k];
   return T4;
 }
 var STEEL = Object.fromEntries(Object.entries({ hi: "#ffffff", a: "#e8edf6", b: "#a4afc6", d: "#68748f", gold: "#ffd84a", goldD: "#b8862a", grip: "#7a3a2a", gripD: "#4a2018", wood: "#8a5a32", woodD: "#5a3820", dark: "#3a3448", darkD: "#262033", olive: "#58663f", oliveA: "#7d8c58", oliveD: "#3a4529" }).map(([k, v]) => [k, hex(v) >>> 0]));
@@ -2702,13 +2891,13 @@ var WEAPONS = {
 };
 function finish(S, restFrames, look2, sourceBox) {
   const dim = (part) => part >= PART.upperF && part <= PART.handF ? 1 : part >= PART.thighF && part <= PART.footF ? 1 : 0;
-  const toneOf = (v, part) => {
+  const toneOf2 = (v, part) => {
     let t = v > 0.8 ? 0 : v > 0.42 ? 1 : v > 0.08 ? 2 : 3;
     t = Math.min(3, t + dim(part));
     return t;
   };
   const tones = /* @__PURE__ */ new Map();
-  for (const i of touched) tones.set(i, toneOf(Tone[i], Part[i]));
+  for (const i of touched) tones.set(i, toneOf2(Tone[i], Part[i]));
   for (const i of touched) {
     if (Mat[i] === 2) continue;
     const t = tones.get(i), votes = [0, 0, 0, 0];
@@ -2830,7 +3019,7 @@ function resolveLook(character) {
   const c = characterOf(character);
   if (!LOOKS.has(c.id)) {
     const names = { 3: "skin", 4: "cloth", 5: "hair", 6: "gold", 7: "leather", 8: "glow", 9: "bone", 10: "lining" };
-    LOOKS.set(c.id, { ...c, materials: c.style ? Object.fromEntries(Object.entries(names).map(([m, key2]) => [m, c[key2].map((v) => hex(v) >>> 0)])) : null });
+    LOOKS.set(c.id, { ...c, materials: c.style ? Object.fromEntries(Object.entries(names).map(([m, key]) => [m, c[key].map((v) => hex(v) >>> 0)])) : null });
   }
   return LOOKS.get(c.id);
 }
@@ -2849,11 +3038,11 @@ function posed(pose4, character = "dummy") {
     const rest = render({}, look2);
     SOURCE_BOXES.set(look2.id, { x: rest.x0, y: rest.y0, w: rest.x1 - rest.x0 + 1, h: rest.y1 - rest.y0 + 1 });
   }
-  const key2 = look2.id + ":" + keyOf(pose4);
-  let r = CACHE.get(key2);
+  const key = look2.id + ":" + keyOf(pose4);
+  let r = CACHE.get(key);
   if (!r) {
     if (CACHE.size > 6e3) CACHE.clear();
-    CACHE.set(key2, r = render(pose4, look2, SOURCE_BOXES.get(look2.id)));
+    CACHE.set(key, r = render(pose4, look2, SOURCE_BOXES.get(look2.id)));
   }
   return r;
 }
@@ -2964,8 +3153,8 @@ function stockActor(k = 1, character = "dummy") {
   k = k === 2 ? 2 : 1;
   const look2 = characterOf(character);
   if (look2.style) {
-    const key2 = look2.id + ":" + k;
-    if (!CHARACTER_ACTORS.has(key2)) {
+    const key = look2.id + ":" + k;
+    if (!CHARACTER_ACTORS.has(key)) {
       const r = posed({}, look2.id), scale3 = k === 2 ? 1 : 2;
       const x2 = Math.floor(r.x0 / scale3), y2 = Math.floor(r.y0 / scale3);
       const w = Math.floor(r.x1 / scale3) - x2 + 1, h = Math.floor(r.y1 / scale3) - y2 + 1;
@@ -2975,7 +3164,7 @@ function stockActor(k = 1, character = "dummy") {
         data[index] = 1;
         pixels[index] = r.color[i];
       }
-      CHARACTER_ACTORS.set(key2, {
+      CHARACTER_ACTORS.set(key, {
         character: look2.id,
         mask: { w, h, data },
         pixels,
@@ -2989,7 +3178,7 @@ function stockActor(k = 1, character = "dummy") {
         custom: true
       });
     }
-    return CHARACTER_ACTORS.get(key2);
+    return CHARACTER_ACTORS.get(key);
   }
   const m = MASKS[k], x = -Math.floor(m.w / 2), y = -m.h;
   return { mask: m, pixels: PIXELS[k], x, y, w: m.w, h: m.h, k, head: [0, y], chest: [0, k === 2 ? -26 : y + 11], ...k === 2 ? { eyes: [[13, 3], [15, 3]] } : {} };
@@ -3012,21 +3201,21 @@ function painterFor(frame3) {
 }
 var FADE = 0.3;
 var isRamp = (v) => Array.isArray(v) && v.length > 0 && v.every((c) => typeof c === "number" || /^#[0-9a-f]{3,8}$/i.test(c));
-function resolveOptions(meta42, o = {}) {
-  const opts = { ...meta42.options ?? {}, ...o };
-  for (const [k, def] of Object.entries(meta42.options ?? {}))
+function resolveOptions(meta49, o = {}) {
+  const opts = { ...meta49.options ?? {}, ...o };
+  for (const [k, def] of Object.entries(meta49.options ?? {}))
     if (isRamp(def) && isRamp(o[k]) && o[k].length !== def.length) opts[k] = fit(o[k], def.length).map(toHex);
-  if (meta42.actor && !opts.actor) opts.actor = stockActor(meta42.actor === 2 ? 2 : 1, opts.character);
+  if (meta49.actor && !opts.actor) opts.actor = stockActor(meta49.actor === 2 ? 2 : 1, opts.character);
   return opts;
 }
 function createFx(mod, o = {}) {
-  const meta42 = mod.meta ?? {};
-  const opts = resolveOptions(meta42, o);
+  const meta49 = mod.meta ?? {};
+  const opts = resolveOptions(meta49, o);
   const impl = mod.create ? mod.create(opts) : mod;
-  const D17 = meta42.duration ?? 1;
+  const D17 = meta49.duration ?? 1;
   let t = 0, stopAt = Infinity;
   return {
-    meta: meta42,
+    meta: meta49,
     options: opts,
     get t() {
       return t;
@@ -3042,7 +3231,7 @@ function createFx(mod, o = {}) {
       p.place(opts.x ?? 0, opts.y ?? 0, !!opts.flip, opts.angle ?? 0);
       p.fade = stopAt === Infinity ? 1 : clamp(1 - (t - stopAt) / FADE);
       p.lightK = opts.light ?? 1;
-      const tt = meta42.loop ? t % D17 : Math.min(t, D17);
+      const tt = meta49.loop ? t % D17 : Math.min(t, D17);
       if (layer !== "front" && impl.drawBack) {
         p.layer = "back";
         impl.drawBack(p, tt, opts);
@@ -3057,14 +3246,14 @@ function createFx(mod, o = {}) {
       if (stopAt === Infinity) stopAt = t;
     },
     done() {
-      return t - stopAt >= FADE || !meta42.loop && t >= D17;
+      return t - stopAt >= FADE || !meta49.loop && t >= D17;
     }
   };
 }
 function composite(f, out, bg = null, lightK = 1) {
-  const n = f.w * f.h, C4 = f.color, L3 = f.light, flat = typeof bg === "number";
+  const n = f.w * f.h, C5 = f.color, L4 = f.light, flat = typeof bg === "number";
   for (let i = 0; i < n; i++) {
-    const c = C4[i], l = L3[i] & 16777215;
+    const c = C5[i], l = L4[i] & 16777215;
     let r, g, b, a;
     const ca = c >>> 24;
     if (ca === 255) {
@@ -3293,20 +3482,20 @@ function moon(p, x, y, r, core, halo, seed = 0) {
   p.glow(x, y, r * 3.2, halo, 0.3);
   p.glow(x, y, r * 1.15, core, 0.14);
 }
-function foliage(p, x, y, rx, ry, C4, seed = 0, n = 7) {
-  p.ellipse(x, y, rx, ry, C4[1]);
+function foliage(p, x, y, rx, ry, C5, seed = 0, n = 7) {
+  p.ellipse(x, y, rx, ry, C5[1]);
   for (let i = 0; i < n; i++) {
     const a = rand(seed, i, 1) * TAU, d = rand(seed, i, 2), r = 2 + rand(seed, i, 3) * rx * 0.42;
     const px = x + Math.cos(a) * rx * 0.62 * d, py = y + Math.sin(a) * ry * 0.62 * d;
-    p.disc(px, py, r, C4[2], 0.9);
-    if (rand(seed, i, 4) > 0.45) p.disc(px - r * 0.25, py - r * 0.35, r * 0.55, C4[3], 0.85);
+    p.disc(px, py, r, C5[2], 0.9);
+    if (rand(seed, i, 4) > 0.45) p.disc(px - r * 0.25, py - r * 0.35, r * 0.55, C5[3], 0.85);
   }
   for (let i = 0; i < n; i++) {
     const a = Math.PI + i / n * Math.PI, px = x + Math.cos(a) * rx * 0.85, py = y + Math.sin(a) * ry * 0.8;
-    p.dot(px, py, C4[3], 0.9);
+    p.dot(px, py, C5[3], 0.9);
   }
 }
-function arch(p, x, baseY, w, h, C4, { broken = true, seed = 0 } = {}) {
+function arch(p, x, baseY, w, h, C5, { broken = true, seed = 0 } = {}) {
   const top = baseY - h, pw = Math.max(5, Math.round(w * 0.15));
   const ix0 = x + pw + Math.round(w * 0.12), ix1 = x + w - pw - Math.round(w * 0.12), iw = Math.max(1, ix1 - ix0);
   const springY = top + Math.round(h * 0.52), apexY = top + Math.round(h * 0.2), ring4 = Math.max(4, Math.round(w * 0.075));
@@ -3323,74 +3512,74 @@ function arch(p, x, baseY, w, h, C4, { broken = true, seed = 0 } = {}) {
     const wt = wallTop(px);
     for (let py = wt; py < baseY; py++) {
       const row = Math.floor((py - top) / 7), off = row % 2 ? 4 : 0;
-      let c = C4[2];
-      if ((px + off) % 12 === 0 || (py - top) % 7 === 6) c = C4[1];
-      else if ((px * 5 + py * 3 + seed) % 29 === 0) c = C4[3];
-      else if (py < wt + 2) c = C4[3];
+      let c = C5[2];
+      if ((px + off) % 12 === 0 || (py - top) % 7 === 6) c = C5[1];
+      else if ((px * 5 + py * 3 + seed) % 29 === 0) c = C5[3];
+      else if (py < wt + 2) c = C5[3];
       p.px(px, py, c);
     }
   }
   for (let px = ix0; px < ix1; px++) {
     const ot = openingTop(px);
-    for (let py = ot; py < baseY; py++) p.px(px, py, C4[0]);
+    for (let py = ot; py < baseY; py++) p.px(px, py, C5[0]);
     for (let k = 1; k <= ring4; k++) {
-      let c = k === 1 ? C4[5] : k === 2 ? C4[4] : k === ring4 ? C4[1] : C4[2];
-      if ((px + k) % 9 === 0) c = C4[1];
+      let c = k === 1 ? C5[5] : k === 2 ? C5[4] : k === ring4 ? C5[1] : C5[2];
+      if ((px + k) % 9 === 0) c = C5[1];
       p.px(px, ot - k, c);
     }
   }
   for (const [jx, dir] of [[ix0 - 1, -1], [ix1, 1]]) {
     for (let py = springY - 2; py < baseY; py++) {
-      p.px(jx, py, C4[4]);
-      p.px(jx + dir, py, C4[1]);
-      if (py % 7 === 0) p.px(jx, py, C4[2]);
+      p.px(jx, py, C5[4]);
+      p.px(jx + dir, py, C5[1]);
+      if (py % 7 === 0) p.px(jx, py, C5[2]);
     }
   }
   let cx = x + Math.round(w * (broken ? 0.8 : 0.24)), cy = wallTop(cx) + 2;
   while (cy < baseY - 2) {
-    p.px(cx, cy, C4[0]);
-    p.px(cx + 1, cy, C4[1]);
+    p.px(cx, cy, C5[0]);
+    p.px(cx + 1, cy, C5[1]);
     cy += 1;
     cx += Math.sin(cy * 0.7 + seed) > 0.3 ? 1 : rand(seed, cy, 9) > 0.6 ? -1 : 0;
   }
-  if (!broken) for (let px = x; px < x + w; px += 7) p.rect(px, wallTop(px) - 1, 6, 1, C4[4]);
+  if (!broken) for (let px = x; px < x + w; px += 7) p.rect(px, wallTop(px) - 1, 6, 1, C5[4]);
   if (broken) {
     for (let i = 0; i < 7; i++) {
       const bx = x + w * 0.4 + rand(seed, i, 1) * w * 0.55, by = baseY - 1 - rand(seed, i, 2) * 10;
-      p.rect(bx, by, 2 + Math.floor(rand(seed, i, 3) * 4), 1 + Math.floor(rand(seed, i, 4) * 2), i % 3 ? C4[2] : C4[3]);
+      p.rect(bx, by, 2 + Math.floor(rand(seed, i, 3) * 4), 1 + Math.floor(rand(seed, i, 4) * 2), i % 3 ? C5[2] : C5[3]);
     }
   }
   for (let i = 0; i < 22; i++) {
     const mx = x + 2 + rand(seed, i, 5) * (w - 4), my = baseY - 2 - rand(seed, i, 6) * Math.min(26, h * 0.6);
-    p.dot(mx, my, i % 3 ? C4[3] : C4[4], 0.7);
+    p.dot(mx, my, i % 3 ? C5[3] : C5[4], 0.7);
   }
-  for (let i = 0; i < 5; i++) fernlike(p, x + 4 + rand(seed, i, 7) * (w - 8), baseY - 1, 2, C4, seed + i);
+  for (let i = 0; i < 5; i++) fernlike(p, x + 4 + rand(seed, i, 7) * (w - 8), baseY - 1, 2, C5, seed + i);
 }
-function fernlike(p, x, y, s, C4, seed = 0) {
+function fernlike(p, x, y, s, C5, seed = 0) {
   for (let i = 0; i < 4; i++) {
-    const a = -Math.PI / 2 + (i - 1.5) * 0.32, L3 = s * (2 + rand(seed, i, 1));
-    for (let k = 1; k <= L3; k++) p.px(x + Math.cos(a) * k, y + Math.sin(a) * k + k * k * 0.06, k > L3 * 0.7 ? C4[4] : C4[3]);
+    const a = -Math.PI / 2 + (i - 1.5) * 0.32, L4 = s * (2 + rand(seed, i, 1));
+    for (let k = 1; k <= L4; k++) p.px(x + Math.cos(a) * k, y + Math.sin(a) * k + k * k * 0.06, k > L4 * 0.7 ? C5[4] : C5[3]);
   }
 }
-function pillar(p, x, baseY, w, h, C4, { broken = false } = {}) {
+function pillar(p, x, baseY, w, h, C5, { broken = false } = {}) {
   const top = baseY - h;
-  p.rect(x, top, w, h, C4[2]);
-  p.rect(x, top, 1, h, C4[4]);
-  p.rect(x + w - 2, top, 2, h, C4[1]);
-  for (let y = top + 4; y < baseY; y += 8) p.rect(x, y, w, 1, C4[1]);
-  for (let y = top + 2; y < baseY; y += 8) p.rect(x + 2, y, w - 4, 1, C4[3]);
-  p.rect(x - 2, baseY - 4, w + 4, 4, C4[2]);
-  p.rect(x - 2, baseY - 4, w + 4, 1, C4[4]);
+  p.rect(x, top, w, h, C5[2]);
+  p.rect(x, top, 1, h, C5[4]);
+  p.rect(x + w - 2, top, 2, h, C5[1]);
+  for (let y = top + 4; y < baseY; y += 8) p.rect(x, y, w, 1, C5[1]);
+  for (let y = top + 2; y < baseY; y += 8) p.rect(x + 2, y, w - 4, 1, C5[3]);
+  p.rect(x - 2, baseY - 4, w + 4, 4, C5[2]);
+  p.rect(x - 2, baseY - 4, w + 4, 1, C5[4]);
   if (broken) {
-    for (let i = 0; i < 4; i++) p.dot(x + rand(3, i, 1) * w, top - 1, C4[3], 0.7);
+    for (let i = 0; i < 4; i++) p.dot(x + rand(3, i, 1) * w, top - 1, C5[3], 0.7);
   } else {
-    p.rect(x - 3, top - 4, w + 6, 4, C4[2]);
-    p.rect(x - 3, top - 4, w + 6, 1, C4[4]);
-    p.rect(x - 1, top, w + 2, 2, C4[1]);
+    p.rect(x - 3, top - 4, w + 6, 4, C5[2]);
+    p.rect(x - 3, top - 4, w + 6, 1, C5[4]);
+    p.rect(x - 1, top, w + 2, 2, C5[1]);
   }
 }
-function ground(p, w, y, h, C4, { grass = true, seed = 0, stone: stone4 = false, lava = false } = {}) {
-  const floor = hex(C4[0]), dark = hex(C4[1]), lit = hex(C4[4]), rim = hex(C4[5]);
+function ground(p, w, y, h, C5, { grass = true, seed = 0, stone: stone4 = false, lava = false } = {}) {
+  const floor = hex(C5[0]), dark = hex(C5[1]), lit = hex(C5[4]), rim = hex(C5[5]);
   for (let yy = y; yy < h; yy++) {
     const d = yy - y;
     let c = d < 2 ? mix(floor, dark, 0.35) : d < 6 ? floor : mix(floor, dark, clamp((d - 5) / 18) * 0.75);
@@ -3431,48 +3620,48 @@ function ground(p, w, y, h, C4, { grass = true, seed = 0, stone: stone4 = false,
     for (let i = 0; i < 10; i++) {
       let x = Math.floor(rand(seed, i, 31) * w), yy = y + 4 + Math.floor(rand(seed, i, 32) * 20);
       for (let k = 0; k < 6; k++) {
-        p.px(x, yy, C4[5]);
-        p.px(x + 1, yy, C4[4]);
-        p.glow(x, yy, 4, C4[4], 0.35);
+        p.px(x, yy, C5[5]);
+        p.px(x + 1, yy, C5[4]);
+        p.glow(x, yy, 4, C5[4], 0.35);
         x += rand(seed, i, 40 + k) > 0.5 ? 1 : -1;
         yy += rand(seed, i, 50 + k) > 0.5 ? 1 : 0;
       }
     }
   }
 }
-function tufts(p, w, y, C4, seed = 0, count = 26) {
+function tufts(p, w, y, C5, seed = 0, count = 26) {
   for (let i = 0; i < count; i++) {
     const x = Math.floor(rand(seed, i, 1) * w), hh = 2 + Math.floor(rand(seed, i, 2) * 5);
-    for (let k = 1; k <= hh; k++) p.px(x + Math.round(k * 0.35), y - k, k === hh ? C4[5] : C4[4]);
-    if (rand(seed, i, 3) > 0.72) p.px(x + 1, y - hh - 1, C4[6] ?? C4[5]);
+    for (let k = 1; k <= hh; k++) p.px(x + Math.round(k * 0.35), y - k, k === hh ? C5[5] : C5[4]);
+    if (rand(seed, i, 3) > 0.72) p.px(x + 1, y - hh - 1, C5[6] ?? C5[5]);
   }
 }
-function mushroom(p, x, y, s, C4) {
-  p.rect(x, y - s * 1.6, Math.max(1, Math.round(s * 0.5)), Math.round(s * 1.6), C4[5]);
-  p.rect(x, y - Math.round(s * 1.6), Math.max(1, Math.round(s * 0.5)), 1, C4[6]);
-  p.ellipse(x + s * 0.25, y - s * 1.9, s * 1.1, s * 0.62, C4[6]);
-  p.ellipse(x + s * 0.25, y - s * 1.75, s * 0.85, s * 0.35, C4[7]);
-  p.dot(x + s * 0.6, y - s * 2.05, C4[6], 0.9);
-  p.glow(x + s * 0.25, y - s * 2, s * 2.4, C4[5], 0.1);
+function mushroom(p, x, y, s, C5) {
+  p.rect(x, y - s * 1.6, Math.max(1, Math.round(s * 0.5)), Math.round(s * 1.6), C5[5]);
+  p.rect(x, y - Math.round(s * 1.6), Math.max(1, Math.round(s * 0.5)), 1, C5[6]);
+  p.ellipse(x + s * 0.25, y - s * 1.9, s * 1.1, s * 0.62, C5[6]);
+  p.ellipse(x + s * 0.25, y - s * 1.75, s * 0.85, s * 0.35, C5[7]);
+  p.dot(x + s * 0.6, y - s * 2.05, C5[6], 0.9);
+  p.glow(x + s * 0.25, y - s * 2, s * 2.4, C5[5], 0.1);
 }
-function fern(p, x, y, s, C4, seed = 0) {
+function fern(p, x, y, s, C5, seed = 0) {
   const n = 5;
   for (let i = 0; i < n; i++) {
-    const a = -Math.PI / 2 + (i - (n - 1) / 2) * 0.42 + (rand(seed, i, 1) - 0.5) * 0.1, L3 = s * (2.2 + rand(seed, i, 2) * 1.4);
-    for (let k = 1; k <= L3; k++) {
-      const u = k / L3, px = x + Math.cos(a) * k * (1 - u * 0.35), py = y + Math.sin(a) * k + u * u * L3 * 0.4;
-      p.px(px, py, k > L3 * 0.7 ? C4[5] : C4[4]);
+    const a = -Math.PI / 2 + (i - (n - 1) / 2) * 0.42 + (rand(seed, i, 1) - 0.5) * 0.1, L4 = s * (2.2 + rand(seed, i, 2) * 1.4);
+    for (let k = 1; k <= L4; k++) {
+      const u = k / L4, px = x + Math.cos(a) * k * (1 - u * 0.35), py = y + Math.sin(a) * k + u * u * L4 * 0.4;
+      p.px(px, py, k > L4 * 0.7 ? C5[5] : C5[4]);
       if (k > 2 && k % 2 === 0) {
-        p.px(px - 1, py, C4[3]);
-        if (k < L3 * 0.7) p.px(px + 1, py - 1, C4[4]);
+        p.px(px - 1, py, C5[3]);
+        if (k < L4 * 0.7) p.px(px + 1, py - 1, C5[4]);
       }
     }
   }
 }
-function pool(p, x, y, rx, C4, k = 0.3) {
-  p.glow(x, y - 1, rx * 1.6, C4[3], k * 0.55);
-  p.glow(x, y - 1, rx * 0.7, C4[4], k * 0.7);
-  p.glow(x, y - 1, rx * 0.3, C4[5], k * 0.45);
+function pool(p, x, y, rx, C5, k = 0.3) {
+  p.glow(x, y - 1, rx * 1.6, C5[3], k * 0.55);
+  p.glow(x, y - 1, rx * 0.7, C5[4], k * 0.7);
+  p.glow(x, y - 1, rx * 0.3, C5[5], k * 0.45);
 }
 function mist(p, t, D17, { y0 = 60, y1 = 140, color = "#8fa8b8", seed = 0, bands = 3, alpha = 0.08 } = {}) {
   const c = hex(color), ph = t / D17 * 8;
@@ -3516,8 +3705,8 @@ function leaves(p, t, D17, { count = 10, color = "#b8d98a", back, seed = 0, x0 =
 }
 function embers(p, t, D17, { count = 18, color = "#ffb050", seed = 0, x0 = 0, x1 = 320, y0 = 148, y1 = 60 } = {}) {
   const c = hex(color);
-  cycle(t, D17, count, seed, (g) => 2.5 + g.next() * 4, (age, L3, g, i) => {
-    const k = age / L3, bx = lerp(x0, x1, g.next()), x = bx + Math.sin(age * 2.3 + i) * 6 * k;
+  cycle(t, D17, count, seed, (g) => 2.5 + g.next() * 4, (age, L4, g, i) => {
+    const k = age / L4, bx = lerp(x0, x1, g.next()), x = bx + Math.sin(age * 2.3 + i) * 6 * k;
     const y = lerp(y0, y1, k) - k * k * 16;
     const a = Math.min(1, k * 8) * Math.min(1, (1 - k) * 3);
     const hot = k < 0.25 ? mix(c, hex("#fff6c4"), 0.65) : k < 0.65 ? c : mix(c, hex("#a8301a"), 0.5);
@@ -3582,17 +3771,17 @@ function farTrees(p, baseY, seed, color) {
     }
   }
 }
-function vine(p, x, y, len2, C4, seed = 0) {
+function vine(p, x, y, len2, C5, seed = 0) {
   let px = x;
   for (let i = 0; i < len2; i++) {
     px = x + Math.sin(i * 0.35 + seed) * 2.2;
-    p.px(px, y + i, i % 4 === 0 ? C4[5] : C4[3]);
-    p.px(px - 1, y + i, C4[2]);
-    if (i % 5 === 2) p.px(px + 1, y + i, C4[5]);
+    p.px(px, y + i, i % 4 === 0 ? C5[5] : C5[3]);
+    p.px(px - 1, y + i, C5[2]);
+    if (i % 5 === 2) p.px(px + 1, y + i, C5[5]);
   }
-  for (let i = 0; i < 4; i++) foliage(p, x + Math.sin(i * 2.1 + seed) * 3, y + len2 * (0.3 + i * 0.18), 2.2, 1.6, C4, seed + i, 3);
+  for (let i = 0; i < 4; i++) foliage(p, x + Math.sin(i * 2.1 + seed) * 3, y + len2 * (0.3 + i * 0.18), 2.2, 1.6, C5, seed + i, 3);
 }
-function bigTree(p, x, baseY, h, C4) {
+function bigTree(p, x, baseY, h, C5) {
   const bark = ["#09080d", "#171410", "#292117", "#3d3020", "#5a4428"].map(hex);
   const top = baseY - h;
   for (let y = top; y < baseY; y++) {
@@ -3617,20 +3806,20 @@ function bigTree(p, x, baseY, h, C4) {
       for (let xx = Math.round(px - r); xx <= Math.round(px + r); xx++) p.px(xx, Math.round(py), xx < px ? bark[3] : bark[1]);
     }
   }
-  foliage(p, x - 25, top + 8, 22, 13, C4, 3, 8);
-  foliage(p, x + 21, top + 14, 20, 12, C4, 5, 7);
-  foliage(p, x - 4, top + 1, 25, 14, C4, 7, 9);
+  foliage(p, x - 25, top + 8, 22, 13, C5, 3, 8);
+  foliage(p, x + 21, top + 14, 20, 12, C5, 5, 7);
+  foliage(p, x - 4, top + 1, 25, 14, C5, 7, 9);
   for (let i = 0; i < 26; i++) {
     const a = rand(9, i, 1) * TAU, r = 9 + rand(9, i, 2) * 24;
     const px = x + Math.cos(a) * r, py = top + 8 + Math.sin(a) * r * 0.6;
-    p.dot(px, py, i % 3 ? C4[4] : C4[5], 0.55);
+    p.dot(px, py, i % 3 ? C5[4] : C5[5], 0.55);
   }
   for (let i = 0; i < 12; i++) {
     const px = x - 28 + rand(13, i, 1) * 12, py = top + 4 + rand(13, i, 2) * 6;
-    p.dot(px, py, C4[5], 0.7);
+    p.dot(px, py, C5[5], 0.7);
   }
 }
-function paving(p, y, C4, seed) {
+function paving(p, y, C5, seed) {
   for (let row = 0; row < 2; row++) {
     for (let x = 60 + row % 2 * 11; x < 262; x += 24) {
       const yy = y + 3 + row * 5, ww = 12 + Math.floor(rand(seed, row, x) * 9);
@@ -3639,18 +3828,18 @@ function paving(p, y, C4, seed) {
       p.rect(x, yy, ww, 2, tone);
       p.rect(x, yy, ww, 1, mix(tone, STONE[5], 0.35));
       p.rect(x, yy + 2, ww, 1, STONE[1]);
-      if (rand(seed, row, x + 3) > 0.7) p.px(x + 3, yy + 1, mix(tone, C4[4], 0.6));
+      if (rand(seed, row, x + 3) > 0.7) p.px(x + 3, yy + 1, mix(tone, C5[4], 0.6));
     }
   }
 }
-function dais(p, x, y, C4, seed) {
+function dais(p, x, y, C5, seed) {
   p.ellipse(x, y, 58, 8.5, STONE[1]);
   p.ellipse(x, y - 1, 54, 7, STONE[2]);
   p.ellipse(x, y - 2, 47, 5.6, mix(STONE[2], STONE[3], 0.55));
   p.ellipse(x, y - 2, 38, 4.4, STONE[2]);
   for (let a = 0; a < TAU; a += 0.22) {
     const px = x + Math.cos(a) * 50, py = y - 1 + Math.sin(a) * 6;
-    p.dot(px, py, a % 0.9 < 0.3 ? C4[4] : STONE[4], 0.55);
+    p.dot(px, py, a % 0.9 < 0.3 ? C5[4] : STONE[4], 0.55);
   }
   for (let i = 0; i < 18; i++) {
     const a = rand(seed, i, 1) * TAU, r = 12 + rand(seed, i, 2) * 40;
@@ -3663,7 +3852,7 @@ function dais(p, x, y, C4, seed) {
   }
   p.glow(x, y - 3, 26, WATER[4], 0.06);
 }
-function build2(C4, o) {
+function build2(C5, o) {
   const seed = o.seed ?? 1;
   const base = bake(W, H, (p) => {
     sky(p, W, H, SKY_TOP2, SKY_LOW2, { horizon: 128, steps: 7 });
@@ -3673,15 +3862,15 @@ function build2(C4, o) {
     farTrees(p, 128, seed + 31, "#0a1715");
     for (let i = 0; i < 9; i++) {
       const x = rand(seed, i, 41) * W;
-      p.glow(x, 122, 26, C4[3], 0.05);
+      p.glow(x, 122, 26, C5[3], 0.05);
     }
   });
   const mid = bake(W, H, (p) => {
     arch(p, 22, 150, 86, 92, STONE, { broken: true, seed: seed + 2 });
     pillar(p, 286, 150, 13, 58, STONE, { broken: true });
     p.rect(20, 148, 100, 3, STONE[1]);
-    bigTree(p, 12, 150, 118, C4);
-    bigTree(p, 312, 150, 96, C4);
+    bigTree(p, 12, 150, 118, C5);
+    bigTree(p, 312, 150, 96, C5);
     p.rect(144, 136, 32, 14, STONE[2]);
     p.rect(144, 136, 32, 1, STONE[4]);
     p.rect(146, 138, 28, 10, STONE[1]);
@@ -3694,16 +3883,16 @@ function build2(C4, o) {
     p.dot(160, 129, WATER[4], 0.8);
     p.dot(159, 129, WATER[3], 0.6);
     p.glow(160, 130, 18, WATER[4], 0.14);
-    vine(p, 148, 136, 18, C4, 6);
-    vine(p, 172, 136, 14, C4, 8);
-    vine(p, 38, 0, 42, C4, 1);
-    vine(p, 88, 0, 58, C4, 3);
-    vine(p, 268, 0, 34, C4, 5);
-    vine(p, 300, 0, 52, C4, 7);
+    vine(p, 148, 136, 18, C5, 6);
+    vine(p, 172, 136, 14, C5, 8);
+    vine(p, 38, 0, 42, C5, 1);
+    vine(p, 88, 0, 58, C5, 3);
+    vine(p, 268, 0, 34, C5, 5);
+    vine(p, 300, 0, 52, C5, 7);
     for (let i = 0; i < 18; i++) {
       const x = 26 + rand(seed, i, 61) * 96, yy = 149 - rand(seed, i, 62) * 3;
       p.rect(x, yy, 1 + Math.floor(rand(seed, i, 63) * 4), 1 + Math.floor(rand(seed, i, 64) * 2), STONE[i % 3 ? 2 : 3]);
-      if (i % 3 === 0) p.dot(x + 1, yy - 1, C4[3], 0.7);
+      if (i % 3 === 0) p.dot(x + 1, yy - 1, C5[3], 0.7);
     }
     for (let i = 0; i < 8; i++) {
       const x = 272 + rand(seed, i, 65) * 30, yy = 149 - rand(seed, i, 66) * 2;
@@ -3711,15 +3900,15 @@ function build2(C4, o) {
     }
     for (let i = 0; i < 30; i++) {
       const x = rand(seed, i, 71) * W, yy = 98 + rand(seed, i, 72) * 50;
-      if (x > 20 && x < 116) p.dot(x, yy, C4[3], 0.6);
-      if (x > 276) p.dot(x, yy, C4[3], 0.5);
+      if (x > 20 && x < 116) p.dot(x, yy, C5[3], 0.6);
+      if (x > 276) p.dot(x, yy, C5[3], 0.5);
     }
-    p.glow(70, 120, 60, C4[4], 0.06);
+    p.glow(70, 120, 60, C5[4], 0.06);
   });
   const floor = bake(W, H, (p) => {
     ground(p, W, 150, H, ["#141714", "#090c09", "#1b2118", "#262e1d", "#334226", "#4a5c30", "#6d8340"].map(hex), { grass: true, stone: false, seed });
-    paving(p, 150, C4, seed + 4);
-    dais(p, 160, 157, C4, seed + 5);
+    paving(p, 150, C5, seed + 4);
+    dais(p, 160, 157, C5, seed + 5);
     p.ellipse(96, 157, 28, 5.6, WATER[1]);
     p.ellipse(96, 156.5, 24, 4.3, WATER[2]);
     p.ellipse(100, 156, 10, 2.2, WATER[3]);
@@ -3729,33 +3918,33 @@ function build2(C4, o) {
     for (const [x, y, len2] of [[18, 150, 42], [24, 151, 28], [300, 151, 22]]) {
       for (let k = 0; k < len2; k++) p.px(x + k, y + Math.round(Math.sin(k * 0.22) * 1.5), k < len2 * 0.5 ? hex("#2c2115") : hex("#3d3020"));
     }
-    mushroom(p, 116, 149, 2.2, C4);
-    mushroom(p, 122, 150, 1.6, C4);
-    fern(p, 34, 150, 3.2, C4, 2);
-    fern(p, 280, 150, 3.6, C4, 5);
-    fern(p, 64, 150, 2.4, C4, 8);
-    tufts(p, W, 150, C4, seed + 11, 38);
-    for (let i = 0; i < 18; i++) p.px(108 + rand(seed, i, 91) * 110, 148 + Math.floor(rand(seed, i, 92) * 3), i % 3 ? STONE[2] : C4[3]);
+    mushroom(p, 116, 149, 2.2, C5);
+    mushroom(p, 122, 150, 1.6, C5);
+    fern(p, 34, 150, 3.2, C5, 2);
+    fern(p, 280, 150, 3.6, C5, 5);
+    fern(p, 64, 150, 2.4, C5, 8);
+    tufts(p, W, 150, C5, seed + 11, 38);
+    for (let i = 0; i < 18; i++) p.px(108 + rand(seed, i, 91) * 110, 148 + Math.floor(rand(seed, i, 92) * 3), i % 3 ? STONE[2] : C5[3]);
     pool(p, 252, 150, 32, WATER, 0.3);
   });
   const fore = bake(W, H, (p) => {
     for (let x = 0; x < W; x++) {
       const hh = 3 + rand(seed, x, 101) * 9 + Math.sin(x * 0.08) * 2;
       if (rand(seed, x, 102) > 0.42) {
-        p.px(x, H - 1, C4[1]);
-        for (let k = 1; k < hh; k++) p.px(x + Math.round(k * 0.22), H - 1 - k, k > hh * 0.7 ? C4[2] : C4[1]);
+        p.px(x, H - 1, C5[1]);
+        for (let k = 1; k < hh; k++) p.px(x + Math.round(k * 0.22), H - 1 - k, k > hh * 0.7 ? C5[2] : C5[1]);
       }
     }
     for (let i = 0; i < 10; i++) {
       const x = rand(seed, i, 111) * W, y = 160 + rand(seed, i, 112) * 10;
-      p.rect(x, y, 2, 1, C4[1]);
-      p.px(x + 2, y, C4[2]);
+      p.rect(x, y, 2, 1, C5[1]);
+      p.px(x + 2, y, C5[2]);
     }
   });
   return { base, mid, floor, fore };
 }
 function create(o) {
-  const C4 = fit(o.palette, 8), L3 = build2(C4, o);
+  const C5 = fit(o.palette, 8), L4 = build2(C5, o);
   let t = 0;
   return {
     update(dt) {
@@ -3763,10 +3952,10 @@ function create(o) {
     },
     draw(p) {
       const tt = t % D;
-      blit(p, L3.base);
-      blit(p, L3.mid);
+      blit(p, L4.base);
+      blit(p, L4.mid);
       mist(p, tt, D, { y0: 96, y1: 142, color: "#a8c8c0", seed: (o.seed ?? 1) + 5, bands: 3, alpha: 0.07 });
-      blit(p, L3.floor);
+      blit(p, L4.floor);
       const ph = tt / D * TAU;
       for (let i = 0; i < 5; i++) {
         const x = 86 + i * 5 + Math.sin(ph * 2 + i) * 2, y = 153 + Math.round(Math.sin(ph * 3 + i * 1.7) * 0.6);
@@ -3777,7 +3966,7 @@ function create(o) {
       motes(p, tt, D, { count: 22, color: "#e8f0d0", seed: (o.seed ?? 1) + 9, y0: 28, y1: 140 });
       p.glow(252, 146, 70, hex("#a8c8c8"), 0.1 + 0.02 * Math.sin(ph));
       p.glow(96, 154, 30, WATER[4], 0.14 + 0.03 * Math.sin(ph * 2));
-      blit(p, L3.fore);
+      blit(p, L4.fore);
     }
   };
 }
@@ -3806,13 +3995,13 @@ function contour(points) {
   return out;
 }
 function limb(p, points, width, tip, colors, { seed = 1, bark = true } = {}) {
-  const C4 = fit(colors, 5), path = contour(points);
+  const C5 = fit(colors, 5), path = contour(points);
   if (path.length < 2) return;
   const distances = [0];
   for (let i = 1; i < path.length; i++) distances.push(distances.at(-1) + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
   const length = distances.at(-1) || 1;
   const radius3 = (i) => lerp(width, tip, distances[i] / length) * 0.5;
-  const ribbon = (scale3, shift2, color) => {
+  const ribbon2 = (scale3, shift2, color) => {
     const left = [], right = [];
     for (let i = 0; i < path.length; i++) {
       const before = path[Math.max(0, i - 1)], after = path[Math.min(path.length - 1, i + 1)];
@@ -3823,20 +4012,20 @@ function limb(p, points, width, tip, colors, { seed = 1, bark = true } = {}) {
     }
     p.poly([...left, ...right.reverse()], color);
   };
-  ribbon(1, 0, C4[0]);
-  ribbon(0.83, -0.02, C4[2]);
-  ribbon(0.27, -0.4, C4[3]);
+  ribbon2(1, 0, C5[0]);
+  ribbon2(0.83, -0.02, C5[2]);
+  ribbon2(0.27, -0.4, C5[3]);
   if (!bark || width < 5) return;
   for (let i = 0; i < Math.floor(width * 0.75); i++) {
     const first = Math.floor(rand(seed, i, 1) * (path.length - 1) * 0.8);
     const last2 = Math.min(path.length - 1, first + 5 + Math.floor(rand(seed, i, 2) * path.length * 0.24));
     const side = (rand(seed, i, 3) - 0.5) * 1.2;
     const groove = path.slice(first, last2 + 1).map(([x, y], j) => [x + side * radius3(first + j), y]);
-    p.polyline(groove, i % 4 === 0 ? C4[4] : C4[1]);
+    p.polyline(groove, i % 4 === 0 ? C5[4] : C5[1]);
   }
 }
 function rock(p, x, y, rx, ry, colors, { seed = 1, moss = null } = {}) {
-  const C4 = fit(colors, 5), radii = Array.from({ length: 13 }, (_, i) => 0.82 + rand(seed, i, 1) * 0.23);
+  const C5 = fit(colors, 5), radii = Array.from({ length: 13 }, (_, i) => 0.82 + rand(seed, i, 1) * 0.23);
   p.shade(x - rx * 1.1, y - ry * 1.1, x + rx * 1.1, y + ry * 1.1, (px, py) => {
     const nx = (px - x) / rx, ny = (py - y) / ry, angle = (Math.atan2(ny, nx) / TAU + 1) % 1 * radii.length;
     const sector = Math.floor(angle), edge = lerp(radii[sector], radii[(sector + 1) % radii.length], angle - sector);
@@ -3849,23 +4038,23 @@ function rock(p, x, y, rx, ry, colors, { seed = 1, moss = null } = {}) {
     if (ny > -0.55 && ny < 0.55 && Math.abs(nx - seam) < 0.65 / rx) step = Math.max(0, step - 2);
     if (grain > 0.48 && noise2(px / 3, py / 3, seed + 41) > 0.3) step = Math.max(1, step - 1);
     if (moss && ny < -0.35 && grain > 0.08 && plane2 > 0.1) return moss[grain > 0.4 ? 1 : 0];
-    return C4[step];
+    return C5[step];
   });
 }
-function leafClump(p, x, y, rx, ry, C4, seed) {
+function leafClump(p, x, y, rx, ry, C5, seed) {
   const edge = Array.from({ length: 18 }, (_, i) => {
     const a = i / 18 * TAU, r = 0.72 + rand(seed, i, 6) * 0.3;
     return [x + Math.cos(a) * rx * r, y + Math.sin(a) * ry * r];
   });
-  p.poly(edge, C4[1]);
+  p.poly(edge, C5[1]);
   for (let i = 0; i < 9; i++) {
     const bx = x + (rand(seed, i, 7) - 0.5) * rx * 1.35, by = y + (rand(seed, i, 8) - 0.5) * ry;
     const w = 2 + rand(seed, i, 9) * 4;
-    p.poly([[bx - w, by], [bx - 1, by - 2], [bx + w, by - 1], [bx + 2, by + 2]], i % 3 ? C4[2] : C4[3]);
+    p.poly([[bx - w, by], [bx - 1, by - 2], [bx + w, by - 1], [bx + 2, by + 2]], i % 3 ? C5[2] : C5[3]);
   }
 }
 function marshTree(p, x, base, h, width, colors, { seed = 1, lean = 8, crown: crown2 = true, detail = true } = {}) {
-  const C4 = fit(colors, 5), at8 = (dx, u) => [x + dx, base - h * u];
+  const C5 = fit(colors, 5), at8 = (dx, u) => [x + dx, base - h * u];
   const left = 0.24 + rand(seed, 0, 21) * 0.2, right = 0.2 + rand(seed, 0, 22) * 0.22;
   const lift2 = 0.76 + rand(seed, 0, 23) * 0.23, upper = 0.1 + rand(seed, 0, 24) * 0.16;
   const branches = [
@@ -3875,33 +4064,33 @@ function marshTree(p, x, base, h, width, colors, { seed = 1, lean = 8, crown: cr
     [at8(lean * 0.9, 0.85), at8(h * upper * 0.7, 0.95), at8(h * upper * 1.3, 1.04 + rand(seed, 2, 25) * 0.13)]
   ];
   branches.forEach((pts, i) => {
-    limb(p, pts, width * (0.5 - i * 0.07), 0.5, C4, { seed: seed + i, bark: detail });
+    limb(p, pts, width * (0.5 - i * 0.07), 0.5, C5, { seed: seed + i, bark: detail });
     const split = pts[pts.length - 2], end = pts.at(-1), dir = i % 2 ? 1 : -1;
     const twig = 5 + rand(seed, i, 26) * 9;
-    limb(p, [split, [split[0] - dir * 2, split[1] - twig * 0.6], [split[0] + dir * twig * 0.3, split[1] - twig]], width * 0.15, 0.3, C4, { bark: false });
+    limb(p, [split, [split[0] - dir * 2, split[1] - twig * 0.6], [split[0] + dir * twig * 0.3, split[1] - twig]], width * 0.15, 0.3, C5, { bark: false });
   });
-  limb(p, [at8(0, 0), at8(-width * 0.2, 0.2), at8(lean * 0.5, 0.48), at8(lean, 0.73), at8(lean * 0.7, 1.06)], width, width * 0.09, C4, { seed, bark: detail });
+  limb(p, [at8(0, 0), at8(-width * 0.2, 0.2), at8(lean * 0.5, 0.48), at8(lean, 0.73), at8(lean * 0.7, 1.06)], width, width * 0.09, C5, { seed, bark: detail });
   for (let i = 0; i < 5; i++) {
     const dir = i % 2 ? 1 : -1, reach = width * (0.8 + rand(seed, i, 10) * 1.3);
-    limb(p, [[x + dir * width * 0.15, base - h * 0.12], [x + dir * reach * 0.4, base - 4], [x + dir * reach, base + 1 + i % 2]], width * 0.28, 0.6, C4, { seed: seed + i + 31, bark: detail });
+    limb(p, [[x + dir * width * 0.15, base - h * 0.12], [x + dir * reach * 0.4, base - 4], [x + dir * reach, base + 1 + i % 2]], width * 0.28, 0.6, C5, { seed: seed + i + 31, bark: detail });
   }
   if (crown2) {
     for (const [i, pts] of branches.entries()) {
       const tip = pts.at(-1);
-      leafClump(p, tip[0] + 2, tip[1] + 3, h * (0.13 + i % 2 * 0.025), h * 0.075, C4, seed + i * 19);
-      if (rand(seed, i, 27) > 0.4) leafClump(p, tip[0] - 8, tip[1] + 8, h * 0.1, h * 0.05, C4, seed + i * 29);
+      leafClump(p, tip[0] + 2, tip[1] + 3, h * (0.13 + i % 2 * 0.025), h * 0.075, C5, seed + i * 19);
+      if (rand(seed, i, 27) > 0.4) leafClump(p, tip[0] - 8, tip[1] + 8, h * 0.1, h * 0.05, C5, seed + i * 29);
     }
   }
   if (!detail) return;
   const knotY = base - h * 0.34, knotX = x + lean * 0.2;
-  p.ellipse(knotX, knotY, width * 0.16, width * 0.24, C4[0]);
-  p.arc(knotX, knotY, width * 0.23, 1, 2, 4.6, C4[3]);
+  p.ellipse(knotX, knotY, width * 0.16, width * 0.24, C5[0]);
+  p.arc(knotX, knotY, width * 0.23, 1, 2, 4.6, C5[3]);
   const mossPaths = branches.slice(0, 2).map(contour);
   for (let i = 0; i < 9; i++) {
     const path = mossPaths[i < 4 ? 0 : 1], k = 0.28 + rand(seed, i, 12) * 0.49;
     const [bx, by] = path[Math.floor(k * (path.length - 1))];
     const length = 5 + rand(seed, i, 13) * 11;
-    const moss = [C4[1], C4[2], C4[3], mix(C4[3], C4[4], 0.2), C4[4]];
+    const moss = [C5[1], C5[2], C5[3], mix(C5[3], C5[4], 0.2), C5[4]];
     limb(p, [[bx, by], [bx - 1, by + length * 0.5], [bx + 2, by + length]], 2, 0.5, moss, { bark: false });
   }
 }
@@ -3932,61 +4121,61 @@ var W2 = 320;
 var H2 = 180;
 var D2 = meta2.duration;
 var FUNGI = [[22, 145, 6], [37, 149, 3.2], [284, 145, 7], [302, 149, 3.5]];
-function build3(C4, seed) {
+function build3(C5, seed) {
   const back = bake(W2, H2, (p) => {
-    sky(p, W2, H2, mix(C4[0], C4[3], 0.15), C4[2], { horizon: 140 });
+    sky(p, W2, H2, mix(C5[0], C5[3], 0.15), C5[2], { horizon: 140 });
     for (let i = 0; i < 9; i++) {
       const x = i * 42 - 5 + rand(seed, i, 1) * 22, h = 82 + rand(seed, i, 2) * 38;
-      const far = [C4[0], C4[1], mix(C4[1], C4[2], 0.36), mix(C4[1], C4[2], 0.48), C4[2]];
+      const far = [C5[0], C5[1], mix(C5[1], C5[2], 0.36), mix(C5[1], C5[2], 0.48), C5[2]];
       marshTree(p, x, 133, h, 6 + rand(seed, i, 3) * 3, far, { seed: seed + i * 17, lean: (rand(seed, i, 4) - 0.5) * 23, detail: false });
     }
-    const mid = [C4[0], C4[1], C4[2], mix(C4[2], C4[3], 0.3), C4[3]];
+    const mid = [C5[0], C5[1], C5[2], mix(C5[2], C5[3], 0.3), C5[3]];
     marshTree(p, 76, 139, 110, 11, mid, { seed: seed + 40, lean: -12, detail: false });
     marshTree(p, 249, 137, 98, 12, mid, { seed: seed + 71, lean: 9, detail: false });
     const bank = contour([[0, 130], [30, 128], [66, 137], [102, 132], [151, 135], [196, 129], [239, 133], [279, 126], [320, 131]]);
-    p.poly([...bank, [320, 150], [0, 150]], C4[1]);
+    p.poly([...bank, [320, 150], [0, 150]], C5[1]);
     for (let i = 0; i < 65; i++) {
       const x = rand(seed, i, 3) * W2, y = 129 + rand(seed, i, 4) * 20;
-      p.rect(x, y, 2 + rand(seed, i, 5) * 12, 1, C4[2]);
+      p.rect(x, y, 2 + rand(seed, i, 5) * 12, 1, C5[2]);
     }
     for (const [x, y] of [[78, 134], [112, 144], [238, 136], [260, 142]]) {
-      p.ellipse(x, y, 5, 1.3, C4[3]);
-      p.line(x, y, x + 4, y, C4[2]);
+      p.ellipse(x, y, 5, 1.3, C5[3]);
+      p.line(x, y, x + 4, y, C5[2]);
     }
-    const wood = [C4[0], mix(C4[0], C4[2], 0.65), C4[2], C4[3], C4[4]];
+    const wood = [C5[0], mix(C5[0], C5[2], 0.65), C5[2], C5[3], C5[4]];
     marshTree(p, 12, 150, 143, 23, wood, { seed: seed + 7, lean: 13 });
     marshTree(p, 309, 150, 151, 27, wood, { seed: seed + 29, lean: -11 });
     limb(p, [[19, 143], [28, 136], [39, 139], [43, 148]], 6, 1, wood, { seed });
     limb(p, [[302, 144], [291, 133], [279, 137], [274, 149]], 7, 1, wood, { seed: seed + 1 });
   });
   const floor = bake(W2, H2, (p) => {
-    p.rect(0, 150, W2, 12, C4[1]);
-    const stone4 = [C4[0], C4[1], C4[2], C4[3], C4[4]];
+    p.rect(0, 150, W2, 12, C5[1]);
+    const stone4 = [C5[0], C5[1], C5[2], C5[3], C5[4]];
     for (let i = 0, x = -4; x < W2; i++) {
       const w = 12 + Math.floor(rand(seed, i, 31) * 15);
-      rock(p, x + w / 2, 156, w * 0.67, 6, stone4, { seed: seed + i * 13, moss: [C4[2], C4[3]] });
-      p.rect(x, 150, w, 2, C4[2]);
-      p.line(x, 150, x + w - 2, 150, C4[3]);
+      rock(p, x + w / 2, 156, w * 0.67, 6, stone4, { seed: seed + i * 13, moss: [C5[2], C5[3]] });
+      p.rect(x, 150, w, 2, C5[2]);
+      p.line(x, 150, x + w - 2, 150, C5[3]);
       x += w;
     }
-    p.rect(0, 162, W2, 18, C4[1]);
+    p.rect(0, 162, W2, 18, C5[1]);
     for (let i = 0; i < 42; i++) {
       const x = rand(seed, i, 8) * W2, y = 164 + rand(seed, i, 9) * 14;
-      p.rect(x, y, 3 + rand(seed, i, 10) * 8, 1, C4[2]);
+      p.rect(x, y, 3 + rand(seed, i, 10) * 8, 1, C5[2]);
     }
-    for (const [x, y, s] of FUNGI) mushroom(p, x, y, s, C4);
-    for (const [i, x] of [8, 28, 291, 312].entries()) rock(p, x, 152, 9, 5, stone4, { seed: seed + i * 21, moss: [C4[3], C4[4]] });
-    for (const x of [8, 43, 275, 314]) fern(p, x, 151, 3, C4, seed + x);
+    for (const [x, y, s] of FUNGI) mushroom(p, x, y, s, C5);
+    for (const [i, x] of [8, 28, 291, 312].entries()) rock(p, x, 152, 9, 5, stone4, { seed: seed + i * 21, moss: [C5[3], C5[4]] });
+    for (const x of [8, 43, 275, 314]) fern(p, x, 151, 3, C5, seed + x);
     for (let i = 0; i < 24; i++) {
       const x = i < 12 ? 2 + i * 3 : 283 + (i - 12) * 3, h = 4 + rand(seed, i, 11) * 11;
-      p.line(x, 179, x + 2, 179 - h, C4[3]);
-      if (i % 4 === 0) p.rect(x + 1, 178 - h, 2, 4, C4[4]);
+      p.line(x, 179, x + 2, 179 - h, C5[3]);
+      if (i % 4 === 0) p.rect(x + 1, 178 - h, 2, 4, C5[4]);
     }
   });
   return { back, floor };
 }
 function create2(o) {
-  const C4 = fit(o.palette, 8), seed = o.seed ?? 1, L3 = build3(C4, seed);
+  const C5 = fit(o.palette, 8), seed = o.seed ?? 1, L4 = build3(C5, seed);
   let t = 0;
   return {
     update(dt) {
@@ -3994,33 +4183,33 @@ function create2(o) {
     },
     draw(p) {
       const u = t % D2 / D2, ph = u * TAU;
-      blit(p, L3.back);
+      blit(p, L4.back);
       mist(p, t % D2, D2, { y0: 102, y1: 141, color: "#93b9b0", seed, bands: 2, alpha: 0.075 });
       for (let i = 0; i < 5; i++) {
         const x = 69 + i * 42 + Math.sin(ph + i * 2) * 10, y = 89 + i % 3 * 13 + Math.cos(ph * 2 + i) * 5;
         const a = 0.55 + 0.25 * Math.sin(ph * 2 + i);
-        p.glow(x, y, 9, C4[6], a * 0.28);
-        p.disc(x, y, 1.8, C4[6], a * 0.65);
-        p.dot(x, y - 1, C4[7], a);
-        p.dot(x - 1, y + 2, C4[5], a * 0.4);
-        p.line(x - 3, 140 + i % 2 * 3, x + 3, 140 + i % 2 * 3, C4[5], a * 0.35);
+        p.glow(x, y, 9, C5[6], a * 0.28);
+        p.disc(x, y, 1.8, C5[6], a * 0.65);
+        p.dot(x, y - 1, C5[7], a);
+        p.dot(x - 1, y + 2, C5[5], a * 0.4);
+        p.line(x - 3, 140 + i % 2 * 3, x + 3, 140 + i % 2 * 3, C5[5], a * 0.35);
       }
-      blit(p, L3.floor);
+      blit(p, L4.floor);
       for (let i = 0; i < FUNGI.length; i++) {
         const [x, y, s] = FUNGI[i];
-        p.glow(x, y - s * 2, 14, C4[6], 0.07 + 0.045 * Math.sin(ph * 2 + i));
+        p.glow(x, y - s * 2, 14, C5[6], 0.07 + 0.045 * Math.sin(ph * 2 + i));
         for (let j = 0; j < 4; j++) {
           const q = (u * 2 + j / 4 + i * 0.19) % 1;
           const px = x + Math.sin(ph * 2 + j * 2 + i) * 6, py = y - s * 2 - q * 28;
-          p.dot(px, py, C4[7], Math.sin(q * Math.PI) * 0.7);
+          p.dot(px, py, C5[7], Math.sin(q * Math.PI) * 0.7);
         }
       }
       for (let i = 0; i < 8; i++) {
         const q = (u * 3 + i / 8) % 1, x = 50 + i * 30, y = 169 + i % 3 * 3;
-        if (q < 0.16) p.dot(x, y - Math.sin(q / 0.16 * Math.PI) * 2, C4[5], Math.sin(q / 0.16 * Math.PI) * 0.8);
+        if (q < 0.16) p.dot(x, y - Math.sin(q / 0.16 * Math.PI) * 2, C5[5], Math.sin(q / 0.16 * Math.PI) * 0.8);
         for (let j = 0; j < 24; j++) {
           const a = j / 24 * TAU;
-          p.dot(x + Math.cos(a) * (1 + q * 7), y + Math.sin(a) * (0.5 + q * 1.4), C4[4], Math.sin(q * Math.PI) * 0.65);
+          p.dot(x + Math.cos(a) * (1 + q * 7), y + Math.sin(a) * (0.5 + q * 1.4), C5[4], Math.sin(q * Math.PI) * 0.65);
         }
       }
     }
@@ -4127,7 +4316,7 @@ function bridge(p, seed) {
     p.rect(x, yy, 2 + rand(seed, i, 3) * 3, 1, ROCK[3]);
   }
 }
-function build4(C4, o) {
+function build4(C5, o) {
   const seed = o.seed ?? 1;
   const base = bake(W3, H3, (p) => {
     for (let y = 0; y < H3; y++) {
@@ -4198,7 +4387,7 @@ function build4(C4, o) {
   return { base, mid, floor, fore };
 }
 function create3(o) {
-  const C4 = fit(o.palette, 7), L3 = build4(C4, o);
+  const C5 = fit(o.palette, 7), L4 = build4(C5, o);
   let t = 0;
   return {
     update(dt) {
@@ -4206,21 +4395,21 @@ function create3(o) {
     },
     draw(p) {
       const tt = t % D3, ph = tt / D3 * TAU;
-      blit(p, L3.base);
+      blit(p, L4.base);
       mist(p, tt, D3, { y0: 78, y1: 138, color: "#e08a58", seed: (o.seed ?? 1) + 8, bands: 2, alpha: 0.055 });
-      blit(p, L3.mid);
+      blit(p, L4.mid);
       for (let i = 0; i < 8; i++) {
         const x = i < 4 ? 34 : 288, y = 70 + (tt * 40 + i * 17) % 78, j = Math.sin(tt * 9 + i) * 2;
         p.dot(x + j, y, HOT2[5], 0.6);
         if (i % 2) p.glow(x + j, y, 5, HOT2[3], 0.16);
       }
-      blit(p, L3.floor);
+      blit(p, L4.floor);
       p.glow(34, 148, 34, HOT2[3], 0.15 + 0.04 * Math.sin(ph * 3));
       p.glow(288, 148, 36, HOT2[3], 0.15 + 0.04 * Math.sin(ph * 3 + 1.2));
       p.glow(160, 152, 60, HOT2[2], 0.06 + 0.02 * Math.sin(ph * 2));
       embers(p, tt, D3, { count: 22, color: "#ff9a3c", seed: (o.seed ?? 1) + 3, y0: 150, y1: 48 });
       motes(p, tt, D3, { count: 18, color: "#ffdca8", seed: (o.seed ?? 1) + 7, y0: 24, y1: 144 });
-      blit(p, L3.fore);
+      blit(p, L4.fore);
     }
   };
 }
@@ -4335,10 +4524,10 @@ var Grid = class {
   /** A line of discs, r may be fn(u): tails, tentacles, legs. c may be fn(u, v) with v 0 center .. 1 edge. */
   tube(pts, r, c, a = 1) {
     for (let k = 1; k < pts.length; k++) {
-      const [ax, ay] = pts[k - 1], [bx, by] = pts[k], L3 = Math.max(1, Math.hypot(bx - ax, by - ay));
-      for (let s = 0; s <= L3; s += 0.5) {
-        const u = (k - 1 + s / L3) / (pts.length - 1), rr = typeof r === "function" ? r(u) : r;
-        const x = ax + (bx - ax) * s / L3, y = ay + (by - ay) * s / L3;
+      const [ax, ay] = pts[k - 1], [bx, by] = pts[k], L4 = Math.max(1, Math.hypot(bx - ax, by - ay));
+      for (let s = 0; s <= L4; s += 0.5) {
+        const u = (k - 1 + s / L4) / (pts.length - 1), rr = typeof r === "function" ? r(u) : r;
+        const x = ax + (bx - ax) * s / L4, y = ay + (by - ay) * s / L4;
         if (rr < 0.75) {
           this.set(x, y, typeof c === "function" ? c(u, 0) : c, a);
           continue;
@@ -4371,25 +4560,25 @@ var Grid = class {
    * Scaled or turned sprites are resampled nearest-neighbour, so they stay hard pixels.
    */
   sprite(rows, pal, X, Y, { ax = 0, ay = 0, sx = 1, sy = 1, rot = 0, flip = false } = {}) {
-    const H5 = rows.length, W8 = rows[0].length, cache = {};
+    const H4 = rows.length, W7 = rows[0].length, cache = {};
     const col = (ch) => ch in cache ? cache[ch] : cache[ch] = pal[ch] === void 0 ? 0 : hex(pal[ch]);
     if (sx === 1 && sy === 1 && rot === 0) {
-      for (let r = 0; r < H5; r++)
-        for (let q = 0; q < W8; q++) {
-          const ch = rows[r][flip ? W8 - 1 - q : q];
+      for (let r = 0; r < H4; r++)
+        for (let q = 0; q < W7; q++) {
+          const ch = rows[r][flip ? W7 - 1 - q : q];
           if (ch === "." || ch === " ") continue;
           const c = col(ch);
-          if (c) this.set(Math.round(X - (flip ? W8 - 1 - ax : ax)) + q, Math.round(Y - ay) + r, c);
+          if (c) this.set(Math.round(X - (flip ? W7 - 1 - ax : ax)) + q, Math.round(Y - ay) + r, c);
         }
       return;
     }
     const cs = Math.cos(rot), sn = Math.sin(rot);
-    const R4 = Math.hypot(Math.max(ax, W8 - ax) * Math.abs(sx), Math.max(ay, H5 - ay) * Math.abs(sy)) + 1;
+    const R4 = Math.hypot(Math.max(ax, W7 - ax) * Math.abs(sx), Math.max(ay, H4 - ay) * Math.abs(sy)) + 1;
     this.shade(X - R4, Y - R4, X + R4, Y + R4, (x, y) => {
       const dx = x - X, dy = y - Y, u = (dx * cs + dy * sn) / sx, v = (-dx * sn + dy * cs) / sy;
       let q = Math.floor(ax + u), r = Math.floor(ay + v);
-      if (q < 0 || r < 0 || q >= W8 || r >= H5) return 0;
-      if (flip) q = W8 - 1 - q;
+      if (q < 0 || r < 0 || q >= W7 || r >= H4) return 0;
+      if (flip) q = W7 - 1 - q;
       const ch = rows[r][q];
       return ch === "." || ch === " " ? 0 : col(ch);
     });
@@ -4485,9 +4674,9 @@ function tongue(p, x, y, h, w, sx, t, D17, n, heat2, only = -1) {
   for (let li = 0; li < LAYERS.length; li++) {
     if (only >= 0 && li !== only) continue;
     const [lw, lh, ri] = LAYERS[li];
-    const H5 = h * lh, col = heat2[ri];
-    for (let r = 0; r <= H5; r++) {
-      const u = r / Math.max(1, H5);
+    const H4 = h * lh, col = heat2[ri];
+    for (let r = 0; r <= H4; r++) {
+      const u = r / Math.max(1, H4);
       const half = w * lw * Math.pow(1 - u, 0.85) * Math.min(1, (r + 1.5) / 3.5) + lnoise(t, D17, F1, r * 0.45, n) * 0.5;
       const cx = x + sx * u * u * lh + lnoise(t, D17, F2, r * 0.2, n + 7) * u * 1.1;
       if (half < 0.3) continue;
@@ -4576,13 +4765,13 @@ function pose(t, hop) {
 }
 function halfW(v, P3) {
   if (v < 0 || v > 1) return -1;
-  const { W: W8, H: H5, round } = P3;
+  const { W: W7, H: H4, round } = P3;
   if (v >= VC) {
     const q2 = (v - VC) / (1 - VC);
-    return W8 / 2 * Math.sqrt(1 - q2 * q2);
+    return W7 / 2 * Math.sqrt(1 - q2 * q2);
   }
-  const q = (VC - v) / VC, hb = v * H5, rc = 3;
-  let hw = W8 / 2 * Math.sqrt(Math.max(0, 1 - round * q * q));
+  const q = (VC - v) / VC, hb = v * H4, rc = 3;
+  let hw = W7 / 2 * Math.sqrt(Math.max(0, 1 - round * q * q));
   if (hb < rc) hw -= rc - Math.sqrt(rc * rc - (rc - hb) ** 2);
   return hw;
 }
@@ -4590,7 +4779,7 @@ var inside = (P3, x, y) => {
   const v = (P3.by - 1 - y) / P3.H, hw = halfW(v, P3);
   return hw >= 0 && Math.abs(x - P3.lean * v * P3.H) <= hw;
 };
-function body(g, C4, P3) {
+function body(g, C5, P3) {
   const yb = P3.by - 1, half = P3.W / 2 + 3;
   const cx = P3.lean * 0.45 * P3.H, cy = yb - P3.H * 0.5, lx = cx - P3.W * 0.24, ly = cy - P3.H * 0.36;
   const lit = (x, y, k) => inside(P3, lx + (x - lx) / k, ly + (y - ly) / k);
@@ -4606,12 +4795,12 @@ function body(g, C4, P3) {
     const ang = Math.atan2(y - cy, (x - cx) * (P3.H / P3.W));
     if (!inside(P3, x - 1.6, y - 1.6) && inside(P3, x - 0.7, y - 0.7) && ang > -2.75 && ang < -1.55) i = ang > -2.45 && ang < -1.8 ? 6 : 5, o.a = 1;
     if (i === 2 && inside(P3, x + 1, y + 1.2) && !inside(P3, x + 2, y + 2.4) && ang > 0.3 && ang < 1.5) i = 4;
-    return C4[i];
+    return C5[i];
   });
   const hx = Math.round(cx - P3.W * 0.27), hy = Math.round(cy - P3.H * 0.14);
-  if (inside(P3, hx - 1, hy) && inside(P3, hx + 1, hy + 1)) g.set(hx, hy, C4[6]), g.set(hx, hy + 1, C4[5]);
+  if (inside(P3, hx - 1, hy) && inside(P3, hx + 1, hy + 1)) g.set(hx, hy, C5[6]), g.set(hx, hy + 1, C5[5]);
 }
-function face(g, C4, P3, t) {
+function face(g, C5, P3, t) {
   const yb = P3.by - 1, ev = 0.47, ey = Math.round(yb - P3.H * ev), ex = Math.max(3, Math.round(P3.W * 0.16)), xc = Math.round(P3.lean * ev * P3.H);
   const air = P3.q >= 0, shut = P3.age < 0.16 && !air, blink = t > 0.22 && t < 0.29;
   const wind = t >= T_SQ && t < T_LIFT ? seg(t, T_SQ, T_UP) : 0, look2 = air ? P3.q < 0.45 ? -1 : P3.q > 0.7 ? 1 : 0 : 0;
@@ -4620,33 +4809,33 @@ function face(g, C4, P3, t) {
     const x = xc + side * ex - (side > 0 ? 1 : 0);
     if (shut) {
       const a = side < 0 ? 0 : 1, b = 1 - a;
-      g.set(x + a, ey - 1, C4[0]);
-      g.set(x + b, ey, C4[0]);
-      g.set(x + a, ey + 1, C4[0]);
+      g.set(x + a, ey - 1, C5[0]);
+      g.set(x + b, ey, C5[0]);
+      g.set(x + a, ey + 1, C5[0]);
       continue;
     }
     if (blink) {
-      g.set(x, ey + 1, C4[0]);
-      g.set(x + 1, ey + 1, C4[0]);
+      g.set(x, ey + 1, C5[0]);
+      g.set(x + 1, ey + 1, C5[0]);
       continue;
     }
     const top = ey + 2 - eh + look2;
-    for (let k = 0; k < eh; k++) g.set(x, top + k, C4[0]), g.set(x + 1, top + k, C4[0]);
-    g.set(x + (look2 > 0 ? 1 : 0), top + (look2 > 0 ? 1 : 0), C4[6]);
-    if (eh >= 4) g.set(x + 1, top + eh - 1, C4[2]);
+    for (let k = 0; k < eh; k++) g.set(x, top + k, C5[0]), g.set(x + 1, top + k, C5[0]);
+    g.set(x + (look2 > 0 ? 1 : 0), top + (look2 > 0 ? 1 : 0), C5[6]);
+    if (eh >= 4) g.set(x + 1, top + eh - 1, C5[2]);
   }
   const my = Math.round(yb - P3.H * 0.31);
-  if (air && P3.q < 0.75) g.set(xc, my, C4[0]), g.set(xc - 1, my, C4[0]), g.set(xc, my + 1, C4[1]), g.set(xc - 1, my + 1, C4[1]);
-  else if (!shut) g.set(xc, my, C4[1]), g.set(xc - 1, my, C4[1]);
+  if (air && P3.q < 0.75) g.set(xc, my, C5[0]), g.set(xc - 1, my, C5[0]), g.set(xc, my + 1, C5[1]), g.set(xc - 1, my + 1, C5[1]);
+  else if (!shut) g.set(xc, my, C5[1]), g.set(xc - 1, my, C5[1]);
 }
 var POP = 0.4;
-function bubbleIn(g, C4, P3, t) {
+function bubbleIn(g, C5, P3, t) {
   if (t > POP) return;
   const v = lerp(0.18, 0.86, ease.inQuad(t / POP)), hw = halfW(v, P3), x = P3.lean * v * P3.H - hw * lerp(0.35, 0.05, t / POP), y = P3.by - 1 - v * P3.H;
-  g.set(x, y, C4[6]);
-  g.set(x + 1, y, C4[5]);
-  g.set(x, y + 1, C4[5]);
-  g.set(x + 1, y + 1, C4[4]);
+  g.set(x, y, C5[6]);
+  g.set(x + 1, y, C5[5]);
+  g.set(x, y + 1, C5[5]);
+  g.set(x + 1, y + 1, C5[4]);
 }
 function droplet(i, o, age) {
   const r = rng(o.seed, i, 7), a = -Math.PI / 2 + r.range(-1.2, 1.2), sp = r.range(60, 118), size = r.chance(0.35) ? 1 : r.chance(0.7) ? 2 : 3;
@@ -4667,79 +4856,79 @@ function puddleR(t, P3) {
   return P3.W / 2 + 3 + 9 * Math.exp(-P3.age * 5) * (1 - Math.exp(-P3.age * 40)) * (t >= T_LAND || t < T_SQ ? 1 : 0);
 }
 function draw(p, time, o) {
-  const t = shift(time, D4, o.seed), C4 = fit(o.palette, 7), P3 = pose(t, o.hop), yb = P3.by - 1, age = P3.age;
+  const t = shift(time, D4, o.seed), C5 = fit(o.palette, 7), P3 = pose(t, o.hop), yb = P3.by - 1, age = P3.age;
   const g = GRID;
-  body(g, C4, P3);
-  face(g, C4, P3, t);
-  bubbleIn(g, C4, P3, t);
-  g.outline((x, y, nx, ny) => ny < 0 && nx <= 0 && y < yb - P3.H * 0.5 ? C4[1] : C4[0]);
+  body(g, C5, P3);
+  face(g, C5, P3, t);
+  bubbleIn(g, C5, P3, t);
+  g.outline((x, y, nx, ny) => ny < 0 && nx <= 0 && y < yb - P3.H * 0.5 ? C5[1] : C5[0]);
   g.draw(p);
   if (t >= POP && t < POP + 0.16) {
     const k = (t - POP) / 0.16, x = P3.lean * P3.H - halfW(0.86, P3) * 0.05, y = yb - P3.H - 0.5;
-    for (let a = 0; a < TAU; a += 0.6) p.dot(x + Math.cos(a) * (1 + k * 3), y + Math.sin(a) * (1 + k * 3) * 0.7, C4[6], 1.2 - k);
-    for (const s of [-1, 1]) p.dot(x + s * (1 + k * 4), y - 1 - k * 6 + k * k * 4, C4[5], 1.3 - k);
-    p.glow(x, y, 6, C4[5], 0.4 * (1 - k));
+    for (let a = 0; a < TAU; a += 0.6) p.dot(x + Math.cos(a) * (1 + k * 3), y + Math.sin(a) * (1 + k * 3) * 0.7, C5[6], 1.2 - k);
+    for (const s of [-1, 1]) p.dot(x + s * (1 + k * 4), y - 1 - k * 6 + k * k * 4, C5[5], 1.3 - k);
+    p.glow(x, y, 6, C5[5], 0.4 * (1 - k));
   }
   for (let i = 0; i < NDROP; i++) {
     const f = droplet(i, o, age);
     if (f.landed || inside(P3, f.x, f.y)) continue;
-    const sv = Math.hypot(f.vx, f.vy) || 1, ux = f.vx / sv, uy = f.vy / sv, L3 = Math.min(2.5, sv / 50);
-    p.line(f.x - ux * L3, f.y - uy * L3, f.x, f.y, C4[3]);
-    if (f.size >= 2) p.px(f.x - 1, f.y, C4[4]), p.px(f.x - 1, f.y + 1, C4[3]), p.px(f.x, f.y + 1, C4[2]);
-    if (f.size >= 3) p.px(f.x + 1, f.y, C4[3]), p.px(f.x - 1, f.y - 1, C4[4]), p.px(f.x, f.y - 1, C4[5]);
-    p.px(f.x, f.y, f.size >= 2 ? C4[6] : C4[5]);
-    p.glow(f.x, f.y, 5 + f.size, C4[4], 0.32);
+    const sv = Math.hypot(f.vx, f.vy) || 1, ux = f.vx / sv, uy = f.vy / sv, L4 = Math.min(2.5, sv / 50);
+    p.line(f.x - ux * L4, f.y - uy * L4, f.x, f.y, C5[3]);
+    if (f.size >= 2) p.px(f.x - 1, f.y, C5[4]), p.px(f.x - 1, f.y + 1, C5[3]), p.px(f.x, f.y + 1, C5[2]);
+    if (f.size >= 3) p.px(f.x + 1, f.y, C5[3]), p.px(f.x - 1, f.y - 1, C5[4]), p.px(f.x, f.y - 1, C5[5]);
+    p.px(f.x, f.y, f.size >= 2 ? C5[6] : C5[5]);
+    p.glow(f.x, f.y, 5 + f.size, C5[4], 0.32);
   }
-  cycle(t, D4, 7, o.seed * 13 + 1, (r) => r.range(1.2, 1.8), (ag, L3, r, i) => {
-    const k = ag / L3, x = r.range(-24, 24) + Math.sin(ag * 2.1 + i * 1.7) * 3, y = -2 - r.range(9, 17) * ag - 5 * ag * ag;
+  cycle(t, D4, 7, o.seed * 13 + 1, (r) => r.range(1.2, 1.8), (ag, L4, r, i) => {
+    const k = ag / L4, x = r.range(-24, 24) + Math.sin(ag * 2.1 + i * 1.7) * 3, y = -2 - r.range(9, 17) * ag - 5 * ag * ag;
     const a = Math.min(1, k * 4) * Math.min(1, (1 - k) * 2.5), tw = 0.6 + 0.4 * Math.sin(ag * 7 + i * 2.3), big = r.chance(0.35);
-    p.dot(x, y, tw > 0.8 ? C4[6] : C4[5], a);
-    if (big) p.dot(x + 1, y, C4[5], a), p.dot(x, y + 1, C4[4], a), p.dot(x + 1, y + 1, C4[4], a * 0.6);
-    p.glow(x, y, big ? 9 : 6, C4[5], (big ? 0.45 : 0.32) * a * tw);
+    p.dot(x, y, tw > 0.8 ? C5[6] : C5[5], a);
+    if (big) p.dot(x + 1, y, C5[5], a), p.dot(x, y + 1, C5[4], a), p.dot(x + 1, y + 1, C5[4], a * 0.6);
+    p.glow(x, y, big ? 9 : 6, C5[5], (big ? 0.45 : 0.32) * a * tw);
   });
   for (const [t0, dx] of DRIPS) {
     const a2 = wrap(t - t0, D4);
     if (a2 > 0.6) continue;
     const P0 = pose(t0, o.hop), f = toss(dx, P0.by - 0.5, 0, 12, a2, G, -1);
-    if (!f.landed) p.px(dx, f.y, C4[5]), p.px(dx, f.y - 1, C4[4]), p.glow(dx, f.y, 4, C4[4], 0.3);
+    if (!f.landed) p.px(dx, f.y, C5[5]), p.px(dx, f.y - 1, C5[4]), p.glow(dx, f.y, 4, C5[4], 0.3);
     else if (a2 - f.at < 0.14) {
       const k = (a2 - f.at) / 0.14;
-      for (const s2 of [-1, 1]) p.dot(dx + s2 * (1 + k * 3), -2 - k * 3 + k * k * 3, C4[5], 1.2 - k);
+      for (const s2 of [-1, 1]) p.dot(dx + s2 * (1 + k * 3), -2 - k * 3 + k * k * 3, C5[5], 1.2 - k);
     }
   }
   if (P3.q > 0.4 && P3.q < 0.64) {
     const k = Math.sin(Math.PI * seg(P3.q, 0.4, 0.64));
-    sparkle(p, P3.lean * 0.8 * P3.H - P3.W * 0.21, yb - P3.H * 0.8, 1 + 2.5 * k, C4[6], C4[5], 0.5 * k);
+    sparkle(p, P3.lean * 0.8 * P3.H - P3.W * 0.21, yb - P3.H * 0.8, 1 + 2.5 * k, C5[6], C5[5], 0.5 * k);
   }
   const cx = P3.lean * P3.H * 0.4, cy = yb - P3.H * 0.45, near = clamp(1 + P3.by / (o.hop * 1.1));
   const R4 = puddleR(t, P3), br = 0.9 + 0.1 * Math.sin(t / D4 * TAU * 2);
-  p.glow(cx * 0.5, -14, 64, C4[3], 0.3 * br);
-  p.glow(cx, cy, 30 + P3.W * 0.3, C4[4], 0.2);
-  p.glow(cx, cy + 3, 14, C4[5], 0.16);
-  p.glow(0, -2, R4 * 1.3 + 6, C4[4], 0.12 + 0.08 * near);
-  if (t >= T_LAND || t < T_SQ) p.glow(0, -3, 40, C4[5], 0.42 * Math.exp(-age * 9));
+  p.glow(cx * 0.5, -14, 64, C5[3], 0.3 * br);
+  p.glow(cx, cy, 30 + P3.W * 0.3, C5[4], 0.2);
+  p.glow(cx, cy + 3, 14, C5[5], 0.16);
+  p.glow(0, -2, R4 * 1.3 + 6, C5[4], 0.12 + 0.08 * near);
+  if (t >= T_LAND || t < T_SQ) p.glow(0, -3, 40, C5[5], 0.42 * Math.exp(-age * 9));
 }
 var DRIPS = [[1.02, -4], [1.18, 3]];
 function drawBack(p, time, o) {
-  const t = shift(time, D4, o.seed), C4 = fit(o.palette, 7), P3 = pose(t, o.hop), age = P3.age;
+  const t = shift(time, D4, o.seed), C5 = fit(o.palette, 7), P3 = pose(t, o.hop), age = P3.age;
   const R4 = puddleR(t, P3), hp = Math.min(2.4, 0.9 + R4 * 0.06);
   for (let x = Math.floor(-R4); x <= Math.ceil(R4); x++) {
     const d = Math.abs(x + 0.5) / R4;
     if (d > 1) continue;
     const top = -1 - Math.round(Math.sqrt(1 - d * d) * hp);
     for (let y = top; y <= 0; y++) {
-      let c = y === top ? C4[5] : y === 0 ? C4[2] : C4[4];
-      if (d > 0.88) c = y === top ? C4[4] : C4[3];
+      let c = y === top ? C5[5] : y === 0 ? C5[2] : C5[4];
+      if (d > 0.88) c = y === top ? C5[4] : C5[3];
       if (y === top && d < 0.88) {
         const n = lnoise(t, D4, 7, x * 0.18, 3) + lnoise(t, D4, 4, x * 0.07, 4) * 0.6;
-        if (n > 0.55) c = C4[6];
-      } else if (y === top + 1 && d < 0.8 && lnoise(t, D4, 3, x * 0.12, 5) > 0.3) c = C4[5];
+        if (n > 0.55) c = C5[6];
+      } else if (y === top + 1 && d < 0.8 && lnoise(t, D4, 3, x * 0.12, 5) > 0.3) c = C5[5];
       p.px(x, y, c);
     }
-    if (d > 0.96) p.px(x, top - 1, C4[1]);
+    if (d > 0.96) p.px(x, top - 1, C5[1]);
   }
-  cycle(t, D4, 4, o.seed * 17 + 3, (r) => r.range(0.45, 0.75), (ag, L3, r) => {
-    const x = r.range(-0.85, 0.85) * R4, k = ag / L3, rb = r.range(1.4, 2.6) * (0.3 + 0.7 * ease.outCubic(Math.min(1, k * 1.25)));
+  cycle(t, D4, 4, o.seed * 17 + 3, (r) => r.range(0.45, 0.75), (ag, L4, r) => {
+    const x = r.range(-0.85, 0.85) * R4, k = ag / L4, rb = r.range(1.4, 2.6) * (0.3 + 0.7 * ease.outCubic(Math.min(1, k * 1.25)));
     if (Math.abs(x) < P3.W / 2 + 1 && P3.q < 0) return;
     const sy = -1 - Math.round(Math.sqrt(Math.max(0, 1 - (x / R4) ** 2)) * hp);
     if (k < 0.85) {
@@ -4747,38 +4936,38 @@ function drawBack(p, time, o) {
         for (let xx = Math.floor(x - rb - 1); xx <= Math.ceil(x + rb + 1); xx++) {
           const dx = xx + 0.5 - x, dy = y + 0.5 - sy, dd = Math.hypot(dx, dy);
           if (dd > rb + 0.5) continue;
-          if (dd > rb - 0.7) p.px(xx, y, dx < 0 && dy < -rb * 0.3 ? C4[6] : C4[4]);
-          else p.blend(xx, y, C4[5], 0.3);
+          if (dd > rb - 0.7) p.px(xx, y, dx < 0 && dy < -rb * 0.3 ? C5[6] : C5[4]);
+          else p.blend(xx, y, C5[5], 0.3);
         }
-      p.glow(x, sy - rb * 0.5, rb * 2 + 3, C4[5], 0.2);
+      p.glow(x, sy - rb * 0.5, rb * 2 + 3, C5[5], 0.2);
     } else {
       const q = (k - 0.85) / 0.15;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0.6, -0.7], [-0.6, -0.7], [0, -1]]) p.dot(x + dx * (2 + 3 * q), sy + dy * (2 + 3 * q), C4[6], 1.2 - q);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0.6, -0.7], [-0.6, -0.7], [0, -1]]) p.dot(x + dx * (2 + 3 * q), sy + dy * (2 + 3 * q), C5[6], 1.2 - q);
     }
   });
   for (let i = 0; i < NDROP; i++) {
     const f = droplet(i, o, age);
     if (!f.landed || f.gone) continue;
     const x = Math.round(f.x), w = f.size + (f.splat > 0 ? 1 : 0);
-    for (let j = 0; j < w; j++) p.px(x - (w >> 1) + j, -1, j === 0 ? C4[5] : C4[4]);
-    if (f.size >= 2 && f.splat <= 0) p.px(x, -2, C4[5]), p.px(x - 1, -2, C4[4]);
-    p.px(x, 0, C4[3]);
+    for (let j = 0; j < w; j++) p.px(x - (w >> 1) + j, -1, j === 0 ? C5[5] : C5[4]);
+    if (f.size >= 2 && f.splat <= 0) p.px(x, -2, C5[5]), p.px(x - 1, -2, C5[4]);
+    p.px(x, 0, C5[3]);
     const dir = Math.sign(f.lx - f.x);
-    for (let j = 1; j < Math.min(8, Math.abs(f.lx - f.x)); j++) p.dot(x + dir * j, 0, C4[2], 0.7 - j * 0.08);
-    p.glow(x, -1, 5, C4[4], 0.25 * f.k + 0.1);
+    for (let j = 1; j < Math.min(8, Math.abs(f.lx - f.x)); j++) p.dot(x + dir * j, 0, C5[2], 0.7 - j * 0.08);
+    p.glow(x, -1, 5, C5[4], 0.25 * f.k + 0.1);
   }
   if (t >= T_LIFT && t < SNAP) {
     const bot = P3.by - 1, u = (t - T_LIFT) / (SNAP - T_LIFT);
     for (let y = Math.floor(bot); y < 0; y++) {
       const m = Math.sin((y - bot) / -bot * Math.PI);
-      p.px(-1, y, C4[4]);
-      if (m * u < 0.45) p.px(0, y, C4[3]);
+      p.px(-1, y, C5[4]);
+      if (m * u < 0.45) p.px(0, y, C5[3]);
     }
   } else if (t >= SNAP && t < SNAP + 0.3) {
     const a2 = t - SNAP, ys = pose(SNAP, o.hop).by - 1, f = toss(-1, ys * 0.45, 0, 0, a2, G * 1.3, -2);
-    if (!f.landed) p.px(-1, f.y, C4[5]), p.px(-1, f.y - 1, C4[3]);
+    if (!f.landed) p.px(-1, f.y, C5[5]), p.px(-1, f.y - 1, C5[3]);
     const nub = 3 * (1 - a2 / 0.12);
-    for (let j = 0; j < nub; j++) p.px(-1, P3.by + j, j === 0 ? C4[3] : C4[4]);
+    for (let j = 0; j < nub; j++) p.px(-1, P3.by + j, j === 0 ? C5[3] : C5[4]);
   }
 }
 
@@ -4828,7 +5017,7 @@ function tongue2(t) {
   }
   return 0;
 }
-function snake(g, C4, B3, t) {
+function snake(g, C5, B3, t) {
   g.clear();
   const hb = bob(t);
   for (let u = LEN; u >= 2; u -= 0.5) {
@@ -4837,10 +5026,10 @@ function snake(g, C4, B3, t) {
     for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) {
       const v = (y + 0.5 - cy) / r;
       if (Math.abs(v) > 1) continue;
-      let c = v < -0.5 ? C4[4] : v < 0.1 ? C4[3] : v < 0.45 ? C4[2] : v < 0.8 ? B3[1] : B3[0];
+      let c = v < -0.5 ? C5[4] : v < 0.1 ? C5[3] : v < 0.45 ? C5[2] : v < 0.8 ? B3[1] : B3[0];
       const dm = Math.abs((u + 2) % 7 - 3.5) / 3.5 + Math.abs(v + 0.25) / 0.55;
-      if (dm < 0.85 && v < 0.35 && u > 4) c = dm < 0.5 ? C4[1] : C4[2];
-      if (v < -0.62 && hump > 4.5 && dm >= 0.85) c = hump > 6 ? C4[6] : C4[5];
+      if (dm < 0.85 && v < 0.35 && u > 4) c = dm < 0.5 ? C5[1] : C5[2];
+      if (v < -0.62 && hump > 4.5 && dm >= 0.85) c = hump > 6 ? C5[6] : C5[5];
       if (v > 0.45 && v < 0.8 && Math.floor(u) % 3 === 0) c = B3[2];
       g.set(x, y, c);
     }
@@ -4850,45 +5039,45 @@ function snake(g, C4, B3, t) {
     const dx = (x - hx) / (x > hx ? 5.6 : 4.6), dy = (y - hy) / (3.6 - Math.max(0, x - hx) * 0.18);
     if (dx * dx + dy * dy > 1) return 0;
     if (dy > 0.55) return B3[1];
-    return dy < -0.3 ? dx < 0.3 ? C4[5] : C4[4] : C4[3];
+    return dy < -0.3 ? dx < 0.3 ? C5[5] : C5[4] : C5[3];
   });
-  g.line(hx - 1, hy + 1.5, hx + 5, hy + 1.2, C4[1]);
-  g.set(hx + 1, hy - 2, C4[0]);
+  g.line(hx - 1, hy + 1.5, hx + 5, hy + 1.2, C5[1]);
+  g.set(hx + 1, hy - 2, C5[0]);
   g.set(hx + 2, hy - 2, B3[2]);
   g.set(hx + 1, hy - 1, B3[2]);
-  g.set(hx + 2, hy - 1, C4[0]);
-  g.set(hx + 1, hy - 3, C4[6]);
-  g.set(hx + 5, hy - 1, C4[1]);
-  g.outline(C4[0]);
+  g.set(hx + 2, hy - 1, C5[0]);
+  g.set(hx + 1, hy - 3, C5[6]);
+  g.set(hx + 5, hy - 1, C5[1]);
+  g.outline(C5[0]);
 }
 function draw2(p, time, o) {
-  const t = shift(time, D5, o.seed), C4 = fit(o.palette, 7), B3 = fit(o.belly, 3), hb = bob(t);
+  const t = shift(time, D5, o.seed), C5 = fit(o.palette, 7), B3 = fit(o.belly, 3), hb = bob(t);
   const e = tongue2(t), tx = HEAD + 7.5, ty = -8.2 + hb;
   if (e > 0.05) {
-    const L3 = 7 * e, wig = Math.sin(t * 60) * 0.6 * e;
-    p.line(tx, ty, tx + L3, ty + wig, TONGUE);
-    if (L3 > 3) p.px(tx + L3 + 1, ty + wig - 1, TONGUE), p.px(tx + L3 + 1, ty + wig + 1, TONGUE);
+    const L4 = 7 * e, wig = Math.sin(t * 60) * 0.6 * e;
+    p.line(tx, ty, tx + L4, ty + wig, TONGUE);
+    if (L4 > 3) p.px(tx + L4 + 1, ty + wig - 1, TONGUE), p.px(tx + L4 + 1, ty + wig + 1, TONGUE);
   }
   const g = GRID2;
-  snake(g, C4, B3, t);
+  snake(g, C5, B3, t);
   g.draw(p);
   const sw = SWARM.begin(t);
-  cycle(t, D5, 26, o.seed * 7 + 1, (r) => r.range(0.6, 1.1), (age, L3, r) => {
+  cycle(t, D5, 26, o.seed * 7 + 1, (r) => r.range(0.6, 1.1), (age, L4, r) => {
     const born = wrap(t - age, D5), m = r.int(0, 2), u = (Math.PI + W4 * born + m * TAU) / K;
     if (u < 18 || u > LEN - 10) return;
     const x = HEAD - u + r.range(-2, 2) - r.range(6, 16) * age;
-    sw.add(P.SMOKE, x, -0.5 - age * r.range(3, 8), 0, 0, age, L3, DUST2, r.range(1.8, 3.4));
+    sw.add(P.SMOKE, x, -0.5 - age * r.range(3, 8), 0, 0, age, L4, DUST2, r.range(1.8, 3.4));
   });
   sw.draw(p);
   p.glow(HEAD + 3.5, -11 + hb, 4, B3[2], 0.35);
 }
 function drawBack2(p, time, o) {
-  const t = shift(time, D5, o.seed), C4 = fit(o.palette, 7);
+  const t = shift(time, D5, o.seed), C5 = fit(o.palette, 7);
   for (let u = 2; u <= LEN; u += 2) {
     const h = lift(u, t), r = radius(u);
-    shadow(p, HEAD - u, -0.2, 2.2 + r * 0.4, 1.2, C4[0], 0.5 * (1 - clamp(h / 10)) + 0.1);
+    shadow(p, HEAD - u, -0.2, 2.2 + r * 0.4, 1.2, C5[0], 0.5 * (1 - clamp(h / 10)) + 0.1);
   }
-  shadow(p, HEAD + 2, -0.2, 5, 1.2, C4[0], 0.35);
+  shadow(p, HEAD + 2, -0.2, 5, 1.2, C5[0], 0.35);
 }
 
 // ../pixelfx/src/fx/critters/frog.js
@@ -4960,7 +5149,7 @@ function fly2(t) {
   }
   return home;
 }
-function frog(g, C4, Bl, Pz, t) {
+function frog(g, C5, Bl, Pz, t) {
   g.clear();
   const cs = Math.cos(Pz.rot), sn = Math.sin(Pz.rot), sx = 1 + Pz.sq * -0.6, sy = 1 + Pz.sq;
   const local = (x, y) => {
@@ -4975,59 +5164,59 @@ function frog(g, C4, Bl, Pz, t) {
     if (!inBody(u, v) && !inEye(u, v)) return 0;
     if (inEye(u, v)) {
       const d = Math.hypot(u - 5.5, v - 13.2 * -1);
-      if (Pz.shut) return v < -13.2 ? C4[4] : C4[3];
-      if (Math.abs(v + 13) < 0.7 && Math.abs(u - 6) < 1.8) return C4[0];
+      if (Pz.shut) return v < -13.2 ? C5[4] : C5[3];
+      if (Math.abs(v + 13) < 0.7 && Math.abs(u - 6) < 1.8) return C5[0];
       if (u < 4.7 && v < -14) return EYE[2];
       return d < 2.4 ? EYE[1] : EYE[0];
     }
     if (v > -5 && u > -6) return v > -3 ? Bl[1] : Bl[2];
-    for (const [px, py, r] of [[-5, -10, 1.6], [0, -11.5, 1.3], [-8, -7, 1.2], [3, -12.5, 0.9]]) if (Math.hypot(u - px, v - py) < r) return C4[2];
-    if (!inBody(u + 2, v + 2.4)) return C4[2];
-    return lit(u, v, 0.5) ? C4[5] : lit(u, v, 0.8) ? C4[4] : C4[3];
+    for (const [px, py, r] of [[-5, -10, 1.6], [0, -11.5, 1.3], [-8, -7, 1.2], [3, -12.5, 0.9]]) if (Math.hypot(u - px, v - py) < r) return C5[2];
+    if (!inBody(u + 2, v + 2.4)) return C5[2];
+    return lit(u, v, 0.5) ? C5[5] : lit(u, v, 0.8) ? C5[4] : C5[3];
   });
   const legs = [];
   if (Pz.leg < 0.5) {
-    g.ellipse(-7.5, -4.5 + (1 - sy) * 3, 5, 3.6, (nx, ny) => nx * -0.6 + ny * -0.8 > 0.35 ? C4[4] : ny > 0.4 ? C4[2] : C4[3]);
+    g.ellipse(-7.5, -4.5 + (1 - sy) * 3, 5, 3.6, (nx, ny) => nx * -0.6 + ny * -0.8 > 0.35 ? C5[4] : ny > 0.4 ? C5[2] : C5[3]);
     legs.push([[-4, -1.5], [-9, -1], [-3, -0.5], [4, -0.5]]);
   } else {
     const ex = -8 - 10 * Pz.leg, ey = 4 + 6 * Pz.leg;
     legs.push([[-6, -5], [-10, 0], [ex, ey], [ex - 5, ey + 2]]);
   }
-  for (const L3 of legs) {
-    g.tube(L3, (u) => lerp(2, 0.7, u), (u, v) => v > 0.55 ? C4[2] : u > 0.66 ? C4[3] : C4[4]);
-    const [fx, fy] = L3[L3.length - 1], [px, py] = L3[L3.length - 2], dx = fx - px, dy = fy - py, l = Math.hypot(dx, dy) || 1;
-    for (const k of [-1, 0, 1]) g.line(fx, fy, fx + dx / l * 2 - dy / l * k * 1.6, fy + dy / l * 2 + dx / l * k * 1.6, C4[3]);
+  for (const L4 of legs) {
+    g.tube(L4, (u) => lerp(2, 0.7, u), (u, v) => v > 0.55 ? C5[2] : u > 0.66 ? C5[3] : C5[4]);
+    const [fx, fy] = L4[L4.length - 1], [px, py] = L4[L4.length - 2], dx = fx - px, dy = fy - py, l = Math.hypot(dx, dy) || 1;
+    for (const k of [-1, 0, 1]) g.line(fx, fy, fx + dx / l * 2 - dy / l * k * 1.6, fy + dy / l * 2 + dx / l * k * 1.6, C5[3]);
   }
   if (!Pz.shut) {
     const [gx, gy] = [4.6, -14.4], X = gx * cs - (gy + 7) * sn * 1, Y = gx * sn + (gy + 7) * cs - 7;
-    g.set(X, Y, C4[6]);
+    g.set(X, Y, C5[6]);
   }
   for (let u = 3; u <= 11; u++) {
     const v = -7.8 + (u - 3) * 0.05, X = u * sx * cs - (v + 7) * sy * sn, Y = u * sx * sn + (v + 7) * sy * cs - 7;
-    g.set(X, Y, C4[1]);
+    g.set(X, Y, C5[1]);
   }
   const fl = Pz.air ? [[7, -4], [9, -1]] : [[7, -4], [8, -0.5]];
-  g.line(fl[0][0], fl[0][1], fl[1][0], fl[1][1], C4[3]);
-  g.set(fl[1][0] + 1, fl[1][1], C4[3]);
-  g.set(fl[1][0] - 1, fl[1][1], C4[3]);
+  g.line(fl[0][0], fl[0][1], fl[1][0], fl[1][1], C5[3]);
+  g.set(fl[1][0] + 1, fl[1][1], C5[3]);
+  g.set(fl[1][0] - 1, fl[1][1], C5[3]);
   if (Pz.throat > 0.05) {
     const r = 0.8 + 2.8 * Pz.throat, cx = 7, cy = -5.2 + r * 0.25;
-    g.ellipse(cx, cy, r * 1.1, r, (nx, ny) => nx * -0.6 + ny * -0.8 > 0.55 ? Bl[2] : ny > 0.5 ? Bl[1] : mix(Bl[2], C4[5], 0.4), 0.9);
-    g.set(cx - r * 0.4, cy - r * 0.45, C4[6]);
+    g.ellipse(cx, cy, r * 1.1, r, (nx, ny) => nx * -0.6 + ny * -0.8 > 0.55 ? Bl[2] : ny > 0.5 ? Bl[1] : mix(Bl[2], C5[5], 0.4), 0.9);
+    g.set(cx - r * 0.4, cy - r * 0.45, C5[6]);
   }
-  g.outline(C4[0]);
+  g.outline(C5[0]);
 }
 function draw3(p, time, o) {
-  const t = shift(time, D6, o.seed), C4 = fit(o.palette, 7), Bl = fit(o.belly, 3), Pz = pose2(t);
+  const t = shift(time, D6, o.seed), C5 = fit(o.palette, 7), Bl = fit(o.belly, 3), Pz = pose2(t);
   const g = GRID3;
-  frog(g, C4, Bl, Pz, t);
+  frog(g, C5, Bl, Pz, t);
   g.draw(p, 1, 0, Math.round(Pz.by));
   const ts = (t - T_SNAP + 0.06) / 0.14;
   if (ts > 0 && ts < 1) {
     const f2 = fly2(T_SNAP - 1e-3), e = Math.sin(Math.PI * ts), mx = 11, my = Pz.by - 8;
     const x1 = lerp(mx, f2[0], e), y1 = lerp(my, f2[1], e);
     p.line(mx, my, x1, y1, TONGUE2);
-    p.line(mx, my + 1, x1, y1 + 1, mix(TONGUE2, C4[0], 0.4));
+    p.line(mx, my + 1, x1, y1 + 1, mix(TONGUE2, C5[0], 0.4));
     p.circle(x1, y1, 1.4, TONGUE2);
   }
   const f = fly2(t);
@@ -5043,10 +5232,10 @@ function draw3(p, time, o) {
   for (const [t0, n, pow] of [[T_UP2, 7, 0.6], [T_LAND2, 18, 1]]) {
     const age = wrap(t - t0, D6);
     for (let i = 0; i < n; i++) {
-      const r = rng(o.seed, i, t0 * 100), L3 = r.range(0.6, 1.1) * pow;
-      if (age > L3) continue;
+      const r = rng(o.seed, i, t0 * 100), L4 = r.range(0.6, 1.1) * pow;
+      if (age > L4) continue;
       const s = r.sign(), v = r.range(24, 70) * pow, x = s * (7 + v / 3.5 * (1 - Math.exp(-age * 3.5))), y = -1.5 - r.range(1, 5) * age;
-      sw.add(P.SMOKE, x, y, 0, 0, age, L3, DUST3, r.range(2.2, 4.2) * (0.65 + 0.35 * pow), 2);
+      sw.add(P.SMOKE, x, y, 0, 0, age, L4, DUST3, r.range(2.2, 4.2) * (0.65 + 0.35 * pow), 2);
     }
     if (pow === 1)
       for (let i = 0; i < 8; i++) {
@@ -5057,8 +5246,8 @@ function draw3(p, time, o) {
   sw.draw(p);
 }
 function drawBack3(p, time, o) {
-  const t = shift(time, D6, o.seed), C4 = fit(o.palette, 7), Pz = pose2(t), hgt = clamp(-Pz.by / HOP);
-  shadow(p, 0, -0.2, 13 * (1 - 0.35 * hgt), 1.6, C4[0], 0.6 - 0.3 * hgt);
+  const t = shift(time, D6, o.seed), C5 = fit(o.palette, 7), Pz = pose2(t), hgt = clamp(-Pz.by / HOP);
+  shadow(p, 0, -0.2, 13 * (1 - 0.35 * hgt), 1.6, C5[0], 0.6 - 0.3 * hgt);
 }
 
 // ../pixelfx/src/fx/critters/bat.js
@@ -5101,60 +5290,60 @@ function wingPts(F, s) {
   const hip = [s * 2, 3.5];
   return { sh, wr, tips, hip, poly: [sh, wr, tips[0], pull(tips[0], tips[1], 0.22), tips[1], pull(tips[1], tips[2], 0.22), tips[2], pull(tips[2], hip, 0.38), hip] };
 }
-function bat(g, C4, E, F, t) {
+function bat(g, C5, E, F, t) {
   g.clear();
   for (const s of [-1, 1]) {
     const w = wingPts(F, s), lead = (x, y) => {
-      const [ax, ay] = w.wr, [bx, by] = w.tips[0], dx = bx - ax, dy = by - ay, L3 = Math.hypot(dx, dy) || 1;
-      return Math.abs(((x - ax) * dy - (y - ay) * dx) / L3);
+      const [ax, ay] = w.wr, [bx, by] = w.tips[0], dx = bx - ax, dy = by - ay, L4 = Math.hypot(dx, dy) || 1;
+      return Math.abs(((x - ax) * dy - (y - ay) * dx) / L4);
     };
     g.poly(w.poly, (x, y) => {
       const near = Math.hypot(x - w.sh[0], y - w.sh[1]);
-      if (lead(x, y) < 1.2 && F.arm < 20) return C4[3];
-      return near < 4.5 ? C4[1] : C4[2];
+      if (lead(x, y) < 1.2 && F.arm < 20) return C5[3];
+      return near < 4.5 ? C5[1] : C5[2];
     });
-    g.line(w.sh[0], w.sh[1], w.wr[0], w.wr[1], C4[4]);
-    for (const tip of w.tips) g.line(w.wr[0], w.wr[1], tip[0], tip[1], (u) => u < 0.6 ? C4[4] : C4[3]);
-    g.set(w.wr[0], w.wr[1] - 1, C4[5]);
+    g.line(w.sh[0], w.sh[1], w.wr[0], w.wr[1], C5[4]);
+    for (const tip of w.tips) g.line(w.wr[0], w.wr[1], tip[0], tip[1], (u) => u < 0.6 ? C5[4] : C5[3]);
+    g.set(w.wr[0], w.wr[1] - 1, C5[5]);
   }
-  g.ellipse(0, 0.5, 3.8, 4.8, (nx, ny) => nx * -0.6 + ny * -0.8 > 0.45 ? C4[4] : nx * 0.6 + ny * 0.8 > 0.55 ? C4[2] : ny > 0.1 && Math.abs(nx) < 0.5 ? C4[4] : C4[3]);
+  g.ellipse(0, 0.5, 3.8, 4.8, (nx, ny) => nx * -0.6 + ny * -0.8 > 0.45 ? C5[4] : nx * 0.6 + ny * 0.8 > 0.55 ? C5[2] : ny > 0.1 && Math.abs(nx) < 0.5 ? C5[4] : C5[3]);
   for (const s of [-1, 1]) {
-    g.poly([[s * 0.6, -3.5], [s * 3.6, -9.5], [s * 3.8, -3]], s < 0 ? C4[4] : C4[3]);
-    g.line(s * 2.6, -4, s * 3.2, -7.5, C4[5]);
+    g.poly([[s * 0.6, -3.5], [s * 3.6, -9.5], [s * 3.8, -3]], s < 0 ? C5[4] : C5[3]);
+    g.line(s * 2.6, -4, s * 3.2, -7.5, C5[5]);
   }
   g.set(-2, -1, E[1]);
   g.set(1, -1, E[1]);
-  g.set(-1, 0, C4[1]);
-  g.set(0, 0, C4[1]);
-  g.set(-1, 1, C4[6]);
-  g.set(0, 1, C4[6]);
-  g.set(-2, 5, C4[3]);
-  g.set(1, 5, C4[3]);
-  g.outline(C4[0]);
+  g.set(-1, 0, C5[1]);
+  g.set(0, 0, C5[1]);
+  g.set(-1, 1, C5[6]);
+  g.set(0, 1, C5[6]);
+  g.set(-2, 5, C5[3]);
+  g.set(1, 5, C5[3]);
+  g.outline(C5[0]);
 }
 function draw4(p, time, o) {
-  const t = shift(time, D7, o.seed), C4 = fit(o.palette, 7), E = fit(o.eyes, 4), S = at(t), fi = frameAt(t), F = FRAMES[fi];
+  const t = shift(time, D7, o.seed), C5 = fit(o.palette, 7), E = fit(o.eyes, 4), S = at(t), fi = frameAt(t), F = FRAMES[fi];
   const X = Math.round(S.x), Y = Math.round(S.y + F.lift);
   for (let k = 2; k <= 16; k++) {
     const A2 = at(t - (k - 1) * 0.022), B22 = at(t - k * 0.022), u = 1 - k / 17;
     for (const ex of [-1.5, 1.5]) p.glowLine(A2.x + ex, A2.y - 0.5, B22.x + ex, B22.y - 0.5, 2.6, E[1], 0.16 * u);
   }
-  cycle(t, D7, 9, o.seed * 11 + 1, D7, (age, L3, r) => {
+  cycle(t, D7, 9, o.seed * 11 + 1, D7, (age, L4, r) => {
     const x = r.range(-50, 50) + Math.sin(age * 1.1 + r.next() * 6) * 3, y = r.range(-34, 34) + age * r.range(-2, 3);
-    const tw = Math.sin(age * 2.6 + r.next() * 6), a = Math.min(1, age * 2, (L3 - age) * 2) * (0.4 + 0.5 * tw);
-    p.dot(x, y, tw > 0.7 ? C4[6] : C4[5], a);
-    if (tw > 0.5) p.glow(x, y, 3, C4[5], 0.2 * a);
+    const tw = Math.sin(age * 2.6 + r.next() * 6), a = Math.min(1, age * 2, (L4 - age) * 2) * (0.4 + 0.5 * tw);
+    p.dot(x, y, tw > 0.7 ? C5[6] : C5[5], a);
+    if (tw > 0.5) p.glow(x, y, 3, C5[5], 0.2 * a);
   });
   const g = GRID4;
   if (fi === 2) {
-    bat(g, C4, E, FRAMES[1], t);
-    g.recolor((x, y, c) => mix(c, C4[4], 0.35));
+    bat(g, C5, E, FRAMES[1], t);
+    g.recolor((x, y, c) => mix(c, C5[4], 0.35));
     g.a.fill(0.35);
     g.draw(p, 1, X, Y - FRAMES[1].lift + F.lift);
   }
-  bat(g, C4, E, F, t);
+  bat(g, C5, E, F, t);
   g.draw(p, 1, X, Y);
-  p.glow(X - 3, Y - 6, 10, C4[5], 0.12);
+  p.glow(X - 3, Y - 6, 10, C5[5], 0.12);
   for (const ex of [-1.5, 1.5]) p.glow(X + ex, Y - 0.5, 7, E[1], 0.6), p.glow(X + ex, Y - 0.5, 2.5, E[2], 0.5);
   p.glow(X, Y, 22, E[0], 0.25);
   for (const g0 of [0.3, 1.5]) {
@@ -5189,12 +5378,12 @@ function at2(t, hover) {
   return { x: 34 * Math.sin(a), y: -hover - 10 * Math.sin(2 * a), vx: 34 * TAU / D8 * Math.cos(a), vy: -20 * TAU / D8 * Math.cos(2 * a) };
 }
 function draw5(p, time, o) {
-  const t = shift(time, D8, o.seed), C4 = fit(o.palette, 7), S = at2(t, o.hover);
-  const heat2 = [C4[6], C4[6], C4[5], C4[5], C4[4], C4[4], C4[3], C4[3], C4[3]];
+  const t = shift(time, D8, o.seed), C5 = fit(o.palette, 7), S = at2(t, o.hover);
+  const heat2 = [C5[6], C5[6], C5[5], C5[5], C5[4], C5[4], C5[3], C5[3], C5[3]];
   const lean = clamp(-S.vx / 80, -0.9, 0.9), stretch = clamp(S.vy / 120, -0.3, 0.4), X = S.x, Y = S.y;
-  cycle(t, D8, 30, o.seed * 7 + 1, (r) => r.range(0.3, 0.6), (age, L3, r) => {
+  cycle(t, D8, 30, o.seed * 7 + 1, (r) => r.range(0.3, 0.6), (age, L4, r) => {
     const S0 = at2(wrap(t - age, D8), o.hover), [x, y] = fly(S0.x + r.range(-3, 3), S0.y - r.range(0, 4), r.range(-8, 8), -r.range(6, 16), age, -40, 2.5);
-    firePuff(p, x, y, 1 - age / L3, r.range(1.2, 2.6), r.next() * 100, heat2);
+    firePuff(p, x, y, 1 - age / L4, r.range(1.2, 2.6), r.next() * 100, heat2);
   });
   const tails = [[-3.5, 13, 2.5, 3], [3.5, 14, 2.5, 7], [0, 20, 3.2, 11]];
   for (let li = 0; li < 4; li++)
@@ -5207,34 +5396,34 @@ function draw5(p, time, o) {
     const dx = x - X, dy = y - Y, ang = Math.atan2(dy, dx), rr = R4 + 0.7 * lnoise(t, D8, 16, ang * 1.6 + 10, 3) + (dy > 0 ? -0.6 : 0);
     const d = Math.hypot(dx, dy) / rr;
     if (d > 1) return 0;
-    return d < 0.42 ? C4[6] : d < 0.68 ? C4[5] : d < 0.88 ? C4[4] : C4[3];
+    return d < 0.42 ? C5[6] : d < 0.68 ? C5[5] : d < 0.88 ? C5[4] : C5[3];
   });
   const look2 = Math.round(clamp(S.vx / 60, -1, 1)), blink = wrap(t, D8) > 2.2 && wrap(t, D8) < 2.28;
   for (const s of [-1, 1]) {
     const ex = Math.round(X) + s * 2 - (s > 0 ? 0 : 1) + look2, ey = Math.round(Y) - 1;
-    if (blink) p.px(ex, ey + 1, C4[1]), p.px(ex + 1, ey + 1, C4[1]);
+    if (blink) p.px(ex, ey + 1, C5[1]), p.px(ex + 1, ey + 1, C5[1]);
     else {
-      for (let k = 0; k < 3; k++) p.px(ex, ey + k, C4[1]), p.px(ex + 1, ey + k, C4[1]);
-      p.px(ex + (look2 > 0 ? 1 : 0), ey, C4[6]);
+      for (let k = 0; k < 3; k++) p.px(ex, ey + k, C5[1]), p.px(ex + 1, ey + k, C5[1]);
+      p.px(ex + (look2 > 0 ? 1 : 0), ey, C5[6]);
     }
   }
-  p.px(Math.round(X) + look2, Math.round(Y) + 3, C4[2]);
-  p.px(Math.round(X) - 1 + look2, Math.round(Y) + 3, C4[2]);
+  p.px(Math.round(X) + look2, Math.round(Y) + 3, C5[2]);
+  p.px(Math.round(X) - 1 + look2, Math.round(Y) + 3, C5[2]);
   const sw = SWARM3.begin(t);
-  sw.ps.sparks = [C4[6], C4[5], C4[4], C4[3]];
-  cycle(t, D8, 26, o.seed * 7 + 2, (r) => r.range(0.8, 1.6), (age, L3, r) => {
+  sw.ps.sparks = [C5[6], C5[5], C5[4], C5[3]];
+  cycle(t, D8, 26, o.seed * 7 + 2, (r) => r.range(0.8, 1.6), (age, L4, r) => {
     const S0 = at2(wrap(t - age, D8), o.hover), s = r.next() * 100, [x, y] = fly(S0.x + r.range(-5, 5), S0.y - r.range(4, 12), r.range(-20, 20), -r.range(20, 45), age, -15, 1.6);
-    sw.add(P.EMBER, x + Math.sin(age * 2.3 + s) * 3 * Math.min(1, age), y, 0, 0, age, L3, C4[4], r.chance(0.3) ? 2 : 1, 0, s);
+    sw.add(P.EMBER, x + Math.sin(age * 2.3 + s) * 3 * Math.min(1, age), y, 0, 0, age, L4, C5[4], r.chance(0.3) ? 2 : 1, 0, s);
   });
   sw.draw(p);
   const fl = 0.85 + 0.15 * lnoise(t, D8, 22, 0, 9);
-  p.glow(X + lean * 3, Y - 6, 46 * fl, C4[4], 0.38);
-  p.glow(X, Y - 1, 13, C4[5], 0.35 * fl);
+  p.glow(X + lean * 3, Y - 6, 46 * fl, C5[4], 0.38);
+  p.glow(X, Y - 1, 13, C5[5], 0.35 * fl);
 }
 function drawBack4(p, time, o) {
-  const t = shift(time, D8, o.seed), C4 = fit(o.palette, 7), S = at2(t, o.hover), near = clamp(1 - (-S.y - 24) / 30);
-  shadow(p, S.x, 0, 7, 1.2, C4[0], 0.4);
-  for (let x = -24; x <= 24; x += 6) p.glow(S.x + x, -1, 16, C4[4], (0.08 + 0.1 * near) * (1 - Math.abs(x) / 32));
+  const t = shift(time, D8, o.seed), C5 = fit(o.palette, 7), S = at2(t, o.hover), near = clamp(1 - (-S.y - 24) / 30);
+  shadow(p, S.x, 0, 7, 1.2, C5[0], 0.4);
+  for (let x = -24; x <= 24; x += 6) p.glow(S.x + x, -1, 16, C5[4], (0.08 + 0.1 * near) * (1 - Math.abs(x) / 32));
 }
 
 // ../pixelfx/src/fx/critters/ghost.js
@@ -5269,7 +5458,7 @@ function halfW2(h) {
   if (h > top - R) return Math.sqrt(Math.max(0, R * R - (h - (top - R)) ** 2));
   return lerp(R + 2.2, R, (h / (top - R)) ** 0.7);
 }
-function sheet(g, C4, t, o, lagX) {
+function sheet(g, C5, t, o, lagX) {
   g.clear();
   const top = 2 * R + 9, ph = t / D9 * TAU * 2, NL2 = 4, HW = R + 2.2, LW = 2 * HW / NL2;
   const off = (h) => lagX * (1 - clamp(h / top)) ** 1.4;
@@ -5301,8 +5490,8 @@ function sheet(g, C4, t, o, lagX) {
     if (!any(x + 1.2, y + 1) && X > 2) i = 2;
     if (h > top - R - 2 && X < 1 && !any(x - 1.5, y - 1.5) && any(x - 0.6, y - 0.6)) i = 6;
     if (h < 1) {
-      const L3 = lobe(X);
-      if (L3.u > 0.1 || -h > L3.d - 1.2) i = Math.min(i, 3);
+      const L4 = lobe(X);
+      if (L4.u > 0.1 || -h > L4.d - 1.2) i = Math.min(i, 3);
     }
     if (h < 7 && h >= -0.5) {
       for (let j = 1; j < NL2; j++) {
@@ -5312,45 +5501,45 @@ function sheet(g, C4, t, o, lagX) {
       }
     }
     o2.a = h < 2 ? 0.86 : 0.95;
-    return C4[i];
+    return C5[i];
   });
   return { inside: inside2, off, top };
 }
 function draw6(p, time, o) {
-  const t = shift(time, D9, o.seed), C4 = fit(o.palette, 7), S = at3(t, o.hover), lagX = at3(t - 0.3, o.hover).x - S.x;
+  const t = shift(time, D9, o.seed), C5 = fit(o.palette, 7), S = at3(t, o.hover), lagX = at3(t - 0.3, o.hover).x - S.x;
   const g = GRID5;
-  const sh = sheet(g, C4, t, o, lagX), top = sh.top;
+  const sh = sheet(g, C5, t, o, lagX), top = sh.top;
   const look2 = wrap(t, D9) < 0.7 ? 0 : wrap(t, D9) < 1.3 ? 1 : wrap(t, D9) < 1.9 ? -1 : 0, blink = wrap(t, D9) > 1.95 && wrap(t, D9) < 2.03;
   const ey = -top + R - 1, mo = 0.5 + 0.5 * Math.sin(t / D9 * TAU * 2);
   for (const s of [-1, 1]) {
     const ex = s * 4 - (s > 0 ? 1 : 0) + look2;
-    if (blink) g.set(ex, ey + 2, C4[1]), g.set(ex + 1, ey + 2, C4[1]);
+    if (blink) g.set(ex, ey + 2, C5[1]), g.set(ex + 1, ey + 2, C5[1]);
     else {
-      for (let k = 0; k < 4; k++) g.set(ex, ey + k, C4[0]), g.set(ex + 1, ey + k, C4[0]);
-      g.set(ex + (look2 < 0 ? 0 : 1), ey, C4[2]);
+      for (let k = 0; k < 4; k++) g.set(ex, ey + k, C5[0]), g.set(ex + 1, ey + k, C5[0]);
+      g.set(ex + (look2 < 0 ? 0 : 1), ey, C5[2]);
     }
   }
   const my = ey + 6;
-  g.set(look2 - 1, my, C4[1]);
-  g.set(look2, my, C4[1]);
-  if (mo > 0.4) g.set(look2 - 1, my + 1, C4[0]), g.set(look2, my + 1, C4[0]);
-  g.outline((x, y, nx, ny) => ny > 0 ? C4[2] : C4[1], 0.95);
+  g.set(look2 - 1, my, C5[1]);
+  g.set(look2, my, C5[1]);
+  if (mo > 0.4) g.set(look2 - 1, my + 1, C5[0]), g.set(look2, my + 1, C5[0]);
+  g.outline((x, y, nx, ny) => ny > 0 ? C5[2] : C5[1], 0.95);
   g.draw(p, 1, S.x, S.y);
-  cycle(t, D9, 12, o.seed * 3 + 1, (r) => r.range(1, 1.7), (age, L3, r, i) => {
-    const S0 = at3(wrap(t - age, D9), o.hover), k = age / L3, x0 = S0.x + r.range(-10, 10), y0 = S0.y + 1.5;
+  cycle(t, D9, 12, o.seed * 3 + 1, (r) => r.range(1, 1.7), (age, L4, r, i) => {
+    const S0 = at3(wrap(t - age, D9), o.hover), k = age / L4, x0 = S0.x + r.range(-10, 10), y0 = S0.y + 1.5;
     const x = x0 + Math.sin(age * 2.2 + i) * 2.4, y = y0 + r.range(5, 11) * age - 3 * age * age;
     const a = Math.min(1, k * 6) * Math.min(1, (1 - k) * 2.2), tw = 0.6 + 0.4 * Math.sin(age * 8 + i * 1.7);
-    p.dot(x, y, tw > 0.8 ? C4[6] : C4[5], a);
-    if (r.chance(0.3)) p.dot(x, y - 1, C4[4], a * 0.7);
-    p.glow(x, y, 7, C4[4], 0.42 * a * tw);
+    p.dot(x, y, tw > 0.8 ? C5[6] : C5[5], a);
+    if (r.chance(0.3)) p.dot(x, y - 1, C5[4], a * 0.7);
+    p.glow(x, y, 7, C5[4], 0.42 * a * tw);
   });
-  p.glow(S.x, S.y - top * 0.55, 54, C4[3], 0.3);
-  p.glow(S.x - 3, S.y - top * 0.72, 14, C4[5], 0.12);
+  p.glow(S.x, S.y - top * 0.55, 54, C5[3], 0.3);
+  p.glow(S.x - 3, S.y - top * 0.72, 14, C5[5], 0.12);
 }
 function drawBack5(p, time, o) {
-  const t = shift(time, D9, o.seed), C4 = fit(o.palette, 7), S = at3(t, o.hover), hgt = clamp((-S.y - 8) / 16);
-  shadow(p, S.x, 0, 11 - 3 * hgt, 1.6, C4[0], 0.55 - 0.2 * hgt);
-  for (let x = -24; x <= 24; x += 6) p.glow(S.x + x, -1, 16, C4[4], 0.14 * (1 - Math.abs(x) / 34) * (1 - 0.4 * hgt));
+  const t = shift(time, D9, o.seed), C5 = fit(o.palette, 7), S = at3(t, o.hover), hgt = clamp((-S.y - 8) / 16);
+  shadow(p, S.x, 0, 11 - 3 * hgt, 1.6, C5[0], 0.55 - 0.2 * hgt);
+  for (let x = -24; x <= 24; x += 6) p.glow(S.x + x, -1, 16, C5[4], 0.14 * (1 - Math.abs(x) / 34) * (1 - 0.4 * hgt));
 }
 
 // ../pixelfx/src/fx/critters/eyeball.js
@@ -5409,19 +5598,19 @@ function veins(seed) {
   }
   return out;
 }
-function eye(g, C4, Fl, I, t, seed) {
+function eye(g, C5, Fl, I, t, seed) {
   g.clear();
-  const [lx, ly] = look(t), L3 = lid(t), V = veins(seed);
+  const [lx, ly] = look(t), L4 = lid(t), V = veins(seed);
   const lit = (x, y, k) => Math.hypot(-4 + (x + 4) / k, -4.5 + (y + 4.5) / k) <= R2;
   g.shade(-R2, -R2, R2, R2, (x, y) => {
     const d = Math.hypot(x, y);
     if (d > R2) return 0;
-    if (!(Math.hypot(x + 2, y + 2.2) <= R2)) return C4[2];
-    return lit(x, y, 0.5) ? C4[5] : lit(x, y, 0.8) ? C4[4] : C4[3];
+    if (!(Math.hypot(x + 2, y + 2.2) <= R2)) return C5[2];
+    return lit(x, y, 0.5) ? C5[5] : lit(x, y, 0.8) ? C5[4] : C5[3];
   });
   for (const pts of V) {
     const sh = pts.map(([x, y]) => [x + lx * 0.35 * (1 - Math.hypot(x, y) / R2), y + ly * 0.35 * (1 - Math.hypot(x, y) / R2)]);
-    for (let k = 1; k < sh.length; k++) g.line(sh[k - 1][0], sh[k - 1][1], sh[k][0], sh[k][1], k < 2 ? VEIN : mix(VEIN, C4[3], 0.45));
+    for (let k = 1; k < sh.length; k++) g.line(sh[k - 1][0], sh[k - 1][1], sh[k][0], sh[k][1], k < 2 ? VEIN : mix(VEIN, C5[3], 0.45));
   }
   const off = Math.hypot(lx, ly), fx = 1 - 0.32 * (Math.abs(lx) / R2) ** 1.4 * 3, fy = 1 - 0.32 * (Math.abs(ly) / R2) ** 1.4 * 3;
   const ir = 6.4, pr = 2 + 0.4 * Math.sin(t / D10 * TAU * 2);
@@ -5429,15 +5618,15 @@ function eye(g, C4, Fl, I, t, seed) {
     const dx = (x - lx) / (ir * fx), dy = (y - ly) / (ir * fy), d = Math.hypot(dx, dy);
     if (d > 1 || Math.hypot(x, y) > R2 - 0.5) return 0;
     const pd = Math.hypot((x - lx) / fx, (y - ly) / fy);
-    if (pd < pr) return C4[0];
+    if (pd < pr) return C5[0];
     if (d > 0.86) return I[0];
     const ang = Math.atan2(dy, dx), streak = Math.sin(ang * 9 + d * 4) > 0.5;
     if (d < 0.5) return streak ? I[4] : I[3];
     if (d < 0.7) return streak ? I[3] : I[2];
     return streak ? I[2] : I[1];
   });
-  if (L3 < 0.5) g.set(-4, -5, C4[5]), g.set(-3, -5, C4[5]), g.set(-4, -4, C4[5]), g.set(1, -2, C4[5]);
-  const up = lerp(-R2 + 3, R2 * 0.42, L3), dn = lerp(R2 - 2.2, R2 * 0.42, L3);
+  if (L4 < 0.5) g.set(-4, -5, C5[5]), g.set(-3, -5, C5[5]), g.set(-4, -4, C5[5]), g.set(1, -2, C5[5]);
+  const up = lerp(-R2 + 3, R2 * 0.42, L4), dn = lerp(R2 - 2.2, R2 * 0.42, L4);
   const flit = (x, y, k) => Math.hypot(-4 + (x + 4) / k, -5 + (y + 5) / k) <= R2 + 0.6;
   g.shade(-R2 - 1, -R2 - 1, R2 + 1, R2 + 1, (x, y) => {
     const d = Math.hypot(x, y);
@@ -5448,10 +5637,10 @@ function eye(g, C4, Fl, I, t, seed) {
     if (y > de) return y < de + 1.1 ? Fl[0] : tone === Fl[4] ? Fl[3] : tone;
     return 0;
   });
-  g.outline(C4[0]);
+  g.outline(C5[0]);
 }
 function draw7(p, time, o) {
-  const t = shift(time, D10, o.seed), C4 = fit(o.palette, 6), Fl = fit(o.flesh, 5), I = fit(o.iris, 5), S = at4(t, o.hover);
+  const t = shift(time, D10, o.seed), C5 = fit(o.palette, 6), Fl = fit(o.flesh, 5), I = fit(o.iris, 5), S = at4(t, o.hover);
   const ng = NERVE.clear();
   for (let s = 0; s <= 20; s += 0.5) {
     const B3 = at4(t - s * 0.035, o.hover), sw = 2.6 * (s / 20) ** 1.3 * Math.sin(t / D10 * TAU * 2 - s * 0.16), r = lerp(2, 0.6, s / 20);
@@ -5465,7 +5654,7 @@ function draw7(p, time, o) {
   ng.outline(Fl[0]);
   ng.draw(p);
   const g = GRID6;
-  eye(g, C4, Fl, I, t, o.seed);
+  eye(g, C5, Fl, I, t, o.seed);
   g.draw(p, 1, S.x, S.y);
   const [lx, ly] = look(t), snap = Math.max(...LOOKS2.map(([t0]) => Math.max(0, 1 - Math.abs(wrap(t - t0 + D10 / 2, D10) - D10 / 2) / 0.2)));
   const open = 1 - lid(t);
@@ -5635,10 +5824,10 @@ function draw8(p, time, o) {
   const open = jaw(t);
   if (open > 0) p.glow(X, Y + 8 + open * 0.5, 4 + open * 2, F[5], 0.25 * open);
   for (let i = 0; i < 9; i++) {
-    const r = rng(o.seed, i, 21), born = 1.98 + i * 0.03, age = wrap(t - born, D11), L3 = r.range(0.25, 0.45);
-    if (age >= L3) continue;
+    const r = rng(o.seed, i, 21), born = 1.98 + i * 0.03, age = wrap(t - born, D11), L4 = r.range(0.25, 0.45);
+    if (age >= L4) continue;
     const S0 = at5(born, o.hover), [x, y] = fly(S0.x + r.range(-3, 3), S0.y + 11, r.range(-22, 22), r.range(40, 75), age, -70, 3.5);
-    firePuff(p, x, y, 1 - age / L3, r.range(1.1, 2), r.next() * 100, heat2);
+    firePuff(p, x, y, 1 - age / L4, r.range(1.1, 2), r.next() * 100, heat2);
   }
   for (let li = 0; li < 4; li++)
     for (const f of tongues) if (f.front) tongue(p, X + f.x, Y + topY(f.x) + 1.5, height(f, t, k) * (1 + stretch), f.w, lick(f) * 0.6, t, D11, f.n, heat2, li);
@@ -5652,35 +5841,35 @@ function particles(p, t, o, heat2, F, back) {
   const sw = SWARM4.begin(t);
   sw.ps.sparks = [F[7], F[6], F[4], F[2]];
   if (back) {
-    cycle(t, D11, 15, o.seed * 7 + 1, (r) => r.range(1.7, 2.5), (age, L3, r) => {
+    cycle(t, D11, 15, o.seed * 7 + 1, (r) => r.range(1.7, 2.5), (age, L4, r) => {
       const S0 = at5(wrap(t - age, D11), o.hover), x0 = S0.x + r.range(-6, 6), y0 = S0.y - 22 - r.range(0, 8);
       const [x, y] = fly(x0, y0, r.range(-5, 5), -r.range(16, 26), age, -12, 1.2);
-      sw.add(P.SMOKE, x + Math.sin(age * 1.3 + r.next() * 6) * 3 * age, y, 0, 0, age, L3, mix(hex("#5b5566"), F[2], 0.3), r.range(2.8, 4.4), PF.BIG);
+      sw.add(P.SMOKE, x + Math.sin(age * 1.3 + r.next() * 6) * 3 * age, y, 0, 0, age, L4, mix(hex("#5b5566"), F[2], 0.3), r.range(2.8, 4.4), PF.BIG);
     });
     sw.draw(p);
     return;
   }
-  cycle(t, D11, 40, o.seed * 7 + 2, (r) => r.range(0.18, 0.36), (age, L3, r) => {
+  cycle(t, D11, 40, o.seed * 7 + 2, (r) => r.range(0.18, 0.36), (age, L4, r) => {
     const S0 = at5(wrap(t - age, D11), o.hover), side = r.chance(0.3), a = side ? r.sign() * r.range(0.9, 1.45) : r.range(-0.8, 0.8);
     const x0 = S0.x + Math.sin(a) * 10.5, y0 = S0.y - 6 - Math.cos(a) * 10 - (side ? 0 : r.range(2, 10));
     const [x, y] = fly(x0, y0, r.range(-6, 6) + Math.sin(a) * 6, -r.range(18, 34), age, -95, 3.2);
-    firePuff(p, x + Math.sin(age * 17 + r.next() * 6) * 0.8, y, 1 - age / L3, r.range(1, 2.2), r.next() * 100, heat2);
+    firePuff(p, x + Math.sin(age * 17 + r.next() * 6) * 0.8, y, 1 - age / L4, r.range(1, 2.2), r.next() * 100, heat2);
   });
-  cycle(t, D11, 18, o.seed * 7 + 3, 0.26, (age, L3, r) => {
+  cycle(t, D11, 18, o.seed * 7 + 3, 0.26, (age, L4, r) => {
     const S0 = at5(wrap(t - age, D11), o.hover), fx = r.range(-10, 10), x0 = S0.x + fx, y0 = S0.y + topY(fx) - r.range(4, 16) * (1 - Math.abs(fx) / 14);
-    const kk = 1 - age / L3, x = x0 + r.range(-3, 3) * age, y = y0 - r.range(12, 20) * age, rr = r.range(0.9, 1.7) * (0.4 + 0.6 * kk);
+    const kk = 1 - age / L4, x = x0 + r.range(-3, 3) * age, y = y0 - r.range(12, 20) * age, rr = r.range(0.9, 1.7) * (0.4 + 0.6 * kk);
     p.circle(x, y, rr + 0.6, kk > 0.5 ? heat2[5] : heat2[6]);
     if (kk > 0.35) p.circle(x, y - 0.3, rr * 0.6, kk > 0.7 ? heat2[2] : heat2[4]);
   });
-  cycle(t, D11, 24, o.seed * 7 + 4, (r) => r.range(1, 2.4), (age, L3, r) => {
+  cycle(t, D11, 24, o.seed * 7 + 4, (r) => r.range(1, 2.4), (age, L4, r) => {
     const S0 = at5(wrap(t - age, D11), o.hover), x0 = S0.x + r.range(-11, 11), y0 = S0.y - r.range(6, 24), s = r.next() * 100;
     const [x, y] = fly(x0, y0, r.range(-22, 22), -r.range(25, 70), age, -20, 1.6);
-    sw.add(P.EMBER, x + Math.sin(age * 2.3 + s) * 4 * Math.min(1, age), y, 0, 0, age, L3, F[4], r.chance(0.3) ? 2 : 1, 0, s);
+    sw.add(P.EMBER, x + Math.sin(age * 2.3 + s) * 4 * Math.min(1, age), y, 0, 0, age, L4, F[4], r.chance(0.3) ? 2 : 1, 0, s);
   });
   if (o.floor)
-    cycle(t, D11, 5, o.seed * 7 + 5, (r) => r.range(0.9, 1.4), (age, L3, r) => {
+    cycle(t, D11, 5, o.seed * 7 + 5, (r) => r.range(0.9, 1.4), (age, L4, r) => {
       const S0 = at5(wrap(t - age, D11), o.hover), b = bounce(S0.x + r.range(-6, 6), S0.y - r.range(10, 18), r.range(-28, 28), -r.range(50, 110), age, 430, -0.5, 0.42);
-      sw.add(P.SPARK, b.x, b.y, b.rest ? 0.1 : b.vx, b.rest ? 0 : b.vy, age, L3, 0, 1, 0, r.next() * 100);
+      sw.add(P.SPARK, b.x, b.y, b.rest ? 0.1 : b.vx, b.rest ? 0 : b.vy, age, L4, 0, 1, 0, r.next() * 100);
     });
   sw.draw(p);
 }
@@ -5739,16 +5928,16 @@ function onArc(s, r, a) {
   const lx = Math.cos(a) * r, ly = Math.sin(a) * r * s.sy, c = Math.cos(s.rot), n = Math.sin(s.rot);
   return [s.cx + lx * c - ly * n, s.cy + lx * n + ly * c];
 }
-function crescent(p, s, ta, L3, W8, age) {
-  if (Math.abs(L3) < 0.02 || W8 < 0.3) return;
-  const R4 = s.ramp, n = R4.length, dir = Math.sign(L3), span = Math.abs(L3), c = Math.cos(s.rot), sn = Math.sin(s.rot), B3 = s.R + 2;
+function crescent(p, s, ta, L4, W7, age) {
+  if (Math.abs(L4) < 0.02 || W7 < 0.3) return;
+  const R4 = s.ramp, n = R4.length, dir = Math.sign(L4), span = Math.abs(L4), c = Math.cos(s.rot), sn = Math.sin(s.rot), B3 = s.R + 2;
   p.shade(s.cx - B3, s.cy - B3, s.cx + B3, s.cy + B3, (x, y, out) => {
     const dx = x - s.cx, dy = y - s.cy, lx = dx * c + dy * sn, ly = (-dx * sn + dy * c) / s.sy, r = Math.hypot(lx, ly);
-    if (r > s.R + 0.5 || r < s.R - W8 - 1) return;
+    if (r > s.R + 0.5 || r < s.R - W7 - 1) return;
     let u = dir * (Math.atan2(ly, lx) - ta) % TAU;
     if (u < 0) u += TAU;
     if (u > span) return;
-    const v = u / span, w = W8 * Math.pow(Math.sin(Math.PI * Math.pow(v, 2.2)), 0.6);
+    const v = u / span, w = W7 * Math.pow(Math.sin(Math.PI * Math.pow(v, 2.2)), 0.6);
     if (w < 0.35) return;
     const q = (s.R - r) / w;
     if (q < 0 || q > 1) return;
@@ -5757,8 +5946,8 @@ function crescent(p, s, ta, L3, W8, age) {
     out.a = Math.min(1, v / 0.4);
   });
   for (let u = 0; u <= span; u += 0.3) {
-    const [x, y] = onArc(s, s.R - W8 * 0.4, ta + dir * u);
-    p.glow(x, y, 5 + W8, R4[n - 3], 0.22 * (1 - age) * (u / span));
+    const [x, y] = onArc(s, s.R - W7 * 0.4, ta + dir * u);
+    p.glow(x, y, 5 + W7, R4[n - 3], 0.22 * (1 - age) * (u / span));
   }
 }
 function drawSlash(p, s, t) {
@@ -5780,10 +5969,10 @@ function tipOf(s) {
   return { x, y, dx: (x2 - x) / l, dy: (y2 - y) / l };
 }
 function create4(o) {
-  const C4 = fit(o.palette, 7), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks });
+  const C5 = fit(o.palette, 7), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks });
   const R02 = o.radius, a0 = -2.55, a1 = 0.95;
-  const A2 = { cx: 6, cy: -26, R: R02, sy: 0.6, rot: -0.38, a0, a1, W: 12, t0: 0, sweep: 0.06, hold: 0.06, trail: 0.24, ramp: C4 };
-  const E = { ...A2, R: R02 * (33 / 42), W: R02 * (4.5 / 42), a0: a0 + (a1 - a0) * 0.1, a1: a1 - (a1 - a0) * (0.15 / 3.5), t0: 0.017, hold: 0.03, trail: 0.2, ramp: C4.slice(0, 6) };
+  const A2 = { cx: 6, cy: -26, R: R02, sy: 0.6, rot: -0.38, a0, a1, W: 12, t0: 0, sweep: 0.06, hold: 0.06, trail: 0.24, ramp: C5 };
+  const E = { ...A2, R: R02 * (33 / 42), W: R02 * (4.5 / 42), a0: a0 + (a1 - a0) * 0.1, a1: a1 - (a1 - a0) * (0.15 / 3.5), t0: 0.017, hold: 0.03, trail: 0.2, ramp: C5.slice(0, 6) };
   const tip = tipOf(A2);
   let t = 0, landed = false;
   return {
@@ -5798,7 +5987,7 @@ function create4(o) {
         for (let i = 0; i < 16; i++) {
           const a = a0 + (a1 - a0) * Rg.range(0.3, 1), [x, y] = onArc(A2, A2.R, a);
           const ox = x - A2.cx, oy = y - A2.cy, l = Math.hypot(ox, oy) || 1, sp = Rg.range(30, 100);
-          ps.spawn(P.MOTE, x, y, ox / l * sp, oy / l * sp - 10, Rg.range(0.25, 0.55), C4[4 + Rg.int(0, 1)], 0.6);
+          ps.spawn(P.MOTE, x, y, ox / l * sp, oy / l * sp - 10, Rg.range(0.25, 0.55), C5[4 + Rg.int(0, 1)], 0.6);
         }
       }
       ps.update(dt);
@@ -5807,10 +5996,10 @@ function create4(o) {
       drawSlash(p, E, t);
       drawSlash(p, A2, t);
       const g = t - A2.sweep * 0.6;
-      if (g > 0 && g < 0.22) sparkle(p, tip.x, tip.y, 9 * ease.outBack(Math.min(1, g / 0.05)) * (1 - g / 0.22), C4[5], C4[3], 0.6);
+      if (g > 0 && g < 0.22) sparkle(p, tip.x, tip.y, 9 * ease.outBack(Math.min(1, g / 0.05)) * (1 - g / 0.22), C5[5], C5[3], 0.6);
       if (t < 0.3) {
         const [x, y] = onArc(A2, A2.R - 4, A2.a0 + (A2.a1 - A2.a0) * ease.outExpo(clamp(t / A2.sweep)));
-        p.glow(x, y, 40, C4[3], 0.5 * (1 - t / 0.3));
+        p.glow(x, y, 40, C5[3], 0.5 * (1 - t / 0.3));
       }
       ps.draw(p);
     }
@@ -5884,10 +6073,10 @@ function slash(p, s, t, half = 0) {
   if (u < 0) return;
   const R4 = s.ramp, n = R4.length, life = s.sweep + s.hold + s.trail, hot = s.hot ?? 0;
   const head4 = ease.outExpo(clamp(u / s.sweep)), tail = smooth(s.sweep + s.hold, life, u), age = clamp(u / life);
-  const U = s.span * head4, T4 = s.span * tail, W8 = s.W * (1 - tail * 0.55);
+  const U = s.span * head4, T4 = s.span * tail, W7 = s.W * (1 - tail * 0.55);
   if (tail < 1 && U - T4 > 0.01) {
-    smear(p, s, T4, U, W8, (uu, r, out) => {
-      const v = (uu - T4) / (U - T4), w = W8 * Math.pow(Math.sin(Math.PI * Math.pow(v, s.lens ? 1 : 2.2)), s.lens ? 0.75 : 0.6);
+    smear(p, s, T4, U, W7, (uu, r, out) => {
+      const v = (uu - T4) / (U - T4), w = W7 * Math.pow(Math.sin(Math.PI * Math.pow(v, s.lens ? 1 : 2.2)), s.lens ? 0.75 : 0.6);
       if (w < 0.35) return;
       const q = (s.R - r) / w;
       if (q < 0 || q > 1) return;
@@ -5895,7 +6084,7 @@ function slash(p, s, t, half = 0) {
       out.c = R4[n - 1 - clamp(ci, 0, n - 1)];
       out.a = Math.min(1, v / (s.lens ? 0.1 : 0.4));
     }, half);
-    glowAlong(p, s, s.R - W8 * 0.4, T4, U, 5 + W8, R4[n - 3], (uu) => (0.22 + hot * 0.3) * (1 - age) * ((uu - T4) / (U - T4)), half, 0.3);
+    glowAlong(p, s, s.R - W7 * 0.4, T4, U, 5 + W7, R4[n - 3], (uu) => (0.22 + hot * 0.3) * (1 - age) * ((uu - T4) / (U - T4)), half, 0.3);
   }
   const th = 0.7 * (1 - clamp((u - s.sweep - s.hold) / (s.trail + 0.2)));
   if (tail > 0.02 && th > 0) trace(p, s, s.R - 0.5, 0, T4, R4[2], (uu) => th * (0.4 + 0.6 * uu / s.span), half);
@@ -5925,9 +6114,9 @@ function rock2(p, b, st) {
 function cracks(R4, x0, n, reach, depth = 7, bias = 0.3) {
   const out = [];
   for (let i = 0; i < n; i++) {
-    const side = R4.chance(0.5 + bias * 0.5) ? 1 : -1, L3 = reach * R4.range(0.45, 1) * (i < 2 ? 1 : 0.7), pts = [[x0 + side * R4.range(0, 1.5), 0]];
+    const side = R4.chance(0.5 + bias * 0.5) ? 1 : -1, L4 = reach * R4.range(0.45, 1) * (i < 2 ? 1 : 0.7), pts = [[x0 + side * R4.range(0, 1.5), 0]];
     let x = pts[0][0], y = 0;
-    while (Math.abs(x - x0) < L3 && y < depth) {
+    while (Math.abs(x - x0) < L4 && y < depth) {
       x += side * R4.range(1.5, 3.5);
       y = Math.min(depth, Math.max(0, y + R4.range(-0.6, 1.6) * (Math.abs(x - x0) > 3 ? 1 : 0.3)));
       pts.push([Math.round(x), Math.round(y)]);
@@ -5945,11 +6134,11 @@ function cracks(R4, x0, n, reach, depth = 7, bias = 0.3) {
 function star(p, x, y, spikes2, sc, th, core, body2, inner, rim) {
   for (const pass of [0, 1, 2])
     for (const s of spikes2) {
-      const c = Math.cos(s.a), sn = Math.sin(s.a), L3 = s.len * sc;
-      for (let d = 0; d <= L3; d += 0.5) {
-        const hw0 = s.w * th * (1 - d / L3) * Math.min(1, 0.5 + d / 3), hw = pass === 0 ? hw0 + 0.8 : pass === 1 ? hw0 : hw0 * 0.45;
-        if (pass === 2 && d > L3 * 0.55) break;
-        for (let o = -hw; o <= hw; o += 0.5) p.px(x + c * d - sn * o, y + sn * d + c * o, pass === 0 ? rim : pass === 1 ? d < L3 * 0.35 ? inner : body2 : core);
+      const c = Math.cos(s.a), sn = Math.sin(s.a), L4 = s.len * sc;
+      for (let d = 0; d <= L4; d += 0.5) {
+        const hw0 = s.w * th * (1 - d / L4) * Math.min(1, 0.5 + d / 3), hw = pass === 0 ? hw0 + 0.8 : pass === 1 ? hw0 : hw0 * 0.45;
+        if (pass === 2 && d > L4 * 0.55) break;
+        for (let o = -hw; o <= hw; o += 0.5) p.px(x + c * d - sn * o, y + sn * d + c * o, pass === 0 ? rim : pass === 1 ? d < L4 * 0.35 ? inner : body2 : core);
       }
     }
   const r = 2.4 * sc * Math.sqrt(th);
@@ -6017,10 +6206,10 @@ var UP = 0.14;
 var R0 = 62;
 var cut = (x, y, th, dir, span, extra) => through(x, y, th, dir, R0, span, 0.55, extra);
 function create5(o) {
-  const C4 = fit(o.palette, 7), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks }), lights = new Lights();
+  const C5 = fit(o.palette, 7), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks }), lights = new Lights();
   const X = 34, Y = -23;
-  const down = cut(X, Y, 0.72, 1, 0.84, { W: 10, t0: 0, sweep: 0.06, hold: 0.07, trail: 0.24, ramp: C4, lens: true });
-  const up = cut(X, Y, -0.66, -1, 0.84, { W: 11, t0: UP, sweep: 0.06, hold: 0.06, trail: 0.26, ramp: C4, lens: true });
+  const down = cut(X, Y, 0.72, 1, 0.84, { W: 10, t0: 0, sweep: 0.06, hold: 0.07, trail: 0.24, ramp: C5, lens: true });
+  const up = cut(X, Y, -0.66, -1, 0.84, { W: 11, t0: UP, sweep: 0.06, hold: 0.06, trail: 0.26, ramp: C5, lens: true });
   const ends = [slashEnd(down), slashEnd(up)], slivers = [-2.4, -1.1, 0.2, 1.6].map((a) => ({ a: a + Rg.range(-0.2, 0.2), r: Rg.range(5, 8), v: Rg.range(70, 120), arc: Rg.range(0.4, 0.7) }));
   const CLOSE = UP + 0.012;
   let t = 0, cut1 = false, cut2 = false, closed = false;
@@ -6029,7 +6218,7 @@ function create5(o) {
       t += dt;
       if (!cut1 && t >= down.sweep) {
         cut1 = true;
-        shavings(ps, Rg, down, 10, [C4[4], C4[5]]);
+        shavings(ps, Rg, down, 10, [C5[4], C5[5]]);
         for (let i = 0; i < 6; i++) {
           const a = Math.atan2(ends[0].dy, ends[0].dx) + Rg.range(-0.5, 0.5), sp = Rg.range(120, 300);
           ps.spawn(P.SPARK, ends[0].x, ends[0].y, Math.cos(a) * sp, Math.sin(a) * sp, Rg.range(0.12, 0.3));
@@ -6037,17 +6226,17 @@ function create5(o) {
       }
       if (!closed && t >= CLOSE) {
         closed = true;
-        lights.add(X, Y, 56, C4[3], 0.45, 0.4);
+        lights.add(X, Y, 56, C5[3], 0.45, 0.4);
         lights.add(X, Y, 18, WHITE, 0.6, 0.08);
         for (let i = 0; i < 18; i++) {
           const a = Rg.range(-Math.PI, Math.PI) * 0.8, sp = Rg.range(140, 360);
           ps.spawn(P.SPARK, X, Y, Math.cos(a) * sp, Math.sin(a) * sp - 40, Rg.range(0.14, 0.4));
         }
-        for (let i = 0; i < 5; i++) ps.spawn(P.STAR, X + Rg.range(-14, 14), Y + Rg.range(-12, 12), 0, -4, Rg.range(0.2, 0.4), Rg.chance(0.5) ? C4[5] : WHITE, Rg.range(1, 2.2), Rg.range(0.05, 0.2));
+        for (let i = 0; i < 5; i++) ps.spawn(P.STAR, X + Rg.range(-14, 14), Y + Rg.range(-12, 12), 0, -4, Rg.range(0.2, 0.4), Rg.chance(0.5) ? C5[5] : WHITE, Rg.range(1, 2.2), Rg.range(0.05, 0.2));
       }
       if (!cut2 && t >= UP + up.sweep) {
         cut2 = true;
-        shavings(ps, Rg, up, 12, [C4[4], C4[5]]);
+        shavings(ps, Rg, up, 12, [C5[4], C5[5]]);
       }
       ps.update(dt);
       lights.update(dt);
@@ -6059,23 +6248,23 @@ function create5(o) {
       slash(p, up, t);
       for (const [s, e] of [[down, ends[0]], [up, ends[1]]]) {
         const g = t - s.t0 - s.sweep * 0.6;
-        if (g > 0 && g < 0.2) sparkle(p, e.x, e.y, 7 * ease.outBack(Math.min(1, g / 0.05)) * (1 - g / 0.2), C4[5], C4[3], 0.5);
+        if (g > 0 && g < 0.2) sparkle(p, e.x, e.y, 7 * ease.outBack(Math.min(1, g / 0.05)) * (1 - g / 0.2), C5[5], C5[3], 0.5);
       }
       const q = t - CLOSE;
       if (q >= 0 && q < 0.26) {
         const k = q / 0.26;
-        flare(p, X, Y, 22 * Math.pow(1 - k, 1.4), 1 - k, C4);
-        p.glow(X, Y, 34, C4[4], 0.35 * (1 - k));
+        flare(p, X, Y, 22 * Math.pow(1 - k, 1.4), 1 - k, C5);
+        p.glow(X, Y, 34, C5[4], 0.35 * (1 - k));
       }
       if (q >= 0.03 && q < 0.15) {
         const k = (q - 0.03) / 0.12;
-        for (const s of slivers) sliver(p, X, Y, s.a, s.r + s.v * (q - 0.03), s.arc * (1 - 0.4 * k), k < 0.4 ? C4[6] : k < 0.7 ? C4[5] : C4[4], 1 - k);
+        for (const s of slivers) sliver(p, X, Y, s.a, s.r + s.v * (q - 0.03), s.arc * (1 - 0.4 * k), k < 0.4 ? C5[6] : k < 0.7 ? C5[5] : C5[4], 1 - k);
       }
       for (const s of [down, up]) {
         const u = t - s.t0;
         if (u <= 0 || u >= 0.25) continue;
         const e = slashEnd({ ...s, span: s.span * ease.outExpo(clamp(u / s.sweep)) });
-        p.glow(e.x, e.y, 40, C4[3], 0.5 * (1 - u / 0.25));
+        p.glow(e.x, e.y, 40, C5[3], 0.5 * (1 - u / 0.25));
       }
       ps.draw(p);
       lights.draw(p);
@@ -6135,12 +6324,12 @@ var TRAIL = 0.22;
 var head = (t) => ease.inQuad(clamp((t - RAISE) / SWING));
 var passedAt = (f) => RAISE + SWING * Math.sqrt(clamp(f));
 function create6(o) {
-  const C4 = fit(o.palette, 8), n = C4.length, R4 = new Rng(o.seed), st = stone(o.stone), floor = () => 0;
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [C4[6], C4[5], C4[4], C4[3]] }), bits = new Bits({ ground: floor }), lights = new Lights();
+  const C5 = fit(o.palette, 8), n = C5.length, R4 = new Rng(o.seed), st = stone(o.stone), floor = () => 0;
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [C5[6], C5[5], C5[4], C5[3]] }), bits = new Bits({ ground: floor }), lights = new Lights();
   const A2 = swing({ cx: 3, cy: -22, R: 37, sy: 0.88, rot: 0.32, a0: -2.45, dir: 1 });
   let U1 = 0;
   while (onSwing(A2, A2.R, U1)[1] < -0.5 && U1 < 4) U1 += 5e-3;
-  const E = { ...A2, R: A2.R * 0.76 }, W8 = 16, WE = 5;
+  const E = { ...A2, R: A2.R * 0.76 }, W7 = 16, WE = 5;
   const [X] = onSwing(A2, A2.R - 2, U1), GLINT = onSwing(A2, A2.R - 3, 0);
   const lines = cracks(R4, X, 4, 40, 7, 0.4);
   const spikes2 = [-Math.PI, -2.7, -2.15, -1.62, -1.05, -0.45, 0].map((a, i) => ({ a: a + R4.range(-0.08, 0.08), len: (i === 0 || i === 6 ? 20 : i === 3 ? 15 : 9) + R4.range(0, 4), w: 1.6 + R4.range(0, 0.6) }));
@@ -6157,26 +6346,26 @@ function create6(o) {
       const q = (s.R - r) / w;
       if (q < 0 || q > 1) return;
       const ci = rim && q < 0.22 && age < 0.12 ? 0 : Math.round(q * (n - 1) * 0.62 + age * 7 + Math.max(0, tt - HIT) * 10 - v * 0.8 + (rim ? 0.7 : 1.7));
-      out.c = C4[n - 1 - clamp(ci, 0, n - 1)];
+      out.c = C5[n - 1 - clamp(ci, 0, n - 1)];
       out.a = Math.min(1, v / 0.35) * (1.2 - gone);
     });
-    if (rim) glowAlong(p, s, s.R - w0 * 0.4, T4, U, 7 + w0 * 0.5, C4[4], (u) => 0.26 * Math.exp(-Math.max(0, tt - passedAt(u / U1)) / 0.2) * ((u - T4) / (U - T4)));
+    if (rim) glowAlong(p, s, s.R - w0 * 0.4, T4, U, 7 + w0 * 0.5, C5[4], (u) => 0.26 * Math.exp(-Math.max(0, tt - passedAt(u / U1)) / 0.2) * ((u - T4) / (U - T4)));
   };
   return {
     update(dt) {
       t += dt;
       if (t < RAISE - 0.04 && R4.chance(0.35)) {
         const a = R4.range(0, TAU), D17 = R4.range(14, 26), T4 = R4.range(0.14, 0.2), v = D17 * 3 / (Math.exp(3 * T4) - 1);
-        ps.spawn(P.STREAK, GLINT[0] + Math.cos(a) * D17, GLINT[1] + Math.sin(a) * D17, -Math.cos(a) * v, -Math.sin(a) * v, T4, R4.chance(0.5) ? C4[5] : C4[4]);
+        ps.spawn(P.STREAK, GLINT[0] + Math.cos(a) * D17, GLINT[1] + Math.sin(a) * D17, -Math.cos(a) * v, -Math.sin(a) * v, T4, R4.chance(0.5) ? C5[5] : C5[4]);
       }
       if (t > RAISE && t < HIT && R4.chance(0.7)) {
         const u = U1 * head(t) * R4.range(0.6, 1), [x, y] = onSwing(A2, A2.R - R4.range(0, 6), u);
-        ps.spawn(P.EMBER, x, y, R4.range(-20, 20), R4.range(-40, -10), R4.range(0.5, 1.1), C4[4], R4.range(1, 2));
+        ps.spawn(P.EMBER, x, y, R4.range(-20, 20), R4.range(-40, -10), R4.range(0.5, 1.1), C5[4], R4.range(1, 2));
       }
       if (!hit && t >= HIT) {
         hit = true;
         lights.add(X, -6, 26, WHITE, 0.9, 0.1);
-        lights.add(X, -12, 64, C4[4], 0.5, 0.8);
+        lights.add(X, -12, 64, C5[4], 0.5, 0.8);
         for (let i = 0; i < 26; i++) {
           const a = -Math.PI / 2 + R4.range(-1.2, 1.35), sp = R4.range(140, 360);
           ps.spawn(P.SPARK, X, -1, Math.cos(a) * sp, Math.sin(a) * sp - 40, R4.range(0.15, 0.5));
@@ -6193,11 +6382,11 @@ function create6(o) {
         }
         for (let i = 0; i < 6; i++)
           bits.add({ kind: B.CHUNK, x: X + R4.range(-3, 3), y: -2, vx: R4.range(-50, 110), vy: -R4.range(120, 260), g: 1, drag: 0.4, bounce: 0.3, life: R4.range(1.15, 1.5), a: R4.range(0, TAU), va: R4.range(-14, 14), s: R4.int(1, 2) });
-        for (let i = 0; i < 16; i++) ps.spawn(P.EMBER, X + R4.range(-8, 8), -R4.range(1, 6), R4.range(-50, 60), -R4.range(30, 110), R4.range(0.7, 1.5), C4[4], R4.range(1, 2));
+        for (let i = 0; i < 16; i++) ps.spawn(P.EMBER, X + R4.range(-8, 8), -R4.range(1, 6), R4.range(-50, 60), -R4.range(30, 110), R4.range(0.7, 1.5), C5[4], R4.range(1, 2));
       }
       if (hit && t < HIT + 0.6 && R4.chance(0.12)) {
         const c = R4.pick(lines), pt = R4.pick(c.pts);
-        ps.spawn(P.EMBER, pt[0], pt[1] - 1, R4.range(-12, 12), -R4.range(20, 50), R4.range(0.5, 0.9), C4[4], 1);
+        ps.spawn(P.EMBER, pt[0], pt[1] - 1, R4.range(-12, 12), -R4.range(20, 50), R4.range(0.5, 0.9), C5[4], 1);
       }
       bits.update(dt);
       for (const b of bits.list)
@@ -6217,11 +6406,11 @@ function create6(o) {
             const d = Math.hypot((x + 0.5) / 9, (y + 0.5) / 3.5);
             if (d > 1) continue;
             const T4 = Math.pow(clamp(1 - q / 0.8), 1.4) * (1.2 - d) - rand(x, y, 3) * 0.3;
-            if (T4 > 0.08) p.dot(X + x, y, C4[clamp(Math.round(T4 * 9), 1, 7)], fade);
+            if (T4 > 0.08) p.dot(X + x, y, C5[clamp(Math.round(T4 * 9), 1, 7)], fade);
             else p.dot(X + x, y, d < 0.5 ? st.dark : st.shade, (d < 0.9 - rand(x, y, 9) * 0.3 ? 1 : 1 - d) * fade);
           }
         const k = q / 0.45;
-        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [st.body, st.light, C4[4], C4[6]], (g) => Math.sin(g) < 0);
+        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [st.body, st.light, C5[4], C5[6]], (g) => Math.sin(g) < 0);
       }
       ps.draw(p, "back");
     },
@@ -6229,8 +6418,8 @@ function create6(o) {
       const q = t - HIT;
       if (t < RAISE + 0.03) {
         const g = ease.outBack(clamp(t / 0.1)) * (1 + 0.15 * Math.sin(t * 60)) * (t > RAISE ? 1 - (t - RAISE) / 0.03 : 1);
-        sparkle(p, GLINT[0], GLINT[1], 1 + 7 * g, C4[6], C4[4], 0.5);
-        p.glow(GLINT[0], GLINT[1], 22, C4[4], 0.3 * g);
+        sparkle(p, GLINT[0], GLINT[1], 1 + 7 * g, C5[6], C5[4], 0.5);
+        p.glow(GLINT[0], GLINT[1], 22, C5[4], 0.3 * g);
       }
       if (q >= 0) {
         const heat2 = Math.pow(clamp(1 - q / 1.2), 1.2), fade = 1 - smooth(1.15, 1.5, q);
@@ -6238,33 +6427,33 @@ function create6(o) {
           const reach = 40 * ease.outCubic(clamp((q - c.at * 0.1) / 0.13)) * (c.fork ? 0.3 : 1);
           if (reach <= 0) continue;
           along2(c.pts, reach, (x0, y0, x1, y1, d) => {
-            const h = heat2 * (1 - d / 46) - (c.fork ? 0.12 : 0), col = h > 0.72 ? WHITE : h > 0.08 ? C4[clamp(Math.round(h * 8), 1, 6)] : st.dark;
+            const h = heat2 * (1 - d / 46) - (c.fork ? 0.12 : 0), col = h > 0.72 ? WHITE : h > 0.08 ? C5[clamp(Math.round(h * 8), 1, 6)] : st.dark;
             if (y1 > 0.5) p.line(x0 + 1, y0, x1 + 1, y1, st.dark, fade);
             p.line(x0, y0, x1, y1, col, fade);
-            if (h > 0.25 && (d | 0) % 6 < 2) p.glow(x1, y1, 6, C4[4], 0.2 * h * fade);
+            if (h > 0.25 && (d | 0) % 6 < 2) p.glow(x1, y1, 6, C5[4], 0.2 * h * fade);
           });
         }
-        if (heat2 > 0) p.glow(X, -2, 34, C4[4], 0.32 * heat2 * fade);
+        if (heat2 > 0) p.glow(X, -2, 34, C5[4], 0.32 * heat2 * fade);
         const k = q / 0.45;
-        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [st.body, st.light, C4[4], C4[6]], (g) => Math.sin(g) >= 0);
+        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [st.body, st.light, C5[4], C5[6]], (g) => Math.sin(g) >= 0);
       }
       arc(p, E, WE, 0.02, false);
-      arc(p, A2, W8, 0, true);
+      arc(p, A2, W7, 0, true);
       const tail = U1 * smooth(HIT + HOLD, HIT + HOLD + TRAIL, t), th = 0.8 * (1 - clamp((t - HIT - HOLD) / (TRAIL + 0.25)));
-      if (tail > 0.02 && th > 0) trace(p, A2, A2.R - 0.5, 0, tail, C4[3], (u) => th * (0.4 + 0.6 * u / U1));
+      if (tail > 0.02 && th > 0) trace(p, A2, A2.R - 0.5, 0, tail, C5[3], (u) => th * (0.4 + 0.6 * u / U1));
       if (t > RAISE && t < HIT + 0.05) {
         const [x, y] = onSwing(A2, A2.R - 5, U1 * head(t));
-        p.glow(x, y, 40, C4[4], 0.5);
+        p.glow(x, y, 40, C5[4], 0.5);
       }
-      if (q >= 0 && q < 0.035) star(p, X, -1, spikes2, 1, 1, WHITE, C4[6], C4[7], C4[5]);
-      else if (q >= 0.035 && q < 0.07) star(p, X, -1, spikes2, 1.25, 0.55, C4[7], C4[6], C4[6], C4[4]);
+      if (q >= 0 && q < 0.035) star(p, X, -1, spikes2, 1, 1, WHITE, C5[6], C5[7], C5[5]);
+      else if (q >= 0.035 && q < 0.07) star(p, X, -1, spikes2, 1.25, 0.55, C5[7], C5[6], C5[6], C5[4]);
       if (q >= 0.05 && q < 0.16) {
         const k = (q - 0.05) / 0.11;
-        for (const s of shards) sliver(p, X, -1, s.a, s.r + s.v * (q - 0.05), s.arc * (1 - 0.4 * k), k < 0.4 ? C4[6] : k < 0.7 ? C4[5] : C4[4], 1 - k);
+        for (const s of shards) sliver(p, X, -1, s.a, s.r + s.v * (q - 0.05), s.arc * (1 - 0.4 * k), k < 0.4 ? C5[6] : k < 0.7 ? C5[5] : C5[4], 1 - k);
       }
       if (q >= 0 && q < 0.2) {
         const pop = Math.exp(-q / 0.05);
-        p.glow(X, -6, 30, C4[5], 0.8 * pop);
+        p.glow(X, -6, 30, C5[5], 0.8 * pop);
         p.glow(X, -2, 10, WHITE, 0.7 * pop);
       }
       for (const b of bits.list) rock2(p, b, st);
@@ -6326,9 +6515,9 @@ var T2 = T1 + HANG;
 var T3 = T2 + TEAR;
 var head2 = (t) => ease.inOutSine(clamp((t - T0) / SWEEP));
 function create7(o) {
-  const C4 = fit(o.palette, 8), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, haze: C4[5] }), lights = new Lights();
+  const C5 = fit(o.palette, 8), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, haze: C5[5] }), lights = new Lights();
   const A2 = swing({ cx: 8, cy: -33, R: 52, sy: 0.6, k: 0.1, rot: 0.08, a0: -0.5, dir: 1, span: 3.5 });
-  const W8 = 21;
+  const W7 = 21;
   const wisps = [];
   let t = 0, lastTear = 0;
   const tear = () => smooth(T2, T3, t);
@@ -6338,18 +6527,18 @@ function create7(o) {
       t += dt;
       if (t < WIND2 && Rg.chance(0.5)) {
         const [x, y] = onSwing(A2, A2.R - 4, 0);
-        ps.spawn(P.VAPOUR, x + Rg.range(-14, 14), y + Rg.range(-8, 8), Rg.range(-10, 10), Rg.range(-6, 6), Rg.range(0.3, 0.5), C4[5], Rg.range(1.5, 2.5));
+        ps.spawn(P.VAPOUR, x + Rg.range(-14, 14), y + Rg.range(-8, 8), Rg.range(-10, 10), Rg.range(-6, 6), Rg.range(0.3, 0.5), C5[5], Rg.range(1.5, 2.5));
       }
       if (t > T0 && t < T1 && Rg.chance(0.5)) {
         const tr = travel(A2, A2.span * head2(t) * Rg.range(0.75, 1));
-        ps.spawn(P.VAPOUR, tr.x, tr.y, tr.dx * 20, -Rg.range(4, 14), Rg.range(0.5, 0.9), C4[6], Rg.range(2, 3.5), 0, Math.sin(tr.a) < 0 ? PF.BACK : 0);
+        ps.spawn(P.VAPOUR, tr.x, tr.y, tr.dx * 20, -Rg.range(4, 14), Rg.range(0.5, 0.9), C5[6], Rg.range(2, 3.5), 0, Math.sin(tr.a) < 0 ? PF.BACK : 0);
       }
       const k = tear();
       for (let u = lastTear; u < k * 1.15; u += 0.022) {
         const uu = Math.min(1, u) * A2.span, tr = travel({ ...A2, R: A2.R - Rg.range(0, 8) }, uu), far = Math.sin(tr.a) < 0;
         addWisp(tr.x, tr.y, far);
-        if (Rg.chance(0.5)) ps.spawn(P.VAPOUR, tr.x, tr.y, Rg.range(-10, 10), -Rg.range(6, 18), Rg.range(0.55, 0.85), Rg.chance(0.5) ? C4[5] : C4[4], Rg.range(2.5, 4.5), 0, far ? PF.BACK : 0);
-        if (Rg.chance(0.2)) ps.spawn(P.STAR, tr.x + Rg.range(-3, 3), tr.y + Rg.range(-3, 3), 0, -6, Rg.range(0.25, 0.5), Rg.chance(0.5) ? C4[6] : WHITE, Rg.range(0.6, 1.6), 0, far ? PF.BACK : 0);
+        if (Rg.chance(0.5)) ps.spawn(P.VAPOUR, tr.x, tr.y, Rg.range(-10, 10), -Rg.range(6, 18), Rg.range(0.55, 0.85), Rg.chance(0.5) ? C5[5] : C5[4], Rg.range(2.5, 4.5), 0, far ? PF.BACK : 0);
+        if (Rg.chance(0.2)) ps.spawn(P.STAR, tr.x + Rg.range(-3, 3), tr.y + Rg.range(-3, 3), 0, -6, Rg.range(0.25, 0.5), Rg.chance(0.5) ? C5[6] : WHITE, Rg.range(0.6, 1.6), 0, far ? PF.BACK : 0);
       }
       lastTear = Math.max(lastTear, k * 1.15);
       for (let i = wisps.length - 1; i >= 0; i--) {
@@ -6380,12 +6569,12 @@ function create7(o) {
       this.blade(p, 1);
       if (t < WIND2 + 0.05) {
         const [x, y] = onSwing(A2, A2.R - 3, 0);
-        sparkle(p, x, y, 6 * Math.min(1, t / 0.04) * (1 - smooth(WIND2 - 0.02, WIND2 + 0.05, t)), C4[6], C4[5], 0.45);
+        sparkle(p, x, y, 6 * Math.min(1, t / 0.04) * (1 - smooth(WIND2 - 0.02, WIND2 + 0.05, t)), C5[6], C5[5], 0.45);
       }
       const g = t - T1 + 0.06;
       if (g > 0 && g < 0.3) {
         const [x, y] = onSwing(A2, A2.R - 3, A2.span);
-        sparkle(p, x, y, 9 * ease.outBack(Math.min(1, g / 0.06)) * (1 - g / 0.3), C4[6], C4[5], 0.55);
+        sparkle(p, x, y, 9 * ease.outBack(Math.min(1, g / 0.06)) * (1 - g / 0.3), C5[6], C5[5], 0.55);
       }
       ps.draw(p, "front");
       this.threads(p, false);
@@ -6394,9 +6583,9 @@ function create7(o) {
     blade(p, half) {
       const U = A2.span * head2(t), k = tear();
       if (U < 0.02 || k >= 1) return;
-      const ramp2 = half < 0 ? [C4[0], C4[0], C4[1], C4[2], C4[3], C4[4], C4[5], C4[6]] : C4;
-      smear(p, A2, 0, U, W8, (u, r, out, a) => {
-        const v = u / U, w = W8 * Math.pow(Math.sin(Math.PI * Math.pow(v, 1.7)), 0.55);
+      const ramp2 = half < 0 ? [C5[0], C5[0], C5[1], C5[2], C5[3], C5[4], C5[5], C5[6]] : C5;
+      smear(p, A2, 0, U, W7, (u, r, out, a) => {
+        const v = u / U, w = W7 * Math.pow(Math.sin(Math.PI * Math.pow(v, 1.7)), 0.55);
         if (w < 0.5) return;
         const q = (A2.R - r) / w;
         if (q < 0 || q > 1) return;
@@ -6406,7 +6595,7 @@ function create7(o) {
         out.c = ramp2[t > T1 && q < 0.2 ? ci - 1 : ci];
         out.a = Math.min(1, v / 0.25);
       }, half);
-      glowAlong(p, A2, A2.R - 2, Math.max(0, k * 1.2 * A2.span - 0.3), U, 14, C4[5], (u) => 0.3 * (u / U), half, 0.25);
+      glowAlong(p, A2, A2.R - 2, Math.max(0, k * 1.2 * A2.span - 0.3), U, 14, C5[5], (u) => 0.3 * (u / U), half, 0.25);
     },
     threads(p, back) {
       for (const w of wisps) {
@@ -6414,9 +6603,9 @@ function create7(o) {
         const life = 1 - w.max / w.life;
         for (let i = 1; i < w.pts.length; i++) {
           const f = i / w.pts.length;
-          p.line(w.pts[i - 1][0], w.pts[i - 1][1], w.pts[i][0], w.pts[i][1], f > 0.75 ? C4[6] : f > 0.4 ? C4[5] : C4[3], life * (0.3 + 0.7 * f));
+          p.line(w.pts[i - 1][0], w.pts[i - 1][1], w.pts[i][0], w.pts[i][1], f > 0.75 ? C5[6] : f > 0.4 ? C5[5] : C5[3], life * (0.3 + 0.7 * f));
         }
-        if (life > 0.5) p.glow(w.x, w.y, 5, C4[5], 0.25 * life);
+        if (life > 0.5) p.glow(w.x, w.y, 5, C5[5], 0.25 * life);
       }
     }
   };
@@ -6442,21 +6631,21 @@ function noiseFor(D17) {
     return pnoise(tt / D17 * P3 + off, P3, seed);
   };
 }
-function looped(t, D17, count, seed, make, draw20) {
+function looped(t, D17, count, seed, make, draw26) {
   for (let i = 0; i < count; i++) {
     const r = rng(seed, i), born = r.next() * D17, q = make(r, i);
-    for (let age = wrap(t - born, D17); age < q.life; age += D17) draw20(q, age, i);
+    for (let age = wrap(t - born, D17); age < q.life; age += D17) draw26(q, age, i);
   }
 }
 var hotFirst = (F) => [...F].reverse();
 var LAYERS2 = [[1, 1, 6], [0.76, 0.86, 4], [0.54, 0.68, 2], [0.3, 0.42, 0]];
-function flameBlade(p, x, y, ux, uy, len2, w, bend2, N5, n, H5, layers = LAYERS2, jit = 0.5, wob = 1.1) {
+function flameBlade(p, x, y, ux, uy, len2, w, bend2, N5, n, H4, layers = LAYERS2, jit = 0.5, wob = 1.1) {
   if (len2 < 1) return;
   const nx = -uy, ny = ux;
   for (const [lw, lh, ri] of layers) {
-    const L3 = len2 * lh, c = H5[ri];
-    for (let r = 0; r <= L3; r += 0.5) {
-      const u = r / Math.max(1, L3);
+    const L4 = len2 * lh, c = H4[ri];
+    for (let r = 0; r <= L4; r += 0.5) {
+      const u = r / Math.max(1, L4);
       const half = w * lw * Math.pow(1 - u, 0.85) * Math.min(1, (r + 1.5) / 3.5) + N5(9, n, r * 0.45) * jit;
       if (half < 0.3) continue;
       const off = bend2 * u * u * lh + N5(4, n + 7, r * 0.2) * u * wob, cx = x + ux * r + nx * off, cy = y + uy * r + ny * off;
@@ -6485,16 +6674,16 @@ function soft(p, x, y, r, c, a) {
     for (let sx = Math.ceil(cx - s - 0.5); sx <= Math.floor(cx + s - 0.5); sx++) p.blendPx(sx, sy, c, a);
   }
 }
-function firePuff2(p, x, y, k, size, frac, H5, glowK = 0.18, tx = 0, ty = -1) {
-  const age = 1 - k, n = H5.length, heat2 = Math.min(0.999, Math.pow(age, 0.62) + frac * 0.1);
+function firePuff2(p, x, y, k, size, frac, H4, glowK = 0.18, tx = 0, ty = -1) {
+  const age = 1 - k, n = H4.length, heat2 = Math.min(0.999, Math.pow(age, 0.62) + frac * 0.1);
   const idx = Math.min(n - 2, Math.floor(heat2 * (n - 1)));
-  const r = size * (0.55 + 0.45 * Math.min(1, age * 7)) * (1 - age * 0.55), c = H5[idx];
+  const r = size * (0.55 + 0.45 * Math.min(1, age * 7)) * (1 - age * 0.55), c = H4[idx];
   if (idx >= n - 2) return soft(p, x, y, r, c, Math.min(1, k * 3) * 0.85);
-  solid(p, x, y, r, H5[Math.min(n - 1, idx + 2)]);
-  if (r > 1.6 && ty > -0.99) solid(p, x + tx * r * 1.5, y + ty * r * 1.5, r * 0.3, H5[Math.min(n - 1, idx + 1)]);
+  solid(p, x, y, r, H4[Math.min(n - 1, idx + 2)]);
+  if (r > 1.6 && ty > -0.99) solid(p, x + tx * r * 1.5, y + ty * r * 1.5, r * 0.3, H4[Math.min(n - 1, idx + 1)]);
   solid(p, x - r * 0.16, y - r * 0.22, r * 0.78, c);
   if (r > 1.6) solid(p, x + tx * r * 0.9, y + ty * r * 0.9, r * 0.42, c);
-  if (idx <= 3 && r > 1.8) solid(p, x - r * 0.28, y - r * 0.34, r * 0.36, H5[Math.max(0, idx - 1)]);
+  if (idx <= 3 && r > 1.8) solid(p, x - r * 0.28, y - r * 0.34, r * 0.36, H4[Math.max(0, idx - 1)]);
   if (idx < 6) p.glow(x, y, r * 2.4 + 2, c, glowK * k);
 }
 var rampAt2 = (r, t) => r[Math.min(r.length - 1, Math.max(0, Math.floor(t * r.length)))];
@@ -6547,11 +6736,11 @@ function floorLight(p, x, y, rx, ry, c, k) {
     out.k = f * f * k;
   });
 }
-function simDraw(p, ps, H5, layer) {
+function simDraw(p, ps, H4, layer) {
   const all = ps.list, rest = [], fire = [];
   for (const q of all) (q.k === P.FIRE ? fire : rest).push(q);
   const puffs = (back) => {
-    for (const q of fire) if (q.delay <= 0 && !!(q.flag & PF.BACK) === back) firePuff2(p, q.x, q.y, q.life / q.max, q.size, q.seed % 1, H5);
+    for (const q of fire) if (q.delay <= 0 && !!(q.flag & PF.BACK) === back) firePuff2(p, q.x, q.y, q.life / q.max, q.size, q.seed % 1, H4);
   };
   ps.list = rest;
   if (layer !== "front") ps.draw(p, "back"), puffs(true);
@@ -6583,7 +6772,7 @@ var NL = noiseFor(D12);
 var SMOKE12 = hex("#5b5566");
 var BODY = [[30, 4.2, 0], [23, 4.4, -1.6], [22, 4.4, 1.6], [15, 4.6, 0]];
 var CORONA = [[-1.3, 6, 1.1], [-1.8, 8, 1.2], [-2.3, 7, 1.1], [1.3, 6, 1.1], [1.8, 8, 1.2], [2.3, 7, 1.1]];
-function head3(p, H5, t, R02, S, hx, hy) {
+function head3(p, H4, t, R02, S, hx, hy) {
   const ph = t / D12;
   p.shade(hx - R02 * 2.4, hy - R02 * 1.7, hx + R02 * 1.5, hy + R02 * 1.7, (x, y, out) => {
     x -= hx;
@@ -6594,14 +6783,14 @@ function head3(p, H5, t, R02, S, hx, hy) {
     if (d > rim) return;
     const swirl = pnoise(a * 5 - ph * 10 + d * 0.45, 5, S + 2);
     const h = 1 - d / rim + 0.26 * swirl + 0.1 * (1 - back);
-    if (rim - d < 1 && back < 0.3) return h > 0.3 ? H5[3] : H5[5];
-    return h > 0.74 ? H5[0] : h > 0.58 ? H5[1] : h > 0.42 ? H5[2] : h > 0.27 ? H5[4] : h > 0.13 ? H5[5] : H5[6];
+    if (rim - d < 1 && back < 0.3) return h > 0.3 ? H4[3] : H4[5];
+    return h > 0.74 ? H4[0] : h > 0.58 ? H4[1] : h > 0.42 ? H4[2] : h > 0.27 ? H4[4] : h > 0.13 ? H4[5] : H4[6];
   });
 }
 function draw9(p, t, o) {
-  const F = fit(o.palette, 9), H5 = hotFirst(F), S = o.seed, R02 = o.radius, V = o.speed;
+  const F = fit(o.palette, 9), H4 = hotFirst(F), S = o.seed, R02 = o.radius, V = o.speed;
   const N5 = (rate, seed = 0, off = 0) => NL(t, rate, seed, off);
-  const GLOW = mix(mix(H5[3], H5[4], 0.5), WHITE, 0.25), SMOKE = mix(SMOKE12, H5[6], 0.3), SPARKS = [H5[1], H5[2], H5[4], H5[5]], EMB = [H5[1], H5[2], H5[4], H5[6]];
+  const GLOW = mix(mix(H4[3], H4[4], 0.5), WHITE, 0.25), SMOKE = mix(SMOKE12, H4[6], 0.3), SPARKS = [H4[1], H4[2], H4[4], H4[5]], EMB = [H4[1], H4[2], H4[4], H4[6]];
   const hx = N5(3, S + 50) * 0.5, hy = N5(2.5, S + 51) * 0.7;
   const fire = [], smoke2 = [];
   looped(t, D12, 130, S + 100, (r) => {
@@ -6619,23 +6808,23 @@ function draw9(p, t, o) {
   fire.sort((a, b) => b[0] - a[0]);
   for (const [age, x, y, q] of fire) {
     const u = age / q.fl;
-    firePuff2(p, x, y, 1 - u, q.s * (1 + 1.3 * u), q.f, H5, 0.07, -0.86, -0.5);
+    firePuff2(p, x, y, 1 - u, q.s * (1 + 1.3 * u), q.f, H4, 0.07, -0.86, -0.5);
   }
   BODY.forEach(([len2, w, dy], i) => {
-    const n = (S * 5 + i) * 17, L3 = len2 * (0.82 + 0.25 * N5(4, n)) * (1 + 0.3 * Math.max(0, N5(2.4, n + 3)));
-    flameBlade(p, hx + 1, hy + dy * 0.5, -1, dy * 0.02, L3, w * R02 / 5, N5(3, n + 5) * 3 + dy, N5, n, H5, LAYERS2, 0.5, 1.1 + L3 * 0.05);
+    const n = (S * 5 + i) * 17, L4 = len2 * (0.82 + 0.25 * N5(4, n)) * (1 + 0.3 * Math.max(0, N5(2.4, n + 3)));
+    flameBlade(p, hx + 1, hy + dy * 0.5, -1, dy * 0.02, L4, w * R02 / 5, N5(3, n + 5) * 3 + dy, N5, n, H4, LAYERS2, 0.5, 1.1 + L4 * 0.05);
   });
   CORONA.forEach(([a, len2, w], i) => {
-    const n = (S * 5 + i + 20) * 17, L3 = len2 * (0.7 + 0.4 * (0.5 + 0.5 * N5(6, n))), ox = Math.cos(a) * R02 * 0.85, oy = Math.sin(a) * R02 * 0.85;
+    const n = (S * 5 + i + 20) * 17, L4 = len2 * (0.7 + 0.4 * (0.5 + 0.5 * N5(6, n))), ox = Math.cos(a) * R02 * 0.85, oy = Math.sin(a) * R02 * 0.85;
     const dx = Math.cos(a) * 0.55 - 1, dy = Math.sin(a) * 0.55, l = Math.hypot(dx, dy);
-    flameBlade(p, hx + ox, hy + oy, dx / l, dy / l, L3, w, -Math.sign(a) * 1.5, N5, n, H5, LAYERS2);
+    flameBlade(p, hx + ox, hy + oy, dx / l, dy / l, L4, w, -Math.sign(a) * 1.5, N5, n, H4, LAYERS2);
   });
-  head3(p, H5, t, R02, S, hx, hy);
+  head3(p, H4, t, R02, S, hx, hy);
   looped(t, D12, 26, S + 200, (r) => ({ a: r.range(-2.4, 2.4), v: r.range(30, 70), life: r.range(0.08, 0.18) }), (q, age) => {
     const ca = Math.cos(q.a), sa = Math.sin(q.a), d = R02 * 0.9 + q.v * age, x = hx + ca * d - V * 0.4 * age, y = hy + sa * d;
-    const k = 1 - age / q.life, L3 = 1 + 2 * k;
-    p.line(x - ca * L3 + V * 0.02, y - sa * L3, x, y, k > 0.5 ? H5[1] : H5[3]);
-    p.glow(x, y, 3, H5[2], 0.4 * k);
+    const k = 1 - age / q.life, L4 = 1 + 2 * k;
+    p.line(x - ca * L4 + V * 0.02, y - sa * L4, x, y, k > 0.5 ? H4[1] : H4[3]);
+    p.glow(x, y, 3, H4[2], 0.4 * k);
   });
   looped(t, D12, 30, S + 300, (r) => ({ x: -r.range(2, 16), y: r.range(-3, 3), v: V * r.range(0.3, 0.8), vy: r.range(-20, 20), life: r.range(0.25, 0.55), big: r.chance(0.25), ph: r.range(0, 6.3) }), (q, age) => {
     const [wx, y, wvx, vy] = drift(0, q.y, q.v, q.vy, age, 0, 50, 3, 2);
@@ -6646,7 +6835,7 @@ function draw9(p, t, o) {
   const fl = 0.85 + 0.15 * N5(9, S + 7);
   p.glowLine(hx - 6, hy, -50, -2, 12, GLOW, 0.2 * fl);
   p.glow(hx - 2, hy, 42, GLOW, 0.42 * fl);
-  p.glow(hx, hy, 13, H5[1], 0.3 * fl);
+  p.glow(hx, hy, 13, H4[1], 0.3 * fl);
 }
 
 // ../pixelfx/src/fx/fire/meteor.js
@@ -6693,11 +6882,11 @@ function rock3(p, b, st) {
   });
 }
 function create8(o) {
-  const F = fit(o.palette, 9), H5 = hotFirst(F), RK = fit(o.rock, 4), st = stone2(o.stone), R4 = new Rng(o.seed), floor = () => 0, S = o.seed * 11;
+  const F = fit(o.palette, 9), H4 = hotFirst(F), RK = fit(o.rock, 4), st = stone2(o.stone), R4 = new Rng(o.seed), floor = () => 0, S = o.seed * 11;
   let blazes;
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [H5[1], H5[2], H5[4], H5[5]], onLand: (x, y) => blazes.add(x, y - 0.25, R4.range(0.9, 1.6), R4.range(0.5, 0.85)) });
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [H4[1], H4[2], H4[4], H4[5]], onLand: (x, y) => blazes.add(x, y - 0.25, R4.range(0.9, 1.6), R4.range(0.5, 0.85)) });
   blazes = new Blazes(ps);
-  const bits = new Bits({ ground: floor }), lights = new Lights(), GLOW = mix(mix(H5[3], H5[4], 0.5), WHITE, 0.25);
+  const bits = new Bits({ ground: floor }), lights = new Lights(), GLOW = mix(mix(H4[3], H4[4], 0.5), WHITE, 0.25);
   const len2 = Math.hypot(FROM[0], FROM[1]), ux = -FROM[0] / len2, uy = -FROM[1] / len2;
   const pos = (tt) => {
     const k = ease.inQuad(clamp(tt / HIT2)) * 0.35 + clamp(tt / HIT2) * 0.65;
@@ -6711,10 +6900,10 @@ function create8(o) {
       if (d > rr + 1) return;
       if (d > rr) return OUTLINE2;
       const face2 = (dx * ux + dy * uy) / Math.max(1, d), heat2 = (1 - cool) * (face2 * 0.6 + 0.5 - d / rr * 0.25);
-      if (heat2 > 0.62) return heat2 > 0.85 ? H5[0] : heat2 > 0.74 ? H5[1] : H5[2];
-      if (heat2 > 0.42) return H5[4];
+      if (heat2 > 0.62) return heat2 > 0.85 ? H4[0] : heat2 > 0.74 ? H4[1] : H4[2];
+      if (heat2 > 0.42) return H4[4];
       const h = rand(Math.floor(px - x), Math.floor(py - y), S + 3);
-      if (h < 0.22 * (1 - cool * 0.7)) return 1 - cool > 0.5 ? H5[4] : H5[6];
+      if (h < 0.22 * (1 - cool * 0.7)) return 1 - cool > 0.5 ? H4[4] : H4[6];
       return dx * -0.6 + dy * -0.8 > 0 ? RK[2] : d / rr > 0.6 ? RK[0] : RK[1];
     });
   };
@@ -6727,14 +6916,14 @@ function create8(o) {
         if (d > 1) continue;
         const k = rand(x * 31 + y, S + 5), T4 = Math.pow(clamp(1 - a / 2.6), 1.3) * (1.25 - d) - k * 0.35;
         if (T4 > 0.06) {
-          const ramp2 = [H5[0], H5[1], H5[2], H5[3], H5[4], H5[5], H5[6], H5[7], H5[8]], c = ramp2[Math.min(8, Math.floor((1 - Math.min(1, T4)) * 8))];
+          const ramp2 = [H4[0], H4[1], H4[2], H4[3], H4[4], H4[5], H4[6], H4[7], H4[8]], c = ramp2[Math.min(8, Math.floor((1 - Math.min(1, T4)) * 8))];
           p.dot(x, y, c, end);
           if ((x & 3) === 0) p.glow(x + 0.5, y, 7, c, 0.2 * T4 * end);
         } else p.dot(x, y, d < 0.55 ? SOOT : SOOT2, (d < 0.95 - k * 0.3 ? 1 : 1 - d) * end);
       }
     for (let x = -40; x <= 40; x++) {
       const e = Math.abs(x) / 40, hh = e < 0.7 ? 0 : Math.round(2.4 * Math.sin((e - 0.7) / 0.3 * Math.PI) * (0.6 + 0.4 * rand(x, S + 7)));
-      for (let j = 0; j < hh; j++) p.dot(x, -1 - j, j === hh - 1 ? mix(st.light, H5[4], 0.5 * clamp(1 - a / 2)) : st.shade, end);
+      for (let j = 0; j < hh; j++) p.dot(x, -1 - j, j === hh - 1 ? mix(st.light, H4[4], 0.5 * clamp(1 - a / 2)) : st.shade, end);
       if (hh) p.dot(x, 0, OUTLINE2, end);
     }
   };
@@ -6749,7 +6938,7 @@ function create8(o) {
           ps.spawn(P.FIRE, x - ux * R4.range(2, 8) + R4.range(-3, 3), y - uy * R4.range(2, 8) + R4.range(-3, 3), vx * 0.15 + R4.range(-20, 20), vy * 0.15 + R4.range(-30, 10), R4.range(0.3, 0.6), 0, R4.range(3, 6), 0, R4.chance(0.65) ? PF.SMOKES | PF.BIG : 0);
         }
         if (R4.chance(0.6 * dt * 60)) ps.spawn(P.SPARK, x, y, vx * 0.35 + R4.range(-80, 80), vy * 0.35 + R4.range(-80, 40), R4.range(0.2, 0.5));
-        if (R4.chance(0.3 * dt * 60)) ps.spawn(P.EMBER, x, y, vx * 0.1 + R4.range(-30, 30), vy * 0.1 + R4.range(-40, 0), R4.range(0.8, 1.6), H5[3], R4.chance(0.2) ? 2 : 1);
+        if (R4.chance(0.3 * dt * 60)) ps.spawn(P.EMBER, x, y, vx * 0.1 + R4.range(-30, 30), vy * 0.1 + R4.range(-40, 0), R4.range(0.8, 1.6), H4[3], R4.chance(0.2) ? 2 : 1);
       } else if (!hit) {
         hit = true;
         lights.add(0, -40, 100, WARM, 0.95, 0.9);
@@ -6773,7 +6962,7 @@ function create8(o) {
         }
         for (let i = 0; i < 36; i++) {
           const a = R4.range(0, TAU), sp = R4.range(40, 150);
-          ps.spawn(P.EMBER, Math.cos(a) * 8, -8 + Math.sin(a) * 6, Math.cos(a) * sp, Math.sin(a) * sp - 70, R4.range(1.2, 2.6), H5[3]);
+          ps.spawn(P.EMBER, Math.cos(a) * 8, -8 + Math.sin(a) * 6, Math.cos(a) * sp, Math.sin(a) * sp - 70, R4.range(1.2, 2.6), H4[3]);
         }
         for (let i = 0; i < 10; i++) {
           const a = -Math.PI / 2 + R4.range(-1, 1.05), sp = R4.range(130, 240);
@@ -6798,25 +6987,25 @@ function create8(o) {
     },
     drawBack(p) {
       crater(p);
-      simDraw(p, ps, H5, "back");
+      simDraw(p, ps, H4, "back");
       blazes.drawBack(p);
       const k = (t - HIT2) / 0.5;
-      if (k > 0 && k < 1) band(p, 0, 0.5, 110 * ease.outCubic(k), 0.16, Math.max(1, 5 * (1 - k)), 1.15 - k, [st.body, st.light, H5[4], H5[1]], (g) => Math.sin(g) < 0);
+      if (k > 0 && k < 1) band(p, 0, 0.5, 110 * ease.outCubic(k), 0.16, Math.max(1, 5 * (1 - k)), 1.15 - k, [st.body, st.light, H4[4], H4[1]], (g) => Math.sin(g) < 0);
     },
     draw(p) {
       const k = (t - HIT2) / 0.5;
-      if (k > 0 && k < 1) band(p, 0, 0.5, 110 * ease.outCubic(k), 0.16, Math.max(1, 5 * (1 - k)), 1.15 - k, [st.body, st.light, H5[4], H5[1]], (g) => Math.sin(g) >= 0, k < 0.12);
+      if (k > 0 && k < 1) band(p, 0, 0.5, 110 * ease.outCubic(k), 0.16, Math.max(1, 5 * (1 - k)), 1.15 - k, [st.body, st.light, H4[4], H4[1]], (g) => Math.sin(g) >= 0, k < 0.12);
       for (const b of bits.list) rock3(p, b, st);
       if (t < HIT2) {
         const [x, y] = pos(t), NZ = (rate, seed = 0, off = 0) => noise(t * rate + off, seed);
         floorLight(p, 0, 0.5, 30 + 40 * (t / HIT2), 7, GLOW, 0.5 * (t / HIT2) ** 2);
-        [[36, 7, 0], [26, 7.5, -2.5], [26, 7.5, 2.5], [16, 8, 0]].forEach(([L3, w, off], i) => {
+        [[36, 7, 0], [26, 7.5, -2.5], [26, 7.5, 2.5], [16, 8, 0]].forEach(([L4, w, off], i) => {
           const n = (S + i) * 13;
-          flameBlade(p, x - uy * off, y + ux * off, -ux, -uy, L3 * (0.85 + 0.25 * NZ(5, n)), w, NZ(3, n + 3) * 3, NZ, n, H5, LAYERS2, 0.5, 1.6);
+          flameBlade(p, x - uy * off, y + ux * off, -ux, -uy, L4 * (0.85 + 0.25 * NZ(5, n)), w, NZ(3, n + 3) * 3, NZ, n, H4, LAYERS2, 0.5, 1.6);
         });
         meteor(p, x, y, 6.5, 0);
         p.glow(x, y, 46, GLOW, 0.55);
-        p.glow(x, y, 12, H5[1], 0.4);
+        p.glow(x, y, 12, H4[1], 0.4);
       } else {
         const a = t - HIT2, cool = clamp(a / 2.8), end = 1 - smooth(meta17.duration - 1.1, meta17.duration - 0.2, t);
         if (end > 0) {
@@ -6824,15 +7013,15 @@ function create8(o) {
           p.glow(0, -2, 22, GLOW, 0.4 * (1 - cool) * end);
         }
       }
-      simDraw(p, ps, H5, "front");
+      simDraw(p, ps, H4, "front");
       const f = (t - HIT2) / 0.08;
       if (f > 0 && f < 1) {
-        p.circle(0, -6, 11 * (1 - f * 0.3) + 1.5, H5[3]);
-        p.circle(0, -6, 11 * (1 - f * 0.3), f < 0.5 ? H5[1] : H5[2]);
-        p.circle(0, -6, 7 * (1 - f * 0.3), f < 0.5 ? WHITE : H5[1]);
+        p.circle(0, -6, 11 * (1 - f * 0.3) + 1.5, H4[3]);
+        p.circle(0, -6, 11 * (1 - f * 0.3), f < 0.5 ? H4[1] : H4[2]);
+        p.circle(0, -6, 7 * (1 - f * 0.3), f < 0.5 ? WHITE : H4[1]);
       }
       const fr = (t - HIT2) / 0.24;
-      if (fr > 0 && fr < 1) flare(p, 0, -6, 44 * Math.pow(1 - fr, 1.4), 1 - fr, [H5[6], H5[4], H5[2], H5[1]]);
+      if (fr > 0 && fr < 1) flare(p, 0, -6, 44 * Math.pow(1 - fr, 1.4), 1 - fr, [H4[6], H4[4], H4[2], H4[1]]);
       lights.draw(p);
     }
   };
@@ -6890,38 +7079,38 @@ var RINGS = [
   { q: [0.36, 0.52], h: [13, 19], w: [7, 9], n: 3, kids: 1 },
   { q: [0.62, 0.9], h: [5, 10], w: [4, 6], n: 4, kids: 0 }
 ];
-function frost(p, C4, x0, x1, reach, a, edge) {
+function frost(p, C5, x0, x1, reach, a, edge) {
   for (let x = Math.floor(x0); x <= Math.ceil(x1); x++) {
     const d = Math.abs(x + 0.5), q = d / reach, k = clamp((a * 1.15 - q) / 0.15);
     if (k <= 0) continue;
     const h = rand(x, 17), fresh = edge > 0 && d > edge - 3, tuft = h < 0.45 ? Math.round((1 + rand(x, 5) * 3) * (1 - q * 0.6)) : 0, D17 = (4 + rand(x, 11) * 4) * (1 - q * 0.5);
-    p.dot(x, 0, fresh || h < 0.25 ? WHITE : C4[6], k);
-    for (let j = 1; j <= tuft; j++) p.dot(x, -j, j === tuft ? WHITE : C4[5], k);
-    if (tuft > 1 && rand(x, 9) < 0.5) p.dot(x + (rand(x, 3) < 0.5 ? -1 : 1), -tuft + 1, C4[6], k);
+    p.dot(x, 0, fresh || h < 0.25 ? WHITE : C5[6], k);
+    for (let j = 1; j <= tuft; j++) p.dot(x, -j, j === tuft ? WHITE : C5[5], k);
+    if (tuft > 1 && rand(x, 9) < 0.5) p.dot(x + (rand(x, 3) < 0.5 ? -1 : 1), -tuft + 1, C5[6], k);
     for (let j = 1; j <= D17; j++) {
       const v = j / D17;
-      p.dot(x, j, rand(x * 31 + j, 7) < 0.06 ? WHITE : v < 0.25 ? C4[6] : v < 0.55 ? C4[5] : C4[4], k * (1.1 - v) * (fresh ? 1.3 : 1));
+      p.dot(x, j, rand(x * 31 + j, 7) < 0.06 ? WHITE : v < 0.25 ? C5[6] : v < 0.55 ? C5[5] : C5[4], k * (1.1 - v) * (fresh ? 1.3 : 1));
     }
   }
 }
-function snowflake(p, C4, x, y, L3, spin, k) {
-  if (L3 < 0.8) return;
+function snowflake(p, C5, x, y, L4, spin, k) {
+  if (L4 < 0.8) return;
   for (let i = 0; i < 6; i++) {
     const a = spin + i * TAU / 6, ca = Math.cos(a), sa = Math.sin(a);
-    for (let d = 0; d <= L3; d += 0.5) p.dot(x + ca * d, y + sa * d, d < L3 * 0.4 ? WHITE : C4[6], k + 0.2);
-    if (L3 > 3)
+    for (let d = 0; d <= L4; d += 0.5) p.dot(x + ca * d, y + sa * d, d < L4 * 0.4 ? WHITE : C5[6], k + 0.2);
+    if (L4 > 3)
       for (const s of [-1, 1]) {
-        const bx = x + ca * L3 * 0.6, by = y + sa * L3 * 0.6, ba = a + s * 0.9;
-        for (let d = 0; d <= L3 * 0.35; d += 0.5) p.dot(bx + Math.cos(ba) * d, by + Math.sin(ba) * d, C4[5], k);
+        const bx = x + ca * L4 * 0.6, by = y + sa * L4 * 0.6, ba = a + s * 0.9;
+        for (let d = 0; d <= L4 * 0.35; d += 0.5) p.dot(bx + Math.cos(ba) * d, by + Math.sin(ba) * d, C5[5], k);
       }
   }
   p.px(x, y, WHITE);
-  p.glow(x, y, 10 + L3 * 3, C4[5], 0.35 + 0.5 * k);
+  p.glow(x, y, 10 + L4 * 3, C5[5], 0.35 + 0.5 * k);
 }
 function create9(o) {
-  const C4 = fit(o.palette, 8), DIM = [C4[0], C4[0], C4[1], C4[2], C4[3], C4[4], C4[5], C4[6]], REACH2 = o.reach;
+  const C5 = fit(o.palette, 8), DIM = [C5[0], C5[0], C5[1], C5[2], C5[3], C5[4], C5[5], C5[6]], REACH2 = o.reach;
   const R4 = new Rng(o.seed), floor = () => 0;
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [C4[7], C4[6], C4[5], C4[4]], haze: C4[5] });
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [C5[7], C5[6], C5[5], C5[4]], haze: C5[5] });
   const bits = new Bits({ ground: floor }), lights = new Lights();
   const front = (t2) => t2 < CHARGE ? 0 : REACH2 * (1 - Math.pow(1 - clamp((t2 - CHARGE) / SPREAD), 3));
   const reachedAt = (d) => CHARGE + SPREAD * (1 - Math.cbrt(1 - Math.min(1, d / REACH2)));
@@ -6946,15 +7135,15 @@ function create9(o) {
       if (!s.up || s.back !== back || m >= 1) continue;
       const g = ease.outBack(clamp((t - s.t0) / 0.1), 2.6), white = t < s.t0 + 0.03, sw = ((t - s.t0) * 0.7 + s.phase * 3) % 1.6 / 0.5;
       for (const q of s.parts)
-        crystal(p, s.x + q.dx, back ? -1 : 0, q.h * g * (1 - m), q.w * (1 - m * 0.3), q.lean * g * (1 - m), back ? DIM : C4, { white, glint: sw <= 1 ? sw : -1 });
+        crystal(p, s.x + q.dx, back ? -1 : 0, q.h * g * (1 - m), q.w * (1 - m * 0.3), q.lean * g * (1 - m), back ? DIM : C5, { white, glint: sw <= 1 ? sw : -1 });
     }
   };
   const ring4 = (p, back) => {
     if (t < CHARGE) return;
     const u = clamp((t - CHARGE) / (SPREAD + 0.15));
     if (u >= 1) return;
-    band(p, 0, 0, front(t) + 2, 0.16, Math.max(2, 10 * Math.pow(1 - u, 0.7)), u < 0.75 ? 1 : (1 - u) / 0.25, C4, (g) => Math.sin(g) < 0 === back, t - CHARGE < 0.1);
-    if (!back) for (const s of [-1, 1]) p.glow(s * (front(t) + 2), -2, 22, C4[5], 0.55 * (1 - u));
+    band(p, 0, 0, front(t) + 2, 0.16, Math.max(2, 10 * Math.pow(1 - u, 0.7)), u < 0.75 ? 1 : (1 - u) / 0.25, C5, (g) => Math.sin(g) < 0 === back, t - CHARGE < 0.1);
+    if (!back) for (const s of [-1, 1]) p.glow(s * (front(t) + 2), -2, 22, C5[5], 0.55 * (1 - u));
   };
   return {
     update(dt) {
@@ -6963,56 +7152,56 @@ function create9(o) {
         if (R4.chance(0.9)) {
           const a = R4.range(0, TAU), D17 = R4.range(26, 58), T4 = R4.range(0.2, 0.3), v = D17 * 3 / (Math.exp(3 * T4) - 1);
           const x = Math.cos(a) * D17, y = Math.min(CORE_Y + Math.sin(a) * D17 * 0.8, -2), l = Math.hypot(x, y - CORE_Y) || 1;
-          ps.spawn(P.STREAK, x, y, -x / l * v, (CORE_Y - y) / l * v, T4, R4.chance(0.5) ? C4[6] : C4[5]);
+          ps.spawn(P.STREAK, x, y, -x / l * v, (CORE_Y - y) / l * v, T4, R4.chance(0.5) ? C5[6] : C5[5]);
         }
         if (R4.chance(0.14)) {
           const s = R4.sign();
-          ps.spawn(P.VAPOUR, s * R4.range(28, 60), -R4.range(0, 2), -s * R4.range(35, 70), -R4.range(0, 3), R4.range(0.35, 0.5), C4[6], R4.range(2, 3));
+          ps.spawn(P.VAPOUR, s * R4.range(28, 60), -R4.range(0, 2), -s * R4.range(35, 70), -R4.range(0, 3), R4.range(0.35, 0.5), C5[6], R4.range(2, 3));
         }
       }
       if (t >= CHARGE && !released) {
         released = true;
-        lights.add(0, CORE_Y, 84, C4[4], 0.8, 0.55);
+        lights.add(0, CORE_Y, 84, C5[4], 0.8, 0.55);
         lights.add(0, CORE_Y, 45, WHITE, 0.7, 0.12);
         for (let i = 0; i < 22; i++) {
           const a = R4.range(-Math.PI, 0.25), sp = R4.range(110, 280);
-          bits.add({ kind: B.SHARD, x: R4.range(-3, 3), y: CORE_Y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.7, drag: 0.6, bounce: 0.3, life: R4.range(0.9, 1.5), a: R4.range(0, TAU), va: R4.range(-20, 20), s: R4.range(1.5, 3.5), c: R4.pick([C4[7], C4[6], C4[5]]) });
+          bits.add({ kind: B.SHARD, x: R4.range(-3, 3), y: CORE_Y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.7, drag: 0.6, bounce: 0.3, life: R4.range(0.9, 1.5), a: R4.range(0, TAU), va: R4.range(-20, 20), s: R4.range(1.5, 3.5), c: R4.pick([C5[7], C5[6], C5[5]]) });
         }
         for (let i = 0; i < 14; i++) {
           const a = R4.range(-Math.PI, 0), sp = R4.range(40, 160);
-          ps.spawn(P.FLAKE, 0, CORE_Y, Math.cos(a) * sp, Math.sin(a) * sp, R4.range(1.2, 1.8), R4.chance(0.6) ? WHITE : C4[6], R4.range(0.5, 1.6));
+          ps.spawn(P.FLAKE, 0, CORE_Y, Math.cos(a) * sp, Math.sin(a) * sp, R4.range(1.2, 1.8), R4.chance(0.6) ? WHITE : C5[6], R4.range(0.5, 1.6));
         }
       }
       const fr = front(t);
       if (t > CHARGE && t < CHARGE + SPREAD)
         for (const s of [-1, 1]) {
-          ps.spawn(P.VAPOUR, s * fr + R4.range(-2, 2), -R4.range(0, 5), s * R4.range(15, 75), -R4.range(2, 15), R4.range(0.6, 1), R4.chance(0.7) ? C4[6] : C4[5], R4.range(3, 5.5) * (1 - 0.4 * (fr / REACH2)));
-          if (R4.chance(0.45)) ps.spawn(P.FLAKE, s * fr, -2, s * R4.range(10, 45), -R4.range(30, 85), R4.range(1.1, 1.9), R4.chance(0.5) ? WHITE : C4[6], R4.range(0.5, 1.2));
+          ps.spawn(P.VAPOUR, s * fr + R4.range(-2, 2), -R4.range(0, 5), s * R4.range(15, 75), -R4.range(2, 15), R4.range(0.6, 1), R4.chance(0.7) ? C5[6] : C5[5], R4.range(3, 5.5) * (1 - 0.4 * (fr / REACH2)));
+          if (R4.chance(0.45)) ps.spawn(P.FLAKE, s * fr, -2, s * R4.range(10, 45), -R4.range(30, 85), R4.range(1.1, 1.9), R4.chance(0.5) ? WHITE : C5[6], R4.range(0.5, 1.2));
         }
       for (const s of sites) {
         if (!s.up && t >= s.t0) {
           s.up = true;
           for (let i = 0; i < 2 + Math.round(s.h / 8); i++) {
             const a = -Math.PI / 2 + R4.range(-1.3, 1.3), sp = R4.range(60, 200) * (0.5 + s.h / 40);
-            bits.add({ kind: B.SHARD, x: s.x + R4.range(-3, 3), y: 0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.8, drag: 0.6, bounce: 0.3, life: R4.range(0.9, 1.6), a: R4.range(0, TAU), va: R4.range(-18, 18), s: R4.range(1.5, 3), c: R4.pick([C4[7], C4[6], C4[5]]) });
+            bits.add({ kind: B.SHARD, x: s.x + R4.range(-3, 3), y: 0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.8, drag: 0.6, bounce: 0.3, life: R4.range(0.9, 1.6), a: R4.range(0, TAU), va: R4.range(-18, 18), s: R4.range(1.5, 3), c: R4.pick([C5[7], C5[6], C5[5]]) });
           }
-          ps.spawn(P.VAPOUR, s.x, -1, R4.range(-30, 30), -R4.range(2, 8), R4.range(0.5, 0.9), C4[6], R4.range(2.5, 4));
-          if (s.h > 10) ps.spawn(P.STAR, s.x + R4.range(-3, 3), -R4.range(4, s.h * 0.8), 0, -3, R4.range(0.3, 0.6), C4[6], R4.range(1, 2.4));
+          ps.spawn(P.VAPOUR, s.x, -1, R4.range(-30, 30), -R4.range(2, 8), R4.range(0.5, 0.9), C5[6], R4.range(2.5, 4));
+          if (s.h > 10) ps.spawn(P.STAR, s.x + R4.range(-3, 3), -R4.range(4, s.h * 0.8), 0, -3, R4.range(0.3, 0.6), C5[6], R4.range(1, 2.4));
         }
       }
       if (t > CHARGE + 0.2 && t < HOLD2 + 0.2) {
         if (R4.chance(0.5)) {
           const s = R4.pick(sites);
-          if (s.up) ps.spawn(P.STAR, s.x + R4.range(-3, 3), -R4.range(2, s.h * 0.9), 0, -3, R4.range(0.3, 0.6), R4.chance(0.6) ? C4[6] : WHITE, R4.range(0.6, 2.2));
+          if (s.up) ps.spawn(P.STAR, s.x + R4.range(-3, 3), -R4.range(2, s.h * 0.9), 0, -3, R4.range(0.3, 0.6), R4.chance(0.6) ? C5[6] : WHITE, R4.range(0.6, 2.2));
         }
-        if (t < HOLD2 - 0.3 && R4.chance(0.16)) ps.spawn(P.FLAKE, R4.range(-1, 1) * fr, -R4.range(40, 90), R4.range(-5, 5), R4.range(3, 10), R4.range(1.1, 1.5), R4.chance(0.5) ? WHITE : C4[6], R4.range(0.5, 1.4));
+        if (t < HOLD2 - 0.3 && R4.chance(0.16)) ps.spawn(P.FLAKE, R4.range(-1, 1) * fr, -R4.range(40, 90), R4.range(-5, 5), R4.range(3, 10), R4.range(1.1, 1.5), R4.chance(0.5) ? WHITE : C5[6], R4.range(0.5, 1.4));
       }
       if (t > HOLD2 && t < HOLD2 + MELT) {
         if (R4.chance(0.5)) {
           const s = R4.pick(sites);
-          bits.add({ kind: B.DRIP, x: s.x + R4.range(-3, 3), y: -R4.range(3, s.h * 0.6 * (1 - sink(t))), vy: 10, g: 0.6, life: 1, c: C4[5] });
+          bits.add({ kind: B.DRIP, x: s.x + R4.range(-3, 3), y: -R4.range(3, s.h * 0.6 * (1 - sink(t))), vy: 10, g: 0.6, life: 1, c: C5[5] });
         }
-        if (R4.chance(0.25)) ps.spawn(P.VAPOUR, R4.range(-1, 1) * REACH2 * 0.8, -R4.range(0, 3), R4.range(-10, 10), -R4.range(6, 16), R4.range(0.6, 1), C4[5], R4.range(3, 5));
+        if (R4.chance(0.25)) ps.spawn(P.VAPOUR, R4.range(-1, 1) * REACH2 * 0.8, -R4.range(0, 3), R4.range(-10, 10), -R4.range(6, 16), R4.range(0.6, 1), C5[5], R4.range(3, 5));
       }
       ps.update(dt);
       bits.update(dt);
@@ -7020,7 +7209,7 @@ function create9(o) {
     },
     drawBack(p) {
       const out = 1 - smooth(HOLD2 + 0.2, HOLD2 + MELT + 0.6, t), fr = front(t);
-      if (out > 0 && t > CHARGE) frost(p, C4, -Math.max(12, fr + 1), Math.max(12, fr + 1), REACH2, out, fr);
+      if (out > 0 && t > CHARGE) frost(p, C5, -Math.max(12, fr + 1), Math.max(12, fr + 1), REACH2, out, fr);
       ring4(p, true);
       drawCrystals(p, true);
       ps.draw(p, "back");
@@ -7030,15 +7219,15 @@ function create9(o) {
       drawCrystals(p, false);
       if (t < CHARGE) {
         const k = t / CHARGE, beat3 = 1 + 0.25 * Math.exp(-((t - CHARGE * 0.55) ** 2) / 2e-3) + 0.3 * Math.exp(-((t - CHARGE * 0.85) ** 2) / 2e-3);
-        snowflake(p, C4, 0, CORE_Y, (2 + 5.5 * k * k) * beat3, t * 4, k);
+        snowflake(p, C5, 0, CORE_Y, (2 + 5.5 * k * k) * beat3, t * 4, k);
       } else if (t < CHARGE + 0.22) {
         const a = (t - CHARGE) / 0.22;
-        flare(p, 0, CORE_Y, 36 * Math.pow(1 - a, 1.5), 1 - a, C4);
+        flare(p, 0, CORE_Y, 36 * Math.pow(1 - a, 1.5), 1 - a, C5);
         p.glow(0, CORE_Y, 46, WHITE, 0.6 * (1 - a));
       }
       if (t > CHARGE) {
         const k = (1 - smooth(HOLD2, HOLD2 + MELT + 0.3, t)) * (0.85 + 0.15 * Math.sin(t * 2.4)), fr = front(t);
-        for (let i = -3; i <= 3; i++) p.glow(i / 3.5 * fr, -4, 26, C4[4], 0.16 * k);
+        for (let i = -3; i <= 3; i++) p.glow(i / 3.5 * fr, -4, 26, C5[4], 0.16 * k);
       }
       bits.draw(p);
       ps.draw(p, "front");
@@ -7060,9 +7249,9 @@ var PLASMA = ["#ffffff", "#c8f8ff", "#7ff3ff", "#1ab8e6"];
 var SOOT3 = hex("#110c16");
 var SOOT22 = hex("#1c1522");
 function zigzag(R4, x0, y0, x1, y1, jag = 0.32, forks = 0.35, w = 1, depth = 0) {
-  const out = { paths: [] }, L3 = Math.hypot(x1 - x0, y1 - y0);
-  let pts = [[x0, y0], [x1, y1]], off = L3 * jag;
-  while (pts.length < 2 + L3 / 3) {
+  const out = { paths: [] }, L4 = Math.hypot(x1 - x0, y1 - y0);
+  let pts = [[x0, y0], [x1, y1]], off = L4 * jag;
+  while (pts.length < 2 + L4 / 3) {
     const nxt = [pts[0]];
     for (let i = 0; i < pts.length - 1; i++) {
       const [ax, ay] = pts[i], [bx, by] = pts[i + 1], l = Math.hypot(bx - ax, by - ay) || 1, o = R4.range(-off, off);
@@ -7076,7 +7265,7 @@ function zigzag(R4, x0, y0, x1, y1, jag = 0.32, forks = 0.35, w = 1, depth = 0) 
     for (let i = 2; i < pts.length - 3; i++)
       if (R4.chance(forks / (1 + depth) / Math.max(4, pts.length / 6))) {
         const [ax, ay] = pts[i], [bx, by] = pts[Math.min(pts.length - 1, i + 3)];
-        const a = Math.atan2(by - ay, bx - ax) + R4.sign() * R4.range(0.35, 0.9), l = (L3 - i / pts.length * L3) * R4.range(0.25, 0.55);
+        const a = Math.atan2(by - ay, bx - ax) + R4.sign() * R4.range(0.35, 0.9), l = (L4 - i / pts.length * L4) * R4.range(0.25, 0.55);
         out.paths.push(...zigzag(R4, ax, ay, ax + Math.cos(a) * l, ay + Math.sin(a) * l, jag * 1.1, forks, w * 0.55, depth + 1).paths);
       }
   }
@@ -7123,7 +7312,7 @@ var walk = (pts, fn) => {
     for (let d = 0; d <= l; d += 0.5) fn(ax + (bx - ax) * d / l, ay + (by - ay) * d / l, i);
   }
 };
-function stroke(p, b, k, C4, s = 1, o = {}) {
+function stroke(p, b, k, C5, s = 1, o = {}) {
   if (k <= 0.02) return;
   const lk = o.light ?? 0.5;
   for (const q of b.paths) {
@@ -7136,12 +7325,12 @@ function stroke(p, b, k, C4, s = 1, o = {}) {
       stamp(x, y, rb, trunk ? 3 : 2);
       if (trunk && k > 0.3) o.core ? stamp(x, y, o.core, 4) : mark(x, y, 4);
     });
-    for (let i = 0; i < pts.length - 1; i += 3) if (o.minY === void 0 || pts[i][1] > o.minY) p.glow(pts[i][0], pts[i][1], (trunk ? 14 : 7) * s, C4[4], lk * k * q.w);
+    for (let i = 0; i < pts.length - 1; i += 3) if (o.minY === void 0 || pts[i][1] > o.minY) p.glow(pts[i][0], pts[i][1], (trunk ? 14 : 7) * s, C5[4], lk * k * q.w);
   }
   const a = o.a ?? 1;
-  flush(p, o.hero ? [C4[3], C4[6], C4[7], C4[7]] : [C4[2], C4[4], C4[5], C4[7]], [a, a, a, a]);
+  flush(p, o.hero ? [C5[3], C5[6], C5[7], C5[7]] : [C5[2], C5[4], C5[5], C5[7]], [a, a, a, a]);
 }
-function crackle(p, b, k, C4, glowK = 0.5, a = 1) {
+function crackle(p, b, k, C5, glowK = 0.5, a = 1) {
   if (k <= 0.02) return;
   for (const q of b.paths) {
     const thick = q.w >= 1;
@@ -7150,9 +7339,9 @@ function crackle(p, b, k, C4, glowK = 0.5, a = 1) {
       if (k > 0.25 && (thick || q.w > 0.4)) mark(x + 1, y, 2), mark(x, y + 1, 2);
       mark(x, y, thick && k > 0.3 ? 4 : 3);
     });
-    for (let i = 0; i < q.pts.length - 1; i += 3) p.glow(q.pts[i][0], q.pts[i][1], (thick ? 9 : 5) * (0.5 + k * 0.5), C4[4], glowK * k * q.w);
+    for (let i = 0; i < q.pts.length - 1; i += 3) p.glow(q.pts[i][0], q.pts[i][1], (thick ? 9 : 5) * (0.5 + k * 0.5), C5[4], glowK * k * q.w);
   }
-  flush(p, [C4[3], C4[5], C4[5], C4[7]], [Math.min(1, (k - 0.45) * 1.6) * a, a, a, a]);
+  flush(p, [C5[3], C5[5], C5[5], C5[7]], [Math.min(1, (k - 0.45) * 1.6) * a, a, a, a]);
 }
 var CROSS2 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 function trace2(p, pts, c, a = 1, from = 0, to = pts.length - 1) {
@@ -7220,7 +7409,7 @@ function cracks2(R4) {
   for (let i = 0; i < 6; i++) grow(R4.range(-1, 1), R4.range(0, 1), i % 2 ? R4.range(-0.5, 0.7) : Math.PI + R4.range(-0.7, 0.5), REACH * R4.range(0.55, 1), 1, 0, 0);
   return out;
 }
-function sigil(p, t, C4, k, near) {
+function sigil(p, t, C5, k, near) {
   const reveal = clamp(t / 0.22), spin = t * 0.8, burnt = t > S1 ? t - S1 : -1;
   if (burnt > 0.45) return;
   const a0 = burnt < 0 ? 1 : burnt < 0.07 ? 1 : 1 - (burnt - 0.07) / 0.38, hot = burnt >= 0 && burnt < 0.07;
@@ -7231,26 +7420,26 @@ function sigil(p, t, C4, k, near) {
     if (!on(a) || from(a) > reveal) continue;
     for (const da of [0, 0.06, 0.12]) {
       const x = Math.cos(a + da) * RX, y = Math.sin(a + da) * RX * SY;
-      p.dot(x, y, hot ? WHITE : near ? k > 0.7 ? C4[6] : C4[5] : k > 0.7 ? C4[4] : C4[3], a0);
-      if (near) p.dot(x, y + 1, hot ? C4[6] : C4[2], a0);
+      p.dot(x, y, hot ? WHITE : near ? k > 0.7 ? C5[6] : C5[5] : k > 0.7 ? C5[4] : C5[3], a0);
+      if (near) p.dot(x, y + 1, hot ? C5[6] : C5[2], a0);
     }
-    if (i % 3 === 0) p.glow(Math.cos(a) * RX, Math.sin(a) * RX * SY, 5, C4[4], 0.3 * k * a0);
+    if (i % 3 === 0) p.glow(Math.cos(a) * RX, Math.sin(a) * RX * SY, 5, C5[4], 0.3 * k * a0);
   }
   for (let j = 0; j < 4; j++) {
     const a = spin * -0.5 + j * TAU / 4 + Math.PI / 4;
     if (!on(a) || reveal < 1) continue;
-    p.line(Math.cos(a) * (RX - 5), Math.sin(a) * (RX - 5) * SY, Math.cos(a) * (RX + 5), Math.sin(a) * (RX + 5) * SY, hot ? WHITE : near ? C4[6] : C4[4], a0);
+    p.line(Math.cos(a) * (RX - 5), Math.sin(a) * (RX - 5) * SY, Math.cos(a) * (RX + 5), Math.sin(a) * (RX + 5) * SY, hot ? WHITE : near ? C5[6] : C5[4], a0);
   }
   if (t > 0.3)
     for (let a = 0; a < TAU; a += 0.09) {
       if (!on(a)) continue;
-      p.dot(Math.cos(a) * 14, Math.sin(a) * 14 * SY, hot ? WHITE : near ? C4[4] : C4[2], a0 * clamp((t - 0.3) / 0.12));
+      p.dot(Math.cos(a) * 14, Math.sin(a) * 14 * SY, hot ? WHITE : near ? C5[4] : C5[2], a0 * clamp((t - 0.3) / 0.12));
     }
   if (near && burnt < 0) {
     const pulse2 = 0.6 + 0.4 * Math.sin(t * (10 + 30 * k));
-    p.px(0, 0, k > 0.5 ? WHITE : C4[6]);
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, -1]]) p.px(dx, dy, C4[5]);
-    p.glow(0, -1, 10 + 10 * k, C4[5], 0.3 + 0.4 * k * pulse2);
+    p.px(0, 0, k > 0.5 ? WHITE : C5[6]);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, -1]]) p.px(dx, dy, C5[5]);
+    p.glow(0, -1, 10 + 10 * k, C5[5], 0.3 + 0.4 * k * pulse2);
   }
 }
 function keep(b) {
@@ -7266,7 +7455,7 @@ function keep(b) {
   return { paths };
 }
 function create10(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), floor = () => 0;
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed), floor = () => 0;
   const ps = new Particles({ rng: R4, ground: floor, sparks: o.sparks }), hot = new Particles({ rng: R4, ground: floor }), lights = new Lights();
   const X0 = R4.range(8, 18) * (R4.chance(0.5) ? 1 : -1);
   const main = keep(zigzag(R4, X0, TOP, 0, -1, 0.17, 0.5)), trunk = main.paths[0].pts;
@@ -7289,7 +7478,7 @@ function create10(o) {
         if (struck >= i || t < s.t) continue;
         struck = i;
         const k = s.k;
-        lights.add(0, -50, 120, C4[4], 0.55 * k, 0.4);
+        lights.add(0, -50, 120, C5[4], 0.55 * k, 0.4);
         lights.add(0, -3, 24, WHITE, 0.5 * k, 0.1);
         for (let j = 0; j < Math.round(44 * k); j++) {
           const a = -Math.PI / 2 + R4.range(-1.3, 1.3), sp = R4.range(110, 320) * (0.65 + 0.35 * k);
@@ -7305,13 +7494,13 @@ function create10(o) {
           ps.spawn(P.GRIT, R4.range(-3, 3), -1, Math.cos(a) * sp, Math.sin(a) * sp, R4.range(1, 1.5), R4.pick(STONE2), R4.chance(0.35) ? 2 : 1);
         }
         for (let j = 0; j < 8; j++) ps.spawn(P.DUST, R4.range(-3, 3), -1, R4.sign() * R4.range(30, 110), -R4.range(4, 24), R4.range(0.4, 0.8), DUST4, R4.range(1.5, 3));
-        for (let j = 0; j < Math.round(4 * k); j++) ps.spawn(P.SMOKE, R4.range(-8, 8), -4, R4.range(-10, 10), -R4.range(10, 25), R4.range(1.1, 1.6), mix(ASH, C4[2], 0.3), R4.range(3, 6), R4.range(0.05, 0.25));
+        for (let j = 0; j < Math.round(4 * k); j++) ps.spawn(P.SMOKE, R4.range(-8, 8), -4, R4.range(-10, 10), -R4.range(10, 25), R4.range(1.1, 1.6), mix(ASH, C5[2], 0.3), R4.range(3, 6), R4.range(0.05, 0.25));
       }
       if (struck >= 0 && t < 1.7 && R4.chance(6 * dt)) ps.spawn(P.SMOKE, R4.range(-8, 8), -2, R4.range(-4, 4), -R4.range(9, 17), R4.range(1, 1.3), 0, R4.range(2, 3.5));
       for (let i = 0; i < gone.length - 1; i++)
         if (gone[i] <= t && gone[i] > t - dt && rand(o.seed, i, 6) < 0.5) {
           const [x, y] = end[i];
-          ps.spawn(P.MOTE, x, y, R4.range(-8, 8), R4.range(6, 22), R4.range(0.4, 0.8), R4.chance(0.5) ? C4[5] : C4[4], R4.range(0.5, 0.9));
+          ps.spawn(P.MOTE, x, y, R4.range(-8, 8), R4.range(6, 22), R4.range(0.4, 0.8), R4.chance(0.5) ? C5[5] : C5[4], R4.range(0.5, 0.9));
         }
       ps.update(dt);
       hot.update(dt);
@@ -7325,7 +7514,7 @@ function create10(o) {
             const d = Math.hypot(x / W5, (y + 96) / 132), a = dark * (1 - smooth(0.55, 1, d));
             if (a > 0.01) p.blend(x + 0.5, y + 0.5, NIGHT, a);
           }
-      sigil(p, t, C4, charge(), false);
+      sigil(p, t, C5, charge(), false);
       if (struck >= 0) {
         const s = now(), front = REACH * ease.outCubic(clamp((t - S1) / 0.35)), T02 = heatAt(), fade = 1 - smooth(2.3, 2.95, t);
         const elec = s.a < 0.14 ? s.s.k * (1 - s.a / 0.14) : 0;
@@ -7333,11 +7522,11 @@ function create10(o) {
           for (const [x, y, d] of br.pts) {
             if (d > front) break;
             const q = d / REACH, n = rand(Math.round(x * 2), Math.round(y * 2), 9), fresh = d > front - 6 && front < REACH;
-            const T4 = T02 * (1.15 - q) * (br.w < 1 ? 0.8 : 1) - n * 0.25, c = fresh || elec > 0.3 && n < 0.85 ? q < 0.5 ? WHITE : C4[6] : heat(T4) || SOOT22;
+            const T4 = T02 * (1.15 - q) * (br.w < 1 ? 0.8 : 1) - n * 0.25, c = fresh || elec > 0.3 && n < 0.85 ? q < 0.5 ? WHITE : C5[6] : heat(T4) || SOOT22;
             p.dot(x, y + 1, SOOT3, fade);
             p.dot(x, y, c, fade);
             if (br.w >= 1 && d < 9) p.dot(x, y + 2, SOOT3, fade);
-            if ((fresh || elec > 0.3) && (Math.round(d) & 3) === 0) p.glow(x, y, 7, C4[5], 0.4);
+            if ((fresh || elec > 0.3) && (Math.round(d) & 3) === 0) p.glow(x, y, 7, C5[5], 0.4);
             else if (T4 > 0.2 && (Math.round(d) & 3) === 0) p.glow(x, y, 5, c, 0.2 * T4);
           }
         scorch(p, 0, 0, 12, T02, fade);
@@ -7348,14 +7537,14 @@ function create10(o) {
     },
     draw(p) {
       const s = now(), f = Math.floor(t * 30 + 1e-4), k = charge();
-      sigil(p, t, C4, k, true);
+      sigil(p, t, C5, k, true);
       if (t > 0.15 && t < S1) {
         const r = rng(o.seed, 61, f);
         for (let i = 0; i < Math.round(1 + 4 * k); i++) {
           const a = r.range(0, TAU), x = Math.cos(a) * RX, y = Math.sin(a) * RX * SY;
-          crackle(p, zigzag(r, x, y, x + r.range(-2.5, 2.5), y - r.range(4, 9) * (0.6 + k), 0.45, 0.3), 0.45 + 0.4 * k, C4, 0.3);
+          crackle(p, zigzag(r, x, y, x + r.range(-2.5, 2.5), y - r.range(4, 9) * (0.6 + k), 0.45, 0.3), 0.45 + 0.4 * k, C5, 0.3);
         }
-        p.glow(0, -2, 36, C4[4], 0.12 + 0.3 * k);
+        p.glow(0, -2, 36, C5[4], 0.12 + 0.3 * k);
       }
       if (t >= LEAD0 && t < S1) {
         const u = clamp((t - LEAD0) / (S1 - LEAD0)), st = Math.min(STEPS, Math.floor(u * STEPS) + 1), fresh = 1 - u * STEPS % 1;
@@ -7365,46 +7554,46 @@ function create10(o) {
           for (let i = 0; i < q.pts.length - 1; i++) {
             const [ax, ay] = q.pts[i], [bx, by] = q.pts[i + 1];
             if (by > reach) {
-              if (ay <= reach && i > 0) p.px(ax, ay, WHITE), p.glow(ax, ay, 7, C4[5], 0.5 * fresh + 0.15);
+              if (ay <= reach && i > 0) p.px(ax, ay, WHITE), p.glow(ax, ay, 7, C5[5], 0.5 * fresh + 0.15);
               break;
             }
             const young = by > prev;
-            p.line(ax, ay, bx, by, young ? fresh > 0.4 ? tk ? C4[6] : C4[5] : C4[4] : tk ? C4[3] : C4[2]);
-            if (i % 4 === 0 && ay > TOP + 14) p.glow(ax, ay, young ? 8 : 5, C4[4], young ? 0.3 * fresh + 0.1 : 0.12);
+            p.line(ax, ay, bx, by, young ? fresh > 0.4 ? tk ? C5[6] : C5[5] : C5[4] : tk ? C5[3] : C5[2]);
+            if (i % 4 === 0 && ay > TOP + 14) p.glow(ax, ay, young ? 8 : 5, C5[4], young ? 0.3 * fresh + 0.1 : 0.12);
           }
         }
         if (t > 0.62) {
           const h = -MEET * ease.outQuad((t - 0.62) / (S1 - 0.62)), r = rng(o.seed, 77, f);
           const b = zigzag(r, 0, -1, r.range(-2, 2), -Math.max(3, h), 0.3, 0.3), tip = b.paths[0].pts.at(-1);
-          crackle(p, b, 0.85, C4, 0.45);
+          crackle(p, b, 0.85, C5, 0.45);
           p.px(tip[0], tip[1], WHITE);
-          p.glow(tip[0], tip[1], 9, C4[5], 0.5);
+          p.glow(tip[0], tip[1], 9, C5[5], 0.5);
         }
       }
       const next = STROKES.find((q) => q.t > t);
       if (next && next !== STROKES[0] && t > next.t - 0.06) {
         const tr = chan(STROKES.indexOf(next)), u = (t - (next.t - 0.06)) / 0.06, i1 = Math.floor(u * tr.length);
-        trace2(p, tr, C4[3], 1);
-        trace2(p, tr, C4[6], 1, i1 - 18, i1);
-        for (let i = Math.max(0, i1 - 18); i < Math.min(tr.length, i1); i += 4) if (tr[i][1] > TOP + 14) p.glow(tr[i][0], tr[i][1], 9, C4[4], 0.35);
+        trace2(p, tr, C5[3], 1);
+        trace2(p, tr, C5[6], 1, i1 - 18, i1);
+        for (let i = Math.max(0, i1 - 18); i < Math.min(tr.length, i1); i += 4) if (tr[i][1] > TOP + 14) p.glow(tr[i][0], tr[i][1], 9, C5[4], 0.35);
       } else if (s && s.k > 0) {
         const hero = s.i === 0 && s.a < 1 / 30;
-        stroke(p, bolts[s.i], s.k, C4, s.i === 0 ? 1.5 : 1.2, { hero, core: s.k > 0.6 ? hero ? 1.2 : 0.8 : 0, minY: TOP + 14 });
+        stroke(p, bolts[s.i], s.k, C5, s.i === 0 ? 1.5 : 1.2, { hero, core: s.k > 0.6 ? hero ? 1.2 : 0.8 : 0, minY: TOP + 14 });
         const r = 4.5 * s.k;
-        p.circle(0, -1, r + 1.5, C4[2]);
-        p.circle(0, -1, r + 0.5, C4[5]);
+        p.circle(0, -1, r + 1.5, C5[2]);
+        p.circle(0, -1, r + 0.5, C5[5]);
         p.circle(0, -1, r * 0.65, WHITE);
-        if (s.a < 0.07) sparkle(p, 0, -2, Math.round(12 * s.k * (1 - s.a / 0.07)), C4[6], C4[4], 0.25);
-        p.glow(0, -16, 96, C4[3], 0.42 * s.k);
-        p.glow(0, -3, 22, C4[5], 0.3 * s.k);
-        if (hero) p.glow(X0 * 0.5, -110, 170, C4[3], 0.3);
+        if (s.a < 0.07) sparkle(p, 0, -2, Math.round(12 * s.k * (1 - s.a / 0.07)), C5[6], C5[4], 0.25);
+        p.glow(0, -16, 96, C5[3], 0.42 * s.k);
+        p.glow(0, -3, 22, C5[5], 0.3 * s.k);
+        if (hero) p.glow(X0 * 0.5, -110, 170, C5[3], 0.3);
       } else if (s) {
         const crumble = s.i === STROKES.length - 1, cool = clamp((s.a - 0.23) / 0.45), tr = chan(s.i);
         for (let i = 0; i < tr.length - 1; i++) {
           if (crumble && t >= gone[i]) continue;
           const h = crumble ? 1 - clamp((t - last2.t - 0.23) / (gone[i] - last2.t - 0.23)) : 1 - cool;
-          p.line(tr[i][0], tr[i][1], tr[i + 1][0], tr[i + 1][1], h > 0.7 ? C4[5] : h > 0.4 ? C4[4] : h > 0.15 ? C4[3] : C4[2]);
-          if (i % 6 === 0 && h > 0.3 && tr[i][1] > TOP + 14) p.glow(tr[i][0], tr[i][1], 6, C4[4], 0.15 * h);
+          p.line(tr[i][0], tr[i][1], tr[i + 1][0], tr[i + 1][1], h > 0.7 ? C5[5] : h > 0.4 ? C5[4] : h > 0.15 ? C5[3] : C5[2]);
+          if (i % 6 === 0 && h > 0.3 && tr[i][1] > TOP + 14) p.glow(tr[i][0], tr[i][1], 6, C5[4], 0.15 * h);
         }
       }
       if (s && s.a < 0.4) {
@@ -7413,7 +7602,7 @@ function create10(o) {
           if (br.w < 1 || r.next() < 0.3) continue;
           const i1 = br.pts.findIndex(([, , d]) => d > run), j1 = i1 < 0 ? br.pts.length : i1, j0 = Math.max(0, j1 - r.int(7, 13));
           const pts = br.pts.slice(j0, j1).map(([x, y]) => [x + r.range(-0.6, 0.6), y - 1.5 - r.range(0, 2.5)]);
-          if (pts.length > 1) crackle(p, { paths: [{ pts, w: 1 }] }, 0.9 * (1 - s.a / 0.4) + 0.1, C4, 0.35);
+          if (pts.length > 1) crackle(p, { paths: [{ pts, w: 1 }] }, 0.9 * (1 - s.a / 0.4) + 0.1, C5, 0.35);
         }
       }
       ps.draw(p, "front");
@@ -7471,11 +7660,11 @@ var DUST5 = hex("#6e6382");
 var STONE3 = ["#655b7a", "#4a4263", "#342d45"].map(hex);
 var ASH2 = hex("#5b5566");
 function create11(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), REACH2 = o.reach, floor = () => 0;
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed), REACH2 = o.reach, floor = () => 0;
   const ps = new Particles({ rng: R4, ground: floor, sparks: o.sparks }), hot = new Particles({ rng: R4, ground: floor }), lights = new Lights();
   const bolts = Array.from({ length: 8 }, (_, i) => {
     const down = i % 2 === 0, side = i % 4 < 2 ? -1 : 1, a = down ? side > 0 ? R4.range(0.35, 0.75) : Math.PI - R4.range(0.35, 0.75) : side > 0 ? -R4.range(0.15, 1.2) : Math.PI + R4.range(0.15, 1.2);
-    const L3 = down ? -CY / Math.sin(a) : R4.range(40, 62), x1 = Math.cos(a) * L3, y1 = down ? 0 : CY + Math.sin(a) * L3;
+    const L4 = down ? -CY / Math.sin(a) : R4.range(40, 62), x1 = Math.cos(a) * L4, y1 = down ? 0 : CY + Math.sin(a) * L4;
     return { down, x1, y1, t0: CLAP + R4.range(0, 0.06) };
   });
   const front = (t2) => t2 < CLAP ? 0 : 8 + (REACH2 - 8) * ease.outCubic(clamp((t2 - CLAP) / 0.5));
@@ -7486,22 +7675,22 @@ function create11(o) {
       t += dt;
       if (t < CLAP && R4.chance(60 * dt)) {
         const a = R4.range(0, TAU), d = R4.range(16, 30), T4 = R4.range(0.07, 0.1), v = d * 3 / (Math.exp(3 * T4) - 1);
-        ps.spawn(P.STREAK, Math.cos(a) * d, CY + Math.sin(a) * d * 0.8, -Math.cos(a) * v, -Math.sin(a) * v * 0.8, T4, R4.chance(0.5) ? C4[6] : C4[5]);
+        ps.spawn(P.STREAK, Math.cos(a) * d, CY + Math.sin(a) * d * 0.8, -Math.cos(a) * v, -Math.sin(a) * v * 0.8, T4, R4.chance(0.5) ? C5[6] : C5[5]);
       }
       if (t >= CLAP && !clapped) {
         clapped = true;
-        lights.add(0, CY - 10, 100, C4[4], 0.65, 0.45);
+        lights.add(0, CY - 10, 100, C5[4], 0.65, 0.45);
         lights.add(0, CY, 26, WHITE, 0.5, 0.07);
         for (let i = 0; i < 64; i++) {
           const a = R4.range(0, TAU), sp = R4.range(170, 380) * (Math.sin(a) > 0.4 ? 0.5 : 1);
           ps.spawn(P.SPARK, Math.cos(a) * 6, CY + Math.sin(a) * 6, Math.cos(a) * sp, Math.sin(a) * sp - 40, R4.range(0.2, 0.55));
         }
-        for (let i = 0; i < 8; i++) ps.spawn(P.SMOKE, R4.range(-8, 8), CY + R4.range(-6, 6), R4.range(-25, 25), -R4.range(10, 30), R4.range(0.8, 1.3), mix(ASH2, C4[4], 0.3), R4.range(4, 7), R4.range(0.05, 0.2));
+        for (let i = 0; i < 8; i++) ps.spawn(P.SMOKE, R4.range(-8, 8), CY + R4.range(-6, 6), R4.range(-25, 25), -R4.range(10, 30), R4.range(0.8, 1.3), mix(ASH2, C5[4], 0.3), R4.range(4, 7), R4.range(0.05, 0.2));
       }
       for (const [i, b] of bolts.entries())
         if (b.down && !landed[i] && t >= b.t0) {
           landed[i] = true;
-          lights.add(b.x1, -4, 46, C4[4], 0.7, 0.25);
+          lights.add(b.x1, -4, 46, C5[4], 0.7, 0.25);
           for (let j = 0; j < 12; j++) {
             const a = -Math.PI / 2 + R4.range(-1.2, 1.2), sp = R4.range(70, 240);
             ps.spawn(P.SPARK, b.x1, -1, Math.cos(a) * sp, Math.sin(a) * sp, R4.range(0.2, 0.5));
@@ -7521,43 +7710,43 @@ function create11(o) {
     drawBack(p) {
       for (const b of bolts) if (b.down && t >= b.t0) scorch(p, b.x1, 0, 9, Math.pow(clamp(1 - (t - b.t0) / 1.1), 1.3), 1 - smooth(1.4, 1.85, t));
       const u = (t - CLAP) / 0.5;
-      if (u > 0 && u < 1) band(p, 0, 0.5, front(t), 0.18, Math.max(2, 16 * (1 - u)), 1.25 - u, [C4[1], C4[2], C4[4], C4[6]], (g) => Math.sin(g) < 0, u < 0.15);
+      if (u > 0 && u < 1) band(p, 0, 0.5, front(t), 0.18, Math.max(2, 16 * (1 - u)), 1.25 - u, [C5[1], C5[2], C5[4], C5[6]], (g) => Math.sin(g) < 0, u < 0.15);
       ps.draw(p, "back");
       hot.draw(p, "back");
     },
     draw(p) {
       const f = Math.floor(t * 30 + 1e-4), u = (t - CLAP) / 0.5, A2 = o.actor;
       const a = t - CLAP;
-      if (a >= 0 && a < 0.07) p.mask(A2.mask, A2.x, A2.y, a < 0.035 ? WHITE : C4[6]);
+      if (a >= 0 && a < 0.07) p.mask(A2.mask, A2.x, A2.y, a < 0.035 ? WHITE : C5[6]);
       if (a >= 0 && a < 0.2) {
         const q = a / 0.2;
-        flare(p, 0, CY, 44 * Math.pow(1 - q, 1.4), 1 - q, C4);
+        flare(p, 0, CY, 44 * Math.pow(1 - q, 1.4), 1 - q, C5);
         if (q < 0.35) p.circle(0, CY, 10 * (1 - q * 2) + 2, WHITE);
-        p.glow(0, CY, 44, C4[5], 0.32 * (1 - q));
+        p.glow(0, CY, 44, C5[5], 0.32 * (1 - q));
       }
       for (const [i, b] of bolts.entries()) {
         const ba = Math.floor((t - b.t0) * 30 + 1e-4);
         if (t < b.t0 || ba >= BK.length) continue;
         const r = rng(o.seed, 3, i, ba >> 1);
-        stroke(p, zigzag(r, 0, CY, b.x1, b.y1, 0.25, b.down ? 0.5 : 0.8), BK[ba], C4, ba === 0 ? 1 : 0.8, { hero: ba === 0 });
+        stroke(p, zigzag(r, 0, CY, b.x1, b.y1, 0.25, b.down ? 0.5 : 0.8), BK[ba], C5, ba === 0 ? 1 : 0.8, { hero: ba === 0 });
         if (b.down) {
-          p.circle(b.x1, -1, 3 * BK[ba] + 1, C4[5]);
+          p.circle(b.x1, -1, 3 * BK[ba] + 1, C5[5]);
           p.px(b.x1, -1, WHITE);
-          p.glow(b.x1, -3, 20, C4[5], 0.5 * BK[ba]);
-        } else if (ba < 2) sparkle(p, b.x1, b.y1, 4, C4[6], C4[4], 0.4);
+          p.glow(b.x1, -3, 20, C5[5], 0.5 * BK[ba]);
+        } else if (ba < 2) sparkle(p, b.x1, b.y1, 4, C5[6], C5[4], 0.4);
       }
       if (u > 0 && u < 1) {
-        band(p, 0, 0.5, front(t), 0.18, Math.max(2, 16 * (1 - u)), 1.25 - u, [C4[1], C4[2], C4[4], C4[6]], (g) => Math.sin(g) >= 0, u < 0.15);
-        for (const s of [-1, 1]) p.glow(s * front(t), -3, 28, C4[4], 0.45 * (1 - u));
+        band(p, 0, 0.5, front(t), 0.18, Math.max(2, 16 * (1 - u)), 1.25 - u, [C5[1], C5[2], C5[4], C5[6]], (g) => Math.sin(g) >= 0, u < 0.15);
+        for (const s of [-1, 1]) p.glow(s * front(t), -3, 28, C5[4], 0.45 * (1 - u));
         const ua = (t - CLAP) / 0.26;
         const ra = 8 + 60 * ease.outCubic(ua);
-        if (ua < 1) p.ring(0, CY, ra, Math.max(1, 2 * (1 - ua)), ua < 0.25 ? C4[5] : ua < 0.6 ? C4[4] : C4[3], (v, g) => CY + Math.sin(g) * ra > -1 ? 0 : 0.85 - 0.85 * ua);
+        if (ua < 1) p.ring(0, CY, ra, Math.max(1, 2 * (1 - ua)), ua < 0.25 ? C5[5] : ua < 0.6 ? C5[4] : C5[3], (v, g) => CY + Math.sin(g) * ra > -1 ? 0 : 0.85 - 0.85 * ua);
       }
       if (a > 0.2 && a < 0.9) {
         const r = rng(o.seed, 9, f), k = 1 - (a - 0.2) / 0.7;
         if (r.next() < 0.8) {
           const x0 = r.range(-14, 14), y0 = r.range(-34, -4), b = r.range(0, TAU), l = r.range(6, 13);
-          crackle(p, zigzag(r, x0, y0, x0 + Math.cos(b) * l, y0 + Math.sin(b) * l, 0.4, 0.3), 0.85 * k + 0.1, C4, 0.35);
+          crackle(p, zigzag(r, x0, y0, x0 + Math.cos(b) * l, y0 + Math.sin(b) * l, 0.4, 0.3), 0.85 * k + 0.1, C5, 0.35);
         }
       }
       ps.draw(p, "front");
@@ -7603,21 +7792,21 @@ function oval(p, cx, cy, rx, ry, c, a = 1, keep2 = null) {
     p.dot(cx + Math.cos(g) * rx, cy + Math.sin(g) * ry, fc ? c(g) : c, fa ? a(g) : a);
   }
 }
-function plus(p, x, y, L3, th, R4, a = 1, glint2 = false) {
+function plus(p, x, y, L4, th, R4, a = 1, glint2 = false) {
   const n = R4.length, X = Math.round(x), Y = Math.round(y), w = th > 1 ? 1 : 0;
-  const ins = (i, j) => Math.abs(i) <= w && Math.abs(j) <= L3 || Math.abs(j) <= w && Math.abs(i) <= L3;
-  for (let j = -L3 - 1; j <= L3 + 1; j++)
-    for (let i = -L3 - 1; i <= L3 + 1; i++) {
+  const ins = (i, j) => Math.abs(i) <= w && Math.abs(j) <= L4 || Math.abs(j) <= w && Math.abs(i) <= L4;
+  for (let j = -L4 - 1; j <= L4 + 1; j++)
+    for (let i = -L4 - 1; i <= L4 + 1; i++) {
       if (!ins(i, j)) {
         if (w && (ins(i - 1, j) || ins(i + 1, j) || ins(i, j - 1) || ins(i, j + 1))) p.dot(X + i, Y + j, R4[Math.max(0, n - 6)], a * 0.9);
         continue;
       }
       let c;
-      if (!w) c = i === 0 && j === 0 ? WHITE : Math.abs(i) + Math.abs(j) >= L3 ? R4[n - 3] : R4[n - 2];
+      if (!w) c = i === 0 && j === 0 ? WHITE : Math.abs(i) + Math.abs(j) >= L4 ? R4[n - 3] : R4[n - 2];
       else if (i === 0 && j === 0) c = WHITE;
-      else if (i === 0 || j === 0) c = Math.abs(i) + Math.abs(j) < L3 ? R4[n - 2] : R4[n - 3];
+      else if (i === 0 || j === 0) c = Math.abs(i) + Math.abs(j) < L4 ? R4[n - 2] : R4[n - 3];
       else c = i < 0 || j < 0 ? R4[n - 3] : R4[n - 5];
-      if (glint2 && (i === 0 && j === -L3 || i === -L3 && j === 0)) c = WHITE;
+      if (glint2 && (i === 0 && j === -L4 || i === -L4 && j === 0)) c = WHITE;
       p.dot(X + i, Y + j, c, a);
     }
 }
@@ -7639,8 +7828,8 @@ var SY2 = 0.2;
 var SEED = 0.3;
 var ROLL = 1;
 function create12(o) {
-  const C4 = fit(o.palette, 8), REACH2 = o.reach, R4 = new Rng(o.seed);
-  const ps = new Particles({ rng: R4, ground: () => 0, sparks: [WHITE, C4[6], C4[5], C4[4]] });
+  const C5 = fit(o.palette, 8), REACH2 = o.reach, R4 = new Rng(o.seed);
+  const ps = new Particles({ rng: R4, ground: () => 0, sparks: [WHITE, C5[6], C5[5], C5[4]] });
   const lights = new Lights();
   const front = (tt) => tt < SEED ? 0 : REACH2 * ease.outCubic(seg(tt, SEED, SEED + ROLL));
   const passed = (d) => SEED + ROLL * (1 - Math.cbrt(1 - Math.min(0.999, d / REACH2)));
@@ -7658,7 +7847,7 @@ function create12(o) {
       if (d > fr) return;
       const age = t - passed(d), k = Math.exp(-age / 0.35) * smooth(fr, fr - 6, d) * (1 - smooth(1.4, 1.9, t));
       if (k < 0.04) return;
-      out.l = C4[4];
+      out.l = C5[4];
       out.k = 0.32 * k;
     });
   }
@@ -7667,24 +7856,24 @@ function create12(o) {
     const u = seg(t, SEED, SEED + ROLL + 0.25), fr = front(t), k = u < 0.7 ? 1 : (1 - u) / 0.3;
     if (k <= 0) return;
     const keep2 = back ? (g) => Math.sin(g) < 0 : (g) => Math.sin(g) >= 0;
-    band(p, 0, 0, fr, SY2, Math.max(2, 7 * (1 - u * 0.7)), k, C4.slice(2), keep2, t < SEED + 0.08);
-    oval(p, 0, 0, fr + 1, (fr + 1) * SY2, (g) => Math.sin(g) > 0.3 ? WHITE : C4[6], k * (back ? 0.7 : 1), keep2);
+    band(p, 0, 0, fr, SY2, Math.max(2, 7 * (1 - u * 0.7)), k, C5.slice(2), keep2, t < SEED + 0.08);
+    oval(p, 0, 0, fr + 1, (fr + 1) * SY2, (g) => Math.sin(g) > 0.3 ? WHITE : C5[6], k * (back ? 0.7 : 1), keep2);
     for (let j = 0, n = Math.ceil(fr * 0.9); j < n; j++) {
       const g = j / n * TAU, near = Math.sin(g) >= 0;
       if (near === back || rand(j, Math.floor(t * 20)) > 0.45) continue;
       const x = Math.cos(g) * fr, y = Math.sin(g) * fr * SY2, h = (1 + rand(j, 7) * 4) * k * (near ? 1 : 0.6);
-      for (let i = 1; i <= h; i++) p.dot(x, y - i, i > h - 1 ? WHITE : C4[6], k * (1.2 - i / (h + 1)));
+      for (let i = 1; i <= h; i++) p.dot(x, y - i, i > h - 1 ? WHITE : C5[6], k * (1.2 - i / (h + 1)));
     }
     for (const r of riders) {
       const g = r.a + r.w * (t - SEED) * 2.2, near = Math.sin(g) >= 0;
       if (near === back) continue;
       const x = Math.cos(g) * fr, y = Math.sin(g) * fr * SY2;
-      if (near) sparkle(p, x, y - 1, 2 + (Math.sin(t * 9 + r.a * 5) > 0.3 ? 1 : 0), WHITE, C4[6], 0.35 * k);
-      else p.dot(x, y, C4[6], k);
+      if (near) sparkle(p, x, y - 1, 2 + (Math.sin(t * 9 + r.a * 5) > 0.3 ? 1 : 0), WHITE, C5[6], 0.35 * k);
+      else p.dot(x, y, C5[6], k);
     }
     if (!back) for (let i = 0; i < 8; i++) {
       const g = i / 8 * TAU;
-      p.glow(Math.cos(g) * fr, Math.sin(g) * fr * SY2 - 2, 16, C4[4], 0.22 * k);
+      p.glow(Math.cos(g) * fr, Math.sin(g) * fr * SY2 - 2, 16, C5[4], 0.22 * k);
     }
   }
   function sprouts(p, back) {
@@ -7692,15 +7881,15 @@ function create12(o) {
       const a = t - s.t0;
       if (a < 0 || a > s.life || s.z < 0 !== back) continue;
       const u = a / s.life, h = s.rise * ease.outCubic(u), x = s.x + Math.sin(a * 4 + s.sway) * 1.5 * u, y = s.z * SY2 - 2 - h;
-      const pop = ease.outBack(clamp(a / 0.12), 2.6), end = s.life - 0.15, L3 = Math.max(1, Math.round(s.L * pop - (back ? 1 : 0)));
-      if (a < 0.04) sparkle(p, x, y, 3, WHITE, C4[6], 0.5);
-      else if (a < end) plus(p, x, y, L3, back && L3 < 3 ? 1 : s.thick, back ? C4.slice(0, 7) : C4, back ? 0.8 : 1, !back && Math.sin(a * 12 + s.sway * 3) > 0.8);
+      const pop = ease.outBack(clamp(a / 0.12), 2.6), end = s.life - 0.15, L4 = Math.max(1, Math.round(s.L * pop - (back ? 1 : 0)));
+      if (a < 0.04) sparkle(p, x, y, 3, WHITE, C5[6], 0.5);
+      else if (a < end) plus(p, x, y, L4, back && L4 < 3 ? 1 : s.thick, back ? C5.slice(0, 7) : C5, back ? 0.8 : 1, !back && Math.sin(a * 12 + s.sway * 3) > 0.8);
       else {
         const v = (a - end) / 0.15;
-        for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) p.dot(x + dx * (2 + v * 5), y + dy * (2 + v * 5) - v * 2, v < 0.4 ? WHITE : C4[6], 1 - v);
+        for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) p.dot(x + dx * (2 + v * 5), y + dy * (2 + v * 5) - v * 2, v < 0.4 ? WHITE : C5[6], 1 - v);
       }
-      if (u < 0.5) for (let j = 1; j < h * (1 - u * 2); j += 1.5) p.dot(s.x, s.z * SY2 - 2 - h + j + 3, C4[5], (1 - j / h) * (1 - u * 2) * (back ? 0.5 : 0.8));
-      p.glow(x, y, 7 + L3 * 2, C4[5], (back ? 0.2 : 0.34) * (a < end ? 1 : 1 - (a - end) / 0.15));
+      if (u < 0.5) for (let j = 1; j < h * (1 - u * 2); j += 1.5) p.dot(s.x, s.z * SY2 - 2 - h + j + 3, C5[5], (1 - j / h) * (1 - u * 2) * (back ? 0.5 : 0.8));
+      p.glow(x, y, 7 + L4 * 2, C5[5], (back ? 0.2 : 0.34) * (a < end ? 1 : 1 - (a - end) / 0.15));
     }
   }
   return {
@@ -7709,26 +7898,26 @@ function create12(o) {
       if (t < SEED - 0.04 && R4.chance(0.7)) {
         const a = R4.range(0, TAU), D17 = R4.range(24, 48), x = Math.cos(a) * D17, y = Math.sin(a) * D17 * SY2 - R4.range(1, 8);
         const T4 = R4.range(0.16, 0.24), l = Math.hypot(x, y + 3) || 1, v = l * 3 / (Math.exp(3 * T4) - 1);
-        ps.spawn(P.STREAK, x, y, -x / l * v, (-3 - y) / l * v, T4, R4.chance(0.5) ? C4[6] : C4[5]);
+        ps.spawn(P.STREAK, x, y, -x / l * v, (-3 - y) / l * v, T4, R4.chance(0.5) ? C5[6] : C5[5]);
       }
       if (!released && t >= SEED) {
         released = true;
-        lights.add(0, -16, 76, C4[5], 0.85, 0.55);
+        lights.add(0, -16, 76, C5[5], 0.85, 0.55);
         lights.add(0, -6, 28, WHITE, 0.8, 0.12);
-        for (let i = 0; i < 10; i++) ps.spawn(P.MOTE, R4.range(-2, 2), -R4.range(2, 10), R4.range(-25, 25), -R4.range(80, 170), R4.range(0.3, 0.6), R4.chance(0.5) ? WHITE : C4[6], R4.range(0.6, 1));
+        for (let i = 0; i < 10; i++) ps.spawn(P.MOTE, R4.range(-2, 2), -R4.range(2, 10), R4.range(-25, 25), -R4.range(80, 170), R4.range(0.3, 0.6), R4.chance(0.5) ? WHITE : C5[6], R4.range(0.6, 1));
         for (let i = 0; i < 16; i++) {
           const a = R4.range(Math.PI * 1.05, Math.PI * 1.95), sp = R4.range(40, 120);
-          ps.spawn(P.STAR, 0, -3, Math.cos(a) * sp, Math.sin(a) * sp, R4.range(0.4, 0.8), R4.chance(0.5) ? WHITE : C4[6], R4.range(0.6, 2));
+          ps.spawn(P.STAR, 0, -3, Math.cos(a) * sp, Math.sin(a) * sp, R4.range(0.4, 0.8), R4.chance(0.5) ? WHITE : C5[6], R4.range(0.6, 2));
         }
       }
       for (const s of sites)
         if (!s.popped && t >= s.t0) {
           s.popped = true;
-          for (let i = 0; i < 3; i++) ps.spawn(P.STAR, s.x + R4.range(-3, 3), s.z * SY2 - 1, R4.range(-10, 10), -R4.range(15, 40), R4.range(0.3, 0.6), R4.chance(0.5) ? WHITE : C4[6], R4.range(0.5, 1.2), 0, s.z < 0 ? 4 : 0);
+          for (let i = 0; i < 3; i++) ps.spawn(P.STAR, s.x + R4.range(-3, 3), s.z * SY2 - 1, R4.range(-10, 10), -R4.range(15, 40), R4.range(0.3, 0.6), R4.chance(0.5) ? WHITE : C5[6], R4.range(0.5, 1.2), 0, s.z < 0 ? 4 : 0);
         }
       if (t > SEED + 0.1 && t < 1.9 && R4.chance(0.35)) {
         const fr = front(t), a = R4.range(0, TAU), d = fr * Math.sqrt(R4.next());
-        ps.spawn(P.EMBER, Math.cos(a) * d, Math.sin(a) * d * SY2 - 1, R4.range(-5, 5), -R4.range(10, 30), R4.range(0.5, 1), C4[5], 1, 0, Math.sin(a) < 0 ? 4 : 0);
+        ps.spawn(P.EMBER, Math.cos(a) * d, Math.sin(a) * d * SY2 - 1, R4.range(-5, 5), -R4.range(10, 30), R4.range(0.5, 1), C5[5], 1, 0, Math.sin(a) < 0 ? 4 : 0);
       }
       ps.update(dt);
       lights.update(dt);
@@ -7743,16 +7932,16 @@ function create12(o) {
       ring4(p, false);
       if (t < SEED) {
         const k = t / SEED;
-        sparkle(p, 0, -3, 2 + 4 * k * k, WHITE, C4[6], 0.3 + 0.4 * k);
-        p.glow(0, -3, 10 + 16 * k, C4[4], 0.5 * k);
-      } else if (t < SEED + 0.2) flare(p, 0, -3, 22 * Math.pow(1 - (t - SEED) / 0.2, 1.5), 1 - (t - SEED) / 0.2, C4.slice(3));
+        sparkle(p, 0, -3, 2 + 4 * k * k, WHITE, C5[6], 0.3 + 0.4 * k);
+        p.glow(0, -3, 10 + 16 * k, C5[4], 0.5 * k);
+      } else if (t < SEED + 0.2) flare(p, 0, -3, 22 * Math.pow(1 - (t - SEED) / 0.2, 1.5), 1 - (t - SEED) / 0.2, C5.slice(3));
       const g = seg(t, SEED, SEED + 0.5);
       if (g > 0 && g < 1) {
         const top = -4 - 46 * ease.outCubic(Math.min(1, g * 2.2)) - 10 * g, bot = -2 - 50 * ease.inQuad(seg(g, 0.35, 1)), w = 1 + 2.4 * (1 - g);
         if (bot - top > 2) {
-          p.beam(0, bot, 0, top, w * 2, (u, v) => v < 0.45 ? WHITE : u > 0.8 ? C4[5] : C4[6]);
-          p.glowLine(0, bot, 0, top, 12, C4[5], 0.55 * (1 - g));
-          sparkle(p, 0, top, 4 * (1 - g) + 1, WHITE, C4[6], 0.5 * (1 - g));
+          p.beam(0, bot, 0, top, w * 2, (u, v) => v < 0.45 ? WHITE : u > 0.8 ? C5[5] : C5[6]);
+          p.glowLine(0, bot, 0, top, 12, C5[5], 0.55 * (1 - g));
+          sparkle(p, 0, top, 4 * (1 - g) + 1, WHITE, C5[6], 0.5 * (1 - g));
         }
       }
       sprouts(p, false);
@@ -7805,8 +7994,8 @@ var ray = (q, t) => {
 };
 var LANDS = /* @__PURE__ */ new Map();
 function landings(o, S) {
-  const key2 = `${o.seed}:${S.x}:${S.y}`;
-  if (LANDS.has(key2)) return LANDS.get(key2);
+  const key = `${o.seed}:${S.x}:${S.y}`;
+  if (LANDS.has(key)) return LANDS.get(key);
   const out = [];
   for (let i = 0; i < 20; i++) {
     const R4 = rng(o.seed, i), q = R4.range(-0.9, 0.9), v = R4.range(22, 34), sway = R4.range(1, 3), ph = R4.range(0, TAU), size = R4.range(0.8, 2.4);
@@ -7820,66 +8009,66 @@ function landings(o, S) {
     }
     out.push({ q, v, sway, ph, size, land });
   }
-  LANDS.set(key2, out);
+  LANDS.set(key, out);
   return out;
 }
 function drawBack8(p, t, o) {
-  const C4 = fit(o.palette, 8);
+  const C5 = fit(o.palette, 8);
   p.each(-24, TOP2, 24, 0.5, (x, y, sx, sy) => {
     const I = ray(x / halfW3(y), t) * (0.6 + 0.4 * smooth(TOP2, 0, y));
     if (I < 0.02) return;
-    p.blendPx(sx, sy, C4[6], I * 0.13);
-    p.add(sx, sy, C4[4], I * 0.22);
+    p.blendPx(sx, sy, C5[6], I * 0.13);
+    p.add(sx, sy, C5[4], I * 0.22);
   });
   for (const [o2, , k, ph] of [RAYS[1], RAYS[2]])
     for (let y = TOP2; y < -1; y++) {
       const pulse2 = 0.5 + 0.5 * Math.sin(y * 0.11 - t / T * TAU * 3 + ph);
-      p.dot(o2 * halfW3(y), y, pulse2 > 0.85 ? WHITE : C4[6], (0.1 + 0.45 * pulse2) * (0.5 + 0.5 * Math.sin(t / T * TAU * k + ph)) * smooth(TOP2, TOP2 + 20, y));
+      p.dot(o2 * halfW3(y), y, pulse2 > 0.85 ? WHITE : C5[6], (0.1 + 0.45 * pulse2) * (0.5 + 0.5 * Math.sin(t / T * TAU * k + ph)) * smooth(TOP2, TOP2 + 20, y));
     }
-  p.glow(0, -4, 30, C4[4], 0.22);
+  p.glow(0, -4, 30, C5[4], 0.22);
 }
 function draw10(p, t, o) {
-  const C4 = fit(o.palette, 8), A2 = o.actor, S = A2 ? shapeOf(A2) : null;
+  const C5 = fit(o.palette, 8), A2 = o.actor, S = A2 ? shapeOf(A2) : null;
   if (A2) {
     const m = A2.mask;
     for (let i = 0; i < m.w; i++)
       for (let j = 0; j < m.h; j++) {
         const c = A2.pixels[j * m.w + i];
         if (!c || luma(c) < 0.15) continue;
-        p.px(A2.x + i, A2.y + j, mix(c, C4[6], 0.35));
+        p.px(A2.x + i, A2.y + j, mix(c, C5[6], 0.35));
         break;
       }
-    p.glow(0, -30, 20, C4[5], 0.22);
+    p.glow(0, -30, 20, C5[5], 0.22);
   }
   for (let y = 0; y <= 3; y++)
     for (let x = -24; x <= 24; x++) {
       const u = Math.hypot(x / 24, y / 4);
       if (u >= 1) continue;
-      p.dot(x, y, u < 0.3 ? y ? C4[5] : WHITE : u < 0.6 ? C4[5] : u < 0.85 ? C4[4] : C4[3], y === 0 ? Math.sqrt(1 - u) : (1 - u) * 0.7);
+      p.dot(x, y, u < 0.3 ? y ? C5[5] : WHITE : u < 0.6 ? C5[5] : u < 0.85 ? C5[4] : C5[3], y === 0 ? Math.sqrt(1 - u) : (1 - u) * 0.7);
     }
   if (S) {
-    const L3 = landings(o, S);
-    cycle(t, T, L3.length, o.seed, (g) => 3, (age, life, R4, i) => {
-      const s = L3[i], y = TOP2 + 6 + s.v * age, x = s.q * halfW3(y) + Math.sin(age * 2.2 + s.ph) * s.sway, fade = Math.min(1, age / 0.3);
+    const L4 = landings(o, S);
+    cycle(t, T, L4.length, o.seed, (g) => 3, (age, life, R4, i) => {
+      const s = L4[i], y = TOP2 + 6 + s.v * age, x = s.q * halfW3(y) + Math.sin(age * 2.2 + s.ph) * s.sway, fade = Math.min(1, age / 0.3);
       if (age > s.land) {
         const w = (age - s.land) / 0.14;
         if (w < 1) {
           const ly = TOP2 + 6 + s.v * s.land, lx = s.q * halfW3(ly) + Math.sin(s.land * 2.2 + s.ph) * s.sway;
-          sparkle(p, lx, ly, 3 * (1 - w) + 1, WHITE, C4[6], 0.5 * (1 - w));
+          sparkle(p, lx, ly, 3 * (1 - w) + 1, WHITE, C5[6], 0.5 * (1 - w));
         }
         return;
       }
       const tw = 0.6 + 0.4 * Math.sin(age * (7 + i % 4) + s.ph);
-      if (s.size > 1.2) sparkle(p, x, y, s.size * tw * fade, tw > 0.85 ? WHITE : C4[6], C4[5], 0.35 * fade);
+      if (s.size > 1.2) sparkle(p, x, y, s.size * tw * fade, tw > 0.85 ? WHITE : C5[6], C5[5], 0.35 * fade);
       else {
-        p.dot(x, y, tw > 0.8 ? WHITE : C4[6], fade);
-        p.glow(x, y, 3, C4[5], 0.35 * fade);
+        p.dot(x, y, tw > 0.8 ? WHITE : C5[6], fade);
+        p.glow(x, y, 3, C5[5], 0.35 * fade);
       }
     });
   }
   cycle(t, T, 16, o.seed + 9, (g) => g.range(1.2, 2.4), (age, life, R4) => {
     const u = age / life, y = TOP2 + 10 + R4.range(0, 90) + u * R4.range(6, 14), q = R4.range(-1, 1), x = q * halfW3(y) + Math.sin(age * 1.7 + q * 5) * 1.5, k = Math.sin(u * Math.PI) * ray(q, t);
-    if (k > 0.12) p.dot(x, y, k > 0.45 ? WHITE : C4[6], Math.min(1, k * 2.2));
+    if (k > 0.12) p.dot(x, y, k > 0.45 ? WHITE : C5[6], Math.min(1, k * 2.2));
   });
 }
 
@@ -7925,11 +8114,11 @@ function onSphere(r, lat, lon) {
 }
 var sheen = (t, T4) => -1.7 + 3.4 * clamp(t / T4 % 1 / 0.55);
 function lattice(p, t, o, back) {
-  const C4 = fit(o.palette, 8), r = o.radius, T4 = meta23.duration, phi = t / T4 * (Math.PI / N2), sw = sheen(t, T4), seen = /* @__PURE__ */ new Map();
+  const C5 = fit(o.palette, 8), r = o.radius, T4 = meta23.duration, phi = t / T4 * (Math.PI / N2), sw = sheen(t, T4), seen = /* @__PURE__ */ new Map();
   const dot2 = (x, y, z) => {
     if (z < 0 !== back) return;
-    const key2 = Math.floor(x) * 1e3 + Math.floor(y), f = Math.abs(z) / r, q = (x - (y - CY2)) / (r * 1.414), hot = Math.abs(q - sw) < 0.12 ? 1 : 0, v = seen.get(key2);
-    if (!v || f < v[2]) seen.set(key2, [x, y, f, hot || (v ? v[3] : 0)]);
+    const key = Math.floor(x) * 1e3 + Math.floor(y), f = Math.abs(z) / r, q = (x - (y - CY2)) / (r * 1.414), hot = Math.abs(q - sw) < 0.12 ? 1 : 0, v = seen.get(key);
+    if (!v || f < v[2]) seen.set(key, [x, y, f, hot || (v ? v[3] : 0)]);
   };
   for (let k = 0; k < 2 * N2; k++) {
     const lon = phi + k * Math.PI / N2;
@@ -7937,71 +8126,71 @@ function lattice(p, t, o, back) {
   }
   for (let lon = 0; lon < TAU; lon += 0.7 / r) dot2(...onSphere(r, 0, lon));
   for (const [x, y, f, hot] of seen.values()) {
-    if (back) p.blend(x, y, C4[4], 0.32);
+    if (back) p.blend(x, y, C5[4], 0.32);
     else if (hot) p.px(x, y, WHITE);
-    else if (f < 0.4) p.px(x, y, C4[6]);
-    else p.blend(x, y, f < 0.7 ? C4[6] : C4[5], f < 0.7 ? 0.8 : 0.55);
+    else if (f < 0.4) p.px(x, y, C5[6]);
+    else p.blend(x, y, f < 0.7 ? C5[6] : C5[5], f < 0.7 ? 0.8 : 0.55);
   }
 }
 function film(p, t, o, back) {
-  const C4 = fit(o.palette, 8), r = o.radius, sw = sheen(t, meta23.duration);
+  const C5 = fit(o.palette, 8), r = o.radius, sw = sheen(t, meta23.duration);
   p.each(-r - 1, CY2 - r - 1, r + 1, CY2 + r + 1, (x, y, sx, sy) => {
     const d = Math.hypot(x, y - CY2) / r;
     if (d >= 1) return;
     const q = (x - (y - CY2)) / (r * 1.414), hot = Math.max(0, 1 - Math.abs(q - sw) / 0.22);
     const a = (back ? 0.07 : 0.03) + 0.26 * Math.pow(d, 6) + 0.2 * hot * (back ? 0.3 : 1);
-    p.blendPx(sx, sy, hot > 0.5 && !back ? C4[6] : C4[5], a);
+    p.blendPx(sx, sy, hot > 0.5 && !back ? C5[6] : C5[5], a);
   });
 }
 function drawBack9(p, t, o) {
-  const C4 = fit(o.palette, 8), r = o.radius, rf = Math.sqrt(r * r - CY2 * CY2);
+  const C5 = fit(o.palette, 8), r = o.radius, rf = Math.sqrt(r * r - CY2 * CY2);
   film(p, t, o, true);
   lattice(p, t, o, true);
-  oval(p, 0, 0, rf, rf * FLOOR_SY, C4[5], 0.8, (g) => Math.sin(g) < 0);
-  p.glow(0, CY2, r * 1.1, C4[4], 0.14);
+  oval(p, 0, 0, rf, rf * FLOOR_SY, C5[5], 0.8, (g) => Math.sin(g) < 0);
+  p.glow(0, CY2, r * 1.1, C5[4], 0.14);
 }
 function draw11(p, t, o) {
-  const C4 = fit(o.palette, 8), r = o.radius, T4 = meta23.duration, rf = Math.sqrt(r * r - CY2 * CY2), A2 = o.actor;
-  if (A2) for (const [x, y] of shapeOf(A2).out) p.light(x, y, C4[5], 0.3);
+  const C5 = fit(o.palette, 8), r = o.radius, T4 = meta23.duration, rf = Math.sqrt(r * r - CY2 * CY2), A2 = o.actor;
+  if (A2) for (const [x, y] of shapeOf(A2).out) p.light(x, y, C5[5], 0.3);
   film(p, t, o, false);
   lattice(p, t, o, false);
   const sw = sheen(t, T4);
   for (let j = 0, n = Math.ceil(r * TAU * 1.4); j < n; j++) {
     const g = j / n * TAU, x = Math.cos(g) * r, y = CY2 + Math.sin(g) * r, q = (x - (y - CY2)) / (r * 1.414);
     const lit = Math.cos(g + 2.36), hot = Math.abs(q - sw) < 0.15;
-    p.dot(x, y, hot || lit > 0.75 ? WHITE : lit > -0.2 ? C4[6] : C4[5], 1);
-    p.dot(Math.cos(g) * (r - 1), CY2 + Math.sin(g) * (r - 1), C4[4], 0.35 + 0.3 * lit);
+    p.dot(x, y, hot || lit > 0.75 ? WHITE : lit > -0.2 ? C5[6] : C5[5], 1);
+    p.dot(Math.cos(g) * (r - 1), CY2 + Math.sin(g) * (r - 1), C5[4], 0.35 + 0.3 * lit);
   }
-  p.glowRing(0, CY2, r, 6, C4[4], 0.32);
+  p.glowRing(0, CY2, r, 6, C5[4], 0.32);
   const phi = t / T4 * (Math.PI / N2);
   for (let k = 0; k < 2 * N2; k++) {
     const [x, y, z] = onSphere(r, 0, phi + k * Math.PI / N2);
     if (z < r * 0.15) continue;
     p.px(x, y, WHITE);
-    if (z > r * 0.45) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.blend(x + dx, y + dy, C4[6], 0.7);
-    p.glow(x, y, 4, C4[5], 0.3);
+    if (z > r * 0.45) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) p.blend(x + dx, y + dy, C5[6], 0.7);
+    p.glow(x, y, 4, C5[5], 0.3);
   }
   const [px0, py0] = onSphere(r, Math.PI / 2, 0);
-  sparkle(p, px0, py0, 2 + Math.round(1.5 + 1.5 * Math.sin(t / T4 * TAU * 2)), WHITE, C4[6], 0.45);
+  sparkle(p, px0, py0, 2 + Math.round(1.5 + 1.5 * Math.sin(t / T4 * TAU * 2)), WHITE, C5[6], 0.45);
   for (const off of [0, Math.PI]) {
     const g = t / T4 * TAU + off + 0.8;
-    sparkle(p, Math.cos(g) * r, CY2 + Math.sin(g) * r, 2, WHITE, C4[6], 0.4);
+    sparkle(p, Math.cos(g) * r, CY2 + Math.sin(g) * r, 2, WHITE, C5[6], 0.4);
   }
-  for (let g = 3.55; g < 4.2; g += 0.04) p.px(Math.cos(g) * r * 0.74, CY2 + Math.sin(g) * r * 0.74, g > 3.7 && g < 4.05 ? WHITE : C4[6]);
+  for (let g = 3.55; g < 4.2; g += 0.04) p.px(Math.cos(g) * r * 0.74, CY2 + Math.sin(g) * r * 0.74, g > 3.7 && g < 4.05 ? WHITE : C5[6]);
   p.px(Math.cos(3.4) * r * 0.62, CY2 + Math.sin(3.4) * r * 0.62, WHITE);
-  for (let g = 0.45; g < 0.8; g += 0.05) p.dot(Math.cos(g) * r * 0.8, CY2 + Math.sin(g) * r * 0.8, C4[5], 0.6);
-  oval(p, 0, 0, rf, rf * FLOOR_SY, (g) => Math.sin(g) > 0.6 ? WHITE : C4[6], 1, (g) => Math.sin(g) >= 0);
-  for (let i = -2; i <= 2; i++) p.glow(i * rf * 0.5, 0, 12, C4[4], 0.18);
+  for (let g = 0.45; g < 0.8; g += 0.05) p.dot(Math.cos(g) * r * 0.8, CY2 + Math.sin(g) * r * 0.8, C5[5], 0.6);
+  oval(p, 0, 0, rf, rf * FLOOR_SY, (g) => Math.sin(g) > 0.6 ? WHITE : C5[6], 1, (g) => Math.sin(g) >= 0);
+  for (let i = -2; i <= 2; i++) p.glow(i * rf * 0.5, 0, 12, C5[4], 0.18);
   cycle(t, T4, 9, o.seed, (g) => g.range(0.35, 0.6), (age, life, R4) => {
     const [x, y, z] = onSphere(r, R4.range(-1.2, 1.3), R4.range(0, TAU) + phi), k = Math.sin(age / life * Math.PI);
     if (z < 0) return;
-    sparkle(p, x, y, 1 + 2.5 * k * R4.range(0.6, 1), WHITE, C4[6], 0.45 * k);
+    sparkle(p, x, y, 1 + 2.5 * k * R4.range(0.6, 1), WHITE, C5[6], 0.45 * k);
   });
   cycle(t, T4, 12, o.seed + 1, (g) => g.range(1.2, 2.2), (age, life, R4) => {
     const x0 = R4.range(-0.7, 0.7) * r, u = age / life, x = x0 + Math.sin(u * 6 + R4.range(0, 6)) * 2, y = CY2 + r * 0.75 - u * r * 1.4;
     if (Math.hypot(x, y - CY2) > r - 2) return;
-    p.dot(x, y, u < 0.5 ? C4[6] : C4[5], Math.sin(u * Math.PI));
-    p.light(x, y, C4[5], 0.4 * Math.sin(u * Math.PI));
+    p.dot(x, y, u < 0.5 ? C5[6] : C5[5], Math.sin(u * Math.PI));
+    p.light(x, y, C5[5], 0.4 * Math.sin(u * Math.PI));
   });
 }
 
@@ -8023,26 +8212,26 @@ var meta24 = {
   bg: "ground",
   options: { palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffe26b", "#fff3a6", "#ffffff"], height: 20, aim: 0.1, seed: 4 }
 };
-function ray2(p, x, y, a, L3, w, C4, from = 0) {
+function ray2(p, x, y, a, L4, w, C5, from = 0) {
   const c = Math.cos(a), s = Math.sin(a);
-  for (let d = from * L3; d <= L3; d += 0.5) {
-    const u = d / L3, hw = w * Math.pow(1 - u, 1.6);
-    const col = u < 0.3 ? WHITE : u < 0.62 ? C4[5] : u < 0.88 ? C4[4] : C4[3];
+  for (let d = from * L4; d <= L4; d += 0.5) {
+    const u = d / L4, hw = w * Math.pow(1 - u, 1.6);
+    const col = u < 0.3 ? WHITE : u < 0.62 ? C5[5] : u < 0.88 ? C5[4] : C5[3];
     p.px(x + c * d, y + s * d, col);
-    if (hw > 0.45) for (let o = 0.5; o <= hw; o += 0.5) for (const e of [-o, o]) p.px(x + c * d - s * e, y + s * d + c * e, u < 0.3 && o < 1 ? C4[5] : C4[4]);
+    if (hw > 0.45) for (let o = 0.5; o <= hw; o += 0.5) for (const e of [-o, o]) p.px(x + c * d - s * e, y + s * d + c * e, u < 0.3 && o < 1 ? C5[5] : C5[4]);
   }
 }
-function diamond(p, x, y, r, C4) {
+function diamond(p, x, y, r, C5) {
   for (let dy = -r - 1; dy <= r + 1; dy++)
     for (let dx = -r - 1; dx <= r + 1; dx++) {
       const m = Math.abs(dx) + Math.abs(dy);
       if (m <= r) p.px(x + dx, y + dy, WHITE);
-      else if (m === r + 1) p.px(x + dx, y + dy, C4[3]);
+      else if (m === r + 1) p.px(x + dx, y + dy, C5[3]);
     }
 }
 function create13(o) {
-  const C4 = fit(o.palette, 7), R4 = new Rng(o.seed), X = 0, Y = -o.height, A2 = o.aim, floor = () => 0;
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [C4[6], C4[5], C4[4], C4[2]] });
+  const C5 = fit(o.palette, 7), R4 = new Rng(o.seed), X = 0, Y = -o.height, A2 = o.aim, floor = () => 0;
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [C5[6], C5[5], C5[4], C5[2]] });
   const lights = new Lights();
   const tilt = R4.range(-0.08, 0.08);
   const rays2 = [
@@ -8052,16 +8241,16 @@ function create13(o) {
     { a: A2 + Math.PI / 2 + tilt, L: R4.range(10, 12), w: 2.3 },
     { a: A2 - Math.PI / 4 + tilt, L: R4.range(5, 7), w: 1 }
   ];
-  lights.add(X, Y, 38, C4[4], 0.35, 0.18);
-  lights.add(X + Math.cos(A2) * 10, Y + Math.sin(A2) * 10, 22, C4[5], 0.45, 0.1);
-  lights.add(X, -2, 26, C4[3], 0.22, 0.22);
+  lights.add(X, Y, 38, C5[4], 0.35, 0.18);
+  lights.add(X + Math.cos(A2) * 10, Y + Math.sin(A2) * 10, 22, C5[5], 0.45, 0.1);
+  lights.add(X, -2, 26, C5[3], 0.22, 0.22);
   for (let i = 0; i < 9; i++) {
     const a = A2 + R4.range(-0.6, 0.6) - 0.15, v = R4.range(170, 360);
     ps.spawn(P.SPARK, X + 1, Y, Math.cos(a) * v, Math.sin(a) * v - 40, R4.range(0.25, 0.45), WHITE, 1, i > 6 ? R4.range(0.01, 0.03) : 0);
   }
   for (let i = 0; i < 6; i++) {
     const a = A2 + R4.range(-1.1, 0.5) - 0.3, v = R4.range(70, 170);
-    ps.spawn(P.GRIT, X + 1, Y, Math.cos(a) * v, Math.sin(a) * v - R4.range(30, 80), R4.range(0.35, 0.45), R4.pick([C4[5], C4[4], C4[4], C4[3]]), 1);
+    ps.spawn(P.GRIT, X + 1, Y, Math.cos(a) * v, Math.sin(a) * v - R4.range(30, 80), R4.range(0.35, 0.45), R4.pick([C5[5], C5[4], C5[4], C5[3]]), 1);
   }
   let t = 0;
   return {
@@ -8073,20 +8262,20 @@ function create13(o) {
     draw(p) {
       ps.draw(p);
       if (t < 0.025) {
-        for (const r of rays2) ray2(p, X, Y, r.a, r.L, r.w, C4);
-        diamond(p, X, Y, 4, C4);
+        for (const r of rays2) ray2(p, X, Y, r.a, r.L, r.w, C5);
+        diamond(p, X, Y, 4, C5);
       } else if (t < 0.058) {
-        for (const r of rays2) ray2(p, X, Y, r.a, r.L * 1.2, r.w * 0.55, C4, 0.12);
-        diamond(p, X, Y, 3, C4);
+        for (const r of rays2) ray2(p, X, Y, r.a, r.L * 1.2, r.w * 0.55, C5, 0.12);
+        diamond(p, X, Y, 3, C5);
       } else if (t < 0.092) {
         const r = rays2[0];
-        ray2(p, X, Y, r.a, r.L * 1.3, 0.6, [C4[0], C4[1], C4[2], C4[3], C4[3], C4[4]], 0.4);
+        ray2(p, X, Y, r.a, r.L * 1.3, 0.6, [C5[0], C5[1], C5[2], C5[3], C5[3], C5[4]], 0.4);
       }
       const pop = Math.exp(-t / 0.045);
       if (pop > 0.02) {
-        p.glow(X, Y, 22, C4[4], 0.3 * pop);
+        p.glow(X, Y, 22, C5[4], 0.3 * pop);
         p.glow(X, Y, 7, WHITE, 0.15 * pop);
-        p.glowLine(X, Y, X + Math.cos(A2) * 26, Y + Math.sin(A2) * 26, 4, C4[5], 0.25 * pop);
+        p.glowLine(X, Y, X + Math.cos(A2) * 26, Y + Math.sin(A2) * 26, 4, C5[5], 0.25 * pop);
       }
       lights.draw(p);
     }
@@ -8107,19 +8296,19 @@ var LIGHT2 = Math.atan2(-1, -1);
 function spikes(R4, n, aim, { len: len2 = [7, 10], w = [1.5, 2.1], fwd = 1.8, back = 0.6, jag = 1, jit = 0.18 } = {}) {
   return Array.from({ length: n }, (_, i) => {
     const a = aim + i / n * TAU + R4.range(-jit, jit), cb = Math.cos(a - aim);
-    const L3 = R4.range(len2[0], len2[1]) * (1 + fwd * Math.pow(Math.max(0, cb), 3) + back * Math.pow(Math.max(0, -cb), 3)) * (i % 2 ? jag : 1);
-    return { a, len: L3, w: R4.range(w[0], w[1]) * (i % 2 ? Math.sqrt(jag) : 1) };
+    const L4 = R4.range(len2[0], len2[1]) * (1 + fwd * Math.pow(Math.max(0, cb), 3) + back * Math.pow(Math.max(0, -cb), 3)) * (i % 2 ? jag : 1);
+    return { a, len: L4, w: R4.range(w[0], w[1]) * (i % 2 ? Math.sqrt(jag) : 1) };
   });
 }
 function star2(p, x, y, list, sc, th, [rim, body2, inner, core], a = 1, heart = 2.4) {
   for (let pass = 0; pass < 3; pass++)
     for (const s of list) {
-      const c = Math.cos(s.a), sn = Math.sin(s.a), L3 = s.len * sc;
-      for (let d = 0; d <= L3; d += 0.5) {
-        if (pass === 2 && d > L3 * 0.55) break;
-        const hw0 = s.w * th * (1 - d / L3) * Math.min(1, 0.5 + d / 3);
+      const c = Math.cos(s.a), sn = Math.sin(s.a), L4 = s.len * sc;
+      for (let d = 0; d <= L4; d += 0.5) {
+        if (pass === 2 && d > L4 * 0.55) break;
+        const hw0 = s.w * th * (1 - d / L4) * Math.min(1, 0.5 + d / 3);
         const hw = pass === 0 ? hw0 + 0.8 : pass === 1 ? hw0 : hw0 * 0.45;
-        const col = pass === 0 ? rim : pass === 1 ? d < L3 * 0.35 ? inner : body2 : core;
+        const col = pass === 0 ? rim : pass === 1 ? d < L4 * 0.35 ? inner : body2 : core;
         for (let o = -hw; o <= hw; o += 0.5) p.dot(x + c * d - sn * o, y + sn * d + c * o, col, a);
       }
     }
@@ -8160,20 +8349,20 @@ var KEYS = [
   [0.092, 1.22, 0.3, 1, [1, 2, 3, 4]],
   [0.125]
 ];
-function flare2(p, x, y, L3, k, C4) {
-  for (const [dx, dy, len2] of [[1, 0, L3], [0, 1, L3 * 0.45], [0.7, 0.7, L3 * 0.16], [0.7, -0.7, L3 * 0.16]])
+function flare2(p, x, y, L4, k, C5) {
+  for (const [dx, dy, len2] of [[1, 0, L4], [0, 1, L4 * 0.45], [0.7, 0.7, L4 * 0.16], [0.7, -0.7, L4 * 0.16]])
     for (const s of [-1, 1])
       for (let d = 1; d <= len2; d++) {
         const u = d / len2, a = u < 0.7 ? 1 : k * (1.6 - u);
-        p.dot(x + s * dx * d, y + s * dy * d, u < 0.35 ? WHITE : u < 0.7 ? C4[6] : C4[5], a);
-        if (dy === 0 && u < 0.42) for (const e of [-1, 1]) p.dot(x + s * d, y + e, u < 0.2 ? C4[6] : C4[5], u < 0.3 ? 1 : k);
+        p.dot(x + s * dx * d, y + s * dy * d, u < 0.35 ? WHITE : u < 0.7 ? C5[6] : C5[5], a);
+        if (dy === 0 && u < 0.42) for (const e of [-1, 1]) p.dot(x + s * d, y + e, u < 0.2 ? C5[6] : C5[5], u < 0.3 ? 1 : k);
       }
-  p.glowLine(x - L3, y, x + L3, y, 6, C4[6], 0.5 * k);
-  p.glowLine(x, y - L3 * 0.45, x, y + L3 * 0.45, 4, C4[6], 0.3 * k);
+  p.glowLine(x - L4, y, x + L4, y, 6, C5[6], 0.5 * k);
+  p.glowLine(x, y - L4 * 0.45, x, y + L4 * 0.45, 4, C5[6], 0.3 * k);
 }
 function create14(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), X = 0, Y = -o.height, A2 = o.aim, floor = () => 0;
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [C4[7], C4[6], C4[5], C4[3]] });
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed), X = 0, Y = -o.height, A2 = o.aim, floor = () => 0;
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [C5[7], C5[6], C5[5], C5[3]] });
   const bits = new Bits({ ground: floor }), lights = new Lights();
   const sp = spikes(R4, 14, A2, { len: [11, 15], w: [1.8, 2.5], fwd: 1.4, back: 0.6, jag: 0.5 });
   [...sp].sort((a, b) => b.len - a.len).slice(0, 2).forEach((s) => s.len *= 1.3);
@@ -8181,24 +8370,24 @@ function create14(o) {
     const a = A2 + i / 7 * TAU;
     return { a, gap: R4.range(0.55, 0.85), dr: R4.range(0.08, 0.4) + 0.15 * Math.max(0, Math.cos(a - A2)), w: 0.7 + 0.5 * Math.max(0, Math.cos(a - A2)) };
   });
-  lights.add(X, Y, 84, C4[5], 0.6, 0.5);
+  lights.add(X, Y, 84, C5[5], 0.6, 0.5);
   lights.add(X, Y, 30, WHITE, 0.7, 0.1);
-  lights.add(X, -4, 44, C4[4], 0.3, 0.45);
+  lights.add(X, -4, 44, C5[4], 0.3, 0.45);
   for (let i = 0; i < 36; i++) {
     const back = R4.chance(0.22), a = (back ? A2 + Math.PI : A2) + R4.range(-1, 1) * (back ? 0.6 : 0.8), v = R4.range(170, 430) * (back ? 0.6 : 1);
     ps.spawn(P.SPARK, X, Y, Math.cos(a) * v, Math.sin(a) * v - 50, R4.range(0.15, 0.5), WHITE, 1, R4.chance(0.3) ? R4.range(0, 0.04) : 0);
   }
   for (let i = 0; i < 10; i++) {
     const a = A2 + R4.range(-1, 1) * 1.1 - 0.35, v = R4.range(110, 280);
-    bits.add({ kind: B.SHARD, x: X, y: Y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, g: 0.8, drag: 0.7, bounce: 0.35, life: R4.range(0.55, 0.85), a: R4.range(0, TAU), va: R4.range(-25, 25), s: R4.range(2, 4.5), c: R4.pick([C4[7], C4[6], C4[6], C4[5]]) });
+    bits.add({ kind: B.SHARD, x: X, y: Y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, g: 0.8, drag: 0.7, bounce: 0.35, life: R4.range(0.55, 0.85), a: R4.range(0, TAU), va: R4.range(-25, 25), s: R4.range(2, 4.5), c: R4.pick([C5[7], C5[6], C5[6], C5[5]]) });
   }
   for (let i = 0; i < 12; i++) {
     const a = A2 - Math.PI / 2 + R4.range(-1.4, 1.4), v = R4.range(35, 110);
-    ps.spawn(P.MOTE, X + Math.cos(a) * 4, Y + Math.sin(a) * 4, Math.cos(a) * v, Math.sin(a) * v - 15, R4.range(0.35, 0.7), R4.pick([C4[6], C4[5], C4[5]]), 0.6, R4.range(0, 0.05));
+    ps.spawn(P.MOTE, X + Math.cos(a) * 4, Y + Math.sin(a) * 4, Math.cos(a) * v, Math.sin(a) * v - 15, R4.range(0.35, 0.7), R4.pick([C5[6], C5[5], C5[5]]), 0.6, R4.range(0, 0.05));
   }
   for (let i = 0; i < 5; i++) {
     const a = R4.range(0, TAU), d = R4.range(14, 34);
-    ps.spawn(P.STAR, X + Math.cos(a) * d, Y + Math.sin(a) * d * 0.8, 0, -4, R4.range(0.22, 0.38), R4.chance(0.5) ? C4[6] : WHITE, R4.range(1.6, 3), R4.range(0.08, 0.32));
+    ps.spawn(P.STAR, X + Math.cos(a) * d, Y + Math.sin(a) * d * 0.8, 0, -4, R4.range(0.22, 0.38), R4.chance(0.5) ? C5[6] : WHITE, R4.range(1.6, 3), R4.range(0.08, 0.32));
   }
   let t = 0;
   return {
@@ -8213,24 +8402,24 @@ function create14(o) {
       if (t >= 0.03 && u < 1) {
         const r = 10 + 30 * ease.outCubic(u), brk = smooth(0.12, 0.6, u), th = Math.max(1, 3.6 * Math.pow(1 - u, 1.2));
         const i = u < 0.12 ? 7 : u < 0.3 ? 6 : u < 0.5 ? 5 : u < 0.75 ? 4 : 3;
-        brokenRing(p, X, Y, r, th, segs, brk, C4[i], C4[Math.max(2, i - 2)], u < 0.6 ? 1 : (1 - u) / 0.4, 1, 0);
-        if (u < 0.6) p.glowRing(X, Y, r, 6, C4[5], 0.35 * Math.pow(1 - u / 0.6, 2));
+        brokenRing(p, X, Y, r, th, segs, brk, C5[i], C5[Math.max(2, i - 2)], u < 0.6 ? 1 : (1 - u) / 0.4, 1, 0);
+        if (u < 0.6) p.glowRing(X, Y, r, 6, C5[5], 0.35 * Math.pow(1 - u / 0.6, 2));
       }
       bits.draw(p);
       ps.draw(p);
       const f = (t - 0.04) / 0.28;
       if (f > 0 && f < 1) {
-        flare2(p, X, Y, 64 * Math.pow(1 - f, 1.3), 1 - f, C4);
-        p.glow(X, Y, 56, C4[5], 0.4 * (1 - f));
+        flare2(p, X, Y, 64 * Math.pow(1 - f, 1.3), 1 - f, C5);
+        p.glow(X, Y, 56, C5[5], 0.4 * (1 - f));
       }
       for (let i = 0; i < KEYS.length - 1; i++)
         if (t >= KEYS[i][0] && t < KEYS[i + 1][0]) {
           const [, sc, th, a, cols] = KEYS[i];
-          star2(p, X, Y, sp, sc, th, cols.map((j) => C4[j]), a, 2.6);
+          star2(p, X, Y, sp, sc, th, cols.map((j) => C5[j]), a, 2.6);
         }
       const pop = Math.exp(-t / 0.05);
       if (pop > 0.02) {
-        p.glow(X, Y, 44, C4[5], 0.4 * pop);
+        p.glow(X, Y, 44, C5[5], 0.4 * pop);
         p.glow(X, Y, 12, WHITE, 0.6 * pop);
       }
       lights.draw(p);
@@ -8405,8 +8594,8 @@ var meta27 = {
 };
 var CY3 = -17;
 function create16(o) {
-  const C4 = fit(o.palette, 6), S = fit(o.stars, 3), R4 = new Rng(o.seed), floor = () => 0;
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [WHITE, S[1], S[0], C4[2]] }), lights = new Lights();
+  const C5 = fit(o.palette, 6), S = fit(o.stars, 3), R4 = new Rng(o.seed), floor = () => 0;
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [WHITE, S[1], S[0], C5[2]] }), lights = new Lights();
   const balls = [], lines = [];
   const ring4 = 9;
   for (let i = 0; i < ring4; i++) {
@@ -8436,9 +8625,9 @@ function create16(o) {
   }
   for (let i = 0; i < 6; i++) {
     const s = R4.sign();
-    ps.spawn(P.DUST, s * R4.range(1, 6), -1, s * R4.range(25, 70), -R4.range(2, 10), R4.range(0.4, 0.7), C4[2], R4.range(1.6, 3), R4.range(0.02, 0.08));
+    ps.spawn(P.DUST, s * R4.range(1, 6), -1, s * R4.range(25, 70), -R4.range(2, 10), R4.range(0.4, 0.7), C5[2], R4.range(1.6, 3), R4.range(0.02, 0.08));
   }
-  lights.add(0, CY3, 46, C4[4], 0.8, 0.4);
+  lights.add(0, CY3, 46, C5[4], 0.8, 0.4);
   lights.add(0, CY3, 22, WHITE, 0.8, 0.1);
   let t = 0;
   const radius3 = (b) => {
@@ -8450,10 +8639,10 @@ function create16(o) {
     const age = b.max - b.life, r = radius3(b), a = Math.min(1, age * 20), lit = age < 0.12;
     if (r < 0.6) return;
     const hy = (b.y - CY3 + 6) / 14, lo = hy > 0.4, hi = hy < -0.3;
-    if (layer === "shade") p.disc(b.x + r * 0.16, b.y + r * 0.2, r, lit ? C4[3] : lo ? C4[1] : C4[2], 0.8 * a);
-    else if (layer === "body") p.disc(b.x - r * 0.06, b.y - r * 0.08, r * 0.86, lit ? C4[4] : lo ? C4[2] : C4[3], 0.88 * a);
+    if (layer === "shade") p.disc(b.x + r * 0.16, b.y + r * 0.2, r, lit ? C5[3] : lo ? C5[1] : C5[2], 0.8 * a);
+    else if (layer === "body") p.disc(b.x - r * 0.06, b.y - r * 0.08, r * 0.86, lit ? C5[4] : lo ? C5[2] : C5[3], 0.88 * a);
     else if (!lo || lit) {
-      p.disc(b.x - r * 0.28, b.y - r * 0.34, r * 0.42, lit || hi ? WHITE : C4[4], 0.85 * a);
+      p.disc(b.x - r * 0.28, b.y - r * 0.34, r * 0.42, lit || hi ? WHITE : C5[4], 0.85 * a);
       if (age < 0.25) p.disc(b.x - r * 0.3, b.y - r * 0.38, r * 0.2, WHITE, 0.9 * a * (1 - age / 0.25));
     }
   };
@@ -8481,7 +8670,7 @@ function create16(o) {
     },
     drawBack(p) {
       const s = 1 - smooth(0.1, 0.9, t);
-      if (s > 0) p.glow(0, -1, 26, C4[4], 0.25 * s);
+      if (s > 0) p.glow(0, -1, 26, C5[4], 0.25 * s);
       ps.draw(p, "back");
     },
     draw(p) {
@@ -8489,18 +8678,18 @@ function create16(o) {
       for (const layer of ["shade", "body", "cap"]) for (const b of live) drawBall(p, b, layer);
       if (t < 0.07) {
         const k = t / 0.07;
-        p.circle(0, CY3, 9 + 3 * k, C4[4]);
+        p.circle(0, CY3, 9 + 3 * k, C5[4]);
         p.circle(0, CY3, 7 + 3 * k, WHITE);
-        flare(p, 0, CY3, 20 * (1 - k * 0.5), 1 - k, C4);
+        flare(p, 0, CY3, 20 * (1 - k * 0.5), 1 - k, C5);
       }
       const rk = (t - 0.03) / 0.2;
-      if (rk > 0 && rk < 1) p.ring(0, CY3, 8 + 18 * ease.outCubic(rk), Math.max(1, 2.5 * (1 - rk)), rk < 0.3 ? WHITE : C4[4], 1.1 - rk);
+      if (rk > 0 && rk < 1) p.ring(0, CY3, 8 + 18 * ease.outCubic(rk), Math.max(1, 2.5 * (1 - rk)), rk < 0.3 ? WHITE : C5[4], 1.1 - rk);
       for (const l of lines) {
         const u = (t - l.d) / 0.2;
         if (u <= 0 || u >= 1) continue;
         const head4 = 8 + (l.r1 - 8) * ease.outExpo(clamp(u / 0.6)), tail = 8 + (l.r1 - 8) * ease.inCubic(u), ca = Math.cos(l.a), sa = Math.sin(l.a);
-        p.line(ca * tail, CY3 + sa * tail, ca * head4, CY3 + sa * head4, (v) => v > 0.6 ? WHITE : C4[4]);
-        p.glowLine(ca * tail, CY3 + sa * tail, ca * head4, CY3 + sa * head4, 3, C4[4], 0.25);
+        p.line(ca * tail, CY3 + sa * tail, ca * head4, CY3 + sa * head4, (v) => v > 0.6 ? WHITE : C5[4]);
+        p.glowLine(ca * tail, CY3 + sa * tail, ca * head4, CY3 + sa * head4, 3, C5[4], 0.25);
       }
       ps.draw(p, "front");
       lights.draw(p);
@@ -8518,14 +8707,14 @@ __export(shatter_death_exports, {
 });
 
 // ../pixelfx/src/fx/spawn/_lib.js
-function bodyOf(actor, C4) {
+function bodyOf(actor, C5) {
   const m = actor.mask, px = actor.pixels, list = [], cells = new Array(m.w * m.h).fill(null);
   const on = (mx, my) => mx >= 0 && my >= 0 && mx < m.w && my < m.h && !!m.data[my * m.w + mx];
   for (let my = 0; my < m.h; my++)
     for (let mx = 0; mx < m.w; mx++) {
       if (!on(mx, my)) continue;
       const own = px?.[my * m.w + mx];
-      const c = own ? hex(own) : C4[Math.max(1, Math.min(C4.length - 2, Math.round((C4.length - 2) * (0.85 - my / m.h * 0.5))))];
+      const c = own ? hex(own) : C5[Math.max(1, Math.min(C5.length - 2, Math.round((C5.length - 2) * (0.85 - my / m.h * 0.5))))];
       const b = { x: actor.x + mx, y: actor.y + my, mx, my, c, edge: !on(mx - 1, my) || !on(mx + 1, my) || !on(mx, my - 1) || !on(mx, my + 1) };
       list.push(b);
       cells[my * m.w + mx] = b;
@@ -8561,27 +8750,27 @@ var CRACK2 = 1.05;
 var BURST = 1.4;
 var actorAlpha = (t) => t < BURST ? 1 : 0;
 function create17(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), floor = () => 0;
-  const body2 = bodyOf(o.actor, C4), W8 = body2.w + 2, H5 = body2.h + 1, X0 = body2.x - 1, Y0 = body2.y - 1;
-  const ice = new Int16Array(W8 * H5).fill(-1), col = new Uint32Array(W8 * H5), glass = new Uint32Array(W8 * H5), solid2 = new Uint8Array(W8 * H5);
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed), floor = () => 0;
+  const body2 = bodyOf(o.actor, C5), W7 = body2.w + 2, H4 = body2.h + 1, X0 = body2.x - 1, Y0 = body2.y - 1;
+  const ice = new Int16Array(W7 * H4).fill(-1), col = new Uint32Array(W7 * H4), glass = new Uint32Array(W7 * H4), solid2 = new Uint8Array(W7 * H4);
   const inBody = (mx, my) => body2.on(mx, my);
-  for (let y = 0; y < H5; y++)
-    for (let x = 0; x < W8; x++) {
+  for (let y = 0; y < H4; y++)
+    for (let x = 0; x < W7; x++) {
       const mx = x - 1, my = y - 1;
-      if (inBody(mx, my) || my < body2.h - 1 && (inBody(mx - 1, my) || inBody(mx + 1, my) || inBody(mx, my - 1) || inBody(mx, my + 1))) ice[y * W8 + x] = 0;
+      if (inBody(mx, my) || my < body2.h - 1 && (inBody(mx - 1, my) || inBody(mx + 1, my) || inBody(mx, my - 1) || inBody(mx, my + 1))) ice[y * W7 + x] = 0;
     }
   const seeds = [];
   for (let i = 0; i < 22; i++) {
     let x, y, tries = 0;
     do
-      x = R4.range(0, W8), y = R4.range(0, H5);
-    while (ice[Math.floor(y) * W8 + Math.floor(x)] < 0 && ++tries < 40);
+      x = R4.range(0, W7), y = R4.range(0, H4);
+    while (ice[Math.floor(y) * W7 + Math.floor(x)] < 0 && ++tries < 40);
     seeds.push([x, y]);
   }
-  const at8 = (x, y) => x >= 0 && y >= 0 && x < W8 && y < H5 && ice[y * W8 + x] >= 0;
-  for (let y = 0; y < H5; y++)
-    for (let x = 0; x < W8; x++) {
-      const i = y * W8 + x;
+  const at8 = (x, y) => x >= 0 && y >= 0 && x < W7 && y < H4 && ice[y * W7 + x] >= 0;
+  for (let y = 0; y < H4; y++)
+    for (let x = 0; x < W7; x++) {
+      const i = y * W7 + x;
       if (ice[i] < 0) continue;
       let d1 = 1e9, d2 = 1e9, k = 0;
       seeds.forEach(([sx2, sy2], j) => {
@@ -8590,20 +8779,20 @@ function create17(o) {
         else if (d < d2) d2 = d;
       });
       ice[i] = k;
-      const [sx, sy] = seeds[k], lit = clamp(0.55 + 0.35 * (rand(k, 41) - 0.5) - 0.5 * ((sx - W8 / 2) / W8) - 0.55 * ((sy - H5 / 2) / H5));
+      const [sx, sy] = seeds[k], lit = clamp(0.55 + 0.35 * (rand(k, 41) - 0.5) - 0.5 * ((sx - W7 / 2) / W7) - 0.55 * ((sy - H4 / 2) / H4));
       const own = body2.cell(x - 1, y - 1)?.c;
-      col[i] = own ? mix(own, C4[4], 0.36) : C4[3];
-      glass[i] = C4[3 + Math.min(2, Math.floor(lit * 3))];
+      col[i] = own ? mix(own, C5[4], 0.36) : C5[3];
+      glass[i] = C5[3 + Math.min(2, Math.floor(lit * 3))];
       let sc = 0;
-      if (d2 - d1 < 0.42 && !own) sc = lit > 0.5 ? C4[6] : C4[5];
-      else if (d2 - d1 < 0.42) col[i] = mix(col[i], C4[6], 0.45);
-      if (!at8(x - 1, y) || !at8(x, y - 1)) sc = C4[6];
-      if (!at8(x + 1, y) || !at8(x, y + 1) && y < H5 - 1) sc = C4[3];
+      if (d2 - d1 < 0.42 && !own) sc = lit > 0.5 ? C5[6] : C5[5];
+      else if (d2 - d1 < 0.42) col[i] = mix(col[i], C5[6], 0.45);
+      if (!at8(x - 1, y) || !at8(x, y - 1)) sc = C5[6];
+      if (!at8(x + 1, y) || !at8(x, y + 1) && y < H4 - 1) sc = C5[3];
       if (sc) col[i] = sc, solid2[i] = 1;
     }
   const spikes2 = [];
   for (let i = 0; i < 7; i++) {
-    const x = R4.int(1, W8 - 2), y0 = R4.int(2, H5 - 3);
+    const x = R4.int(1, W7 - 2), y0 = R4.int(2, H4 - 3);
     let y = y0;
     while (y > 0 && at8(x, y - 1)) y--;
     if (at8(x, y)) spikes2.push({ x: X0 + x + 0.5, base: Y0 + y + 1, h: R4.range(3, 6), w: R4.range(2.5, 3.5), lean: R4.range(-2.5, 2.5), at: LOCK + R4.range(-0.02, 0.08) });
@@ -8613,7 +8802,7 @@ function create17(o) {
       const h = i ? R4.range(5, 7) : R4.range(8, 11);
       spikes2.push({ x: sd * (i ? R4.range(11, 13) : R4.range(7, 9)), base: 0, h, w: i ? 3.5 : 4.5, lean: sd * h * R4.range(0.25, 0.45), at: R4.range(0.08, 0.2) });
     }
-  const IX = Math.round(W8 * 0.48), IY = Math.round(H5 * 0.42), cracks3 = [];
+  const IX = Math.round(W7 * 0.48), IY = Math.round(H4 * 0.42), cracks3 = [];
   const walk2 = (x, y, a, len2) => {
     const pts = [[x, y]];
     for (let s = 0; s < len2; s++) {
@@ -8627,18 +8816,18 @@ function create17(o) {
     cracks3.push(pts);
   };
   for (let i = 0; i < 7; i++) walk2(IX, IY, i / 7 * TAU + R4.range(-0.3, 0.3), 20);
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [WHITE, C4[6], C4[5], C4[4]], haze: C4[5] });
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [WHITE, C5[6], C5[5], C5[4]], haze: C5[5] });
   const bits = new Bits({ ground: floor }), lights = new Lights(), pieces = [], rime = [];
   let t = 0, locked = false, cracked = false, burst2 = false;
-  const level2 = (t2) => H5 * (1 - ease.outCubic(clamp(t2 / LOCK)));
+  const level2 = (t2) => H4 * (1 - ease.outCubic(clamp(t2 / LOCK)));
   function shatter() {
     const cells = /* @__PURE__ */ new Map();
-    for (let y = 0; y < H5; y++)
-      for (let x = 0; x < W8; x++) {
-        const k = ice[y * W8 + x];
+    for (let y = 0; y < H4; y++)
+      for (let x = 0; x < W7; x++) {
+        const k = ice[y * W7 + x];
         if (k < 0) continue;
         if (!cells.has(k)) cells.set(k, []);
-        const i = y * W8 + x;
+        const i = y * W7 + x;
         cells.get(k).push([x, y, solid2[i] ? col[i] : mix(col[i], glass[i], 0.3)]);
       }
     for (const px of cells.values()) {
@@ -8653,32 +8842,32 @@ function create17(o) {
     }
     for (let i = 0; i < 64; i++) {
       const a = -Math.PI / 2 + R4.range(-1.45, 1.45), sp = R4.range(60, 180);
-      bits.add({ kind: B.SHARD, x: X0 + IX + R4.range(-6, 6), y: Y0 + IY + R4.range(-8, 8), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.85, drag: 0.6, bounce: 0.3, life: R4.range(0.9, 1.6), a: R4.range(0, TAU), va: R4.range(-20, 20), s: R4.range(1.5, 3.2), c: R4.pick([C4[7], C4[6], C4[5]]) });
+      bits.add({ kind: B.SHARD, x: X0 + IX + R4.range(-6, 6), y: Y0 + IY + R4.range(-8, 8), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.85, drag: 0.6, bounce: 0.3, life: R4.range(0.9, 1.6), a: R4.range(0, TAU), va: R4.range(-20, 20), s: R4.range(1.5, 3.2), c: R4.pick([C5[7], C5[6], C5[5]]) });
     }
-    for (let i = 0; i < 14; i++) ps.spawn(P.VAPOUR, R4.range(-10, 10), -R4.range(1, 20), R4.sign() * R4.range(20, 80), -R4.range(4, 20), R4.range(0.6, 1.1), R4.chance(0.5) ? C4[6] : C4[5], R4.range(2.5, 4.5));
-    for (let i = 0; i < 16; i++) ps.spawn(P.STAR, R4.range(-16, 16), -R4.range(4, 38), R4.range(-40, 40), -R4.range(10, 60), R4.range(0.4, 1), R4.pick([WHITE, C4[6]]), R4.range(1, 2.4));
+    for (let i = 0; i < 14; i++) ps.spawn(P.VAPOUR, R4.range(-10, 10), -R4.range(1, 20), R4.sign() * R4.range(20, 80), -R4.range(4, 20), R4.range(0.6, 1.1), R4.chance(0.5) ? C5[6] : C5[5], R4.range(2.5, 4.5));
+    for (let i = 0; i < 16; i++) ps.spawn(P.STAR, R4.range(-16, 16), -R4.range(4, 38), R4.range(-40, 40), -R4.range(10, 60), R4.range(0.4, 1), R4.pick([WHITE, C5[6]]), R4.range(1, 2.4));
     lights.add(0, Y0 + IY, 46, WHITE, 0.75, 0.14);
-    lights.add(0, Y0 + IY, 70, C4[4], 0.6, 0.5);
+    lights.add(0, Y0 + IY, 70, C5[4], 0.6, 0.5);
   }
   return {
     update(dt) {
       t += dt;
       if (t < LOCK) {
         const y = Y0 + level2(t);
-        if (R4.chance(0.7)) ps.spawn(P.STAR, R4.range(-10, 10), y, R4.range(-12, 12), -R4.range(0, 18), R4.range(0.25, 0.5), R4.chance(0.5) ? WHITE : C4[6], R4.range(0.8, 1.8));
-        if (R4.chance(0.25)) ps.spawn(P.VAPOUR, R4.range(-8, 8), -1, R4.sign() * R4.range(15, 50), -R4.range(2, 10), R4.range(0.6, 1), C4[6], R4.range(2, 3.5));
+        if (R4.chance(0.7)) ps.spawn(P.STAR, R4.range(-10, 10), y, R4.range(-12, 12), -R4.range(0, 18), R4.range(0.25, 0.5), R4.chance(0.5) ? WHITE : C5[6], R4.range(0.8, 1.8));
+        if (R4.chance(0.25)) ps.spawn(P.VAPOUR, R4.range(-8, 8), -1, R4.sign() * R4.range(15, 50), -R4.range(2, 10), R4.range(0.6, 1), C5[6], R4.range(2, 3.5));
       }
       if (!locked && t >= LOCK) {
         locked = true;
-        lights.add(0, -20, 54, C4[4], 0.6, 0.3);
-        for (let i = 0; i < 6; i++) ps.spawn(P.STAR, R4.range(-12, 12), -R4.range(4, 36), 0, -4, R4.range(0.35, 0.7), R4.pick([WHITE, C4[6]]), R4.range(1.2, 2.4));
+        lights.add(0, -20, 54, C5[4], 0.6, 0.3);
+        for (let i = 0; i < 6; i++) ps.spawn(P.STAR, R4.range(-12, 12), -R4.range(4, 36), 0, -4, R4.range(0.35, 0.7), R4.pick([WHITE, C5[6]]), R4.range(1.2, 2.4));
       }
-      if (locked && t < CRACK2 && R4.chance(0.08)) ps.spawn(P.STAR, R4.range(-11, 11), -R4.range(2, 36), 0, -3, R4.range(0.3, 0.6), R4.pick([WHITE, C4[6]]), R4.range(0.8, 2));
+      if (locked && t < CRACK2 && R4.chance(0.08)) ps.spawn(P.STAR, R4.range(-11, 11), -R4.range(2, 36), 0, -3, R4.range(0.3, 0.6), R4.pick([WHITE, C5[6]]), R4.range(0.8, 2));
       if (!cracked && t >= CRACK2) {
         cracked = true;
         for (let i = 0; i < 5; i++) {
           const a = R4.range(0, TAU), sp = R4.range(60, 150);
-          bits.add({ kind: B.SHARD, x: X0 + IX, y: Y0 + IY, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, g: 0.8, drag: 0.6, bounce: 0.3, life: R4.range(0.5, 0.9), a: R4.range(0, TAU), va: R4.range(-20, 20), s: R4.range(1, 2), c: C4[6] });
+          bits.add({ kind: B.SHARD, x: X0 + IX, y: Y0 + IY, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, g: 0.8, drag: 0.6, bounce: 0.3, life: R4.range(0.5, 0.9), a: R4.range(0, TAU), va: R4.range(-20, 20), s: R4.range(1, 2), c: C5[6] });
         }
         lights.add(0, Y0 + IY, 24, WHITE, 0.7, 0.1);
       }
@@ -8693,7 +8882,7 @@ function create17(o) {
           continue;
         }
         if (q.rest) {
-          if (t < meta28.duration - 0.9 && R4.chance(0.02)) ps.spawn(P.VAPOUR, q.x, q.y - 1, R4.range(-4, 4), -R4.range(4, 10), R4.range(0.5, 0.8), C4[5], R4.range(1.5, 2.5));
+          if (t < meta28.duration - 0.9 && R4.chance(0.02)) ps.spawn(P.VAPOUR, q.x, q.y - 1, R4.range(-4, 4), -R4.range(4, 10), R4.range(0.5, 0.8), C5[5], R4.range(1.5, 2.5));
           continue;
         }
         q.vy += 900 * dt;
@@ -8710,7 +8899,7 @@ function create17(o) {
             q.vx *= 0.65;
             q.va = q.va * 0.5 + R4.range(-4, 4);
             if (q.n > 8) ps.spawn(P.STAR, q.x, q.y, 0, -6, 0.3, WHITE, 1.2);
-            for (let j = 0; j < 2; j++) ps.spawn(P.DUST, q.x + R4.range(-2, 2), -0.5, R4.sign() * R4.range(10, 30), -R4.range(2, 8), R4.range(0.3, 0.5), C4[5], R4.range(1.2, 2));
+            for (let j = 0; j < 2; j++) ps.spawn(P.DUST, q.x + R4.range(-2, 2), -0.5, R4.sign() * R4.range(10, 30), -R4.range(2, 8), R4.range(0.3, 0.5), C5[5], R4.range(1.2, 2));
           } else if (Math.abs(q.vx) > 12) q.vy = 0, q.vx *= 0.9, q.va *= 0.85;
           else q.rest = true, q.vx = q.vy = 0;
         }
@@ -8724,17 +8913,17 @@ function create17(o) {
       if (k > 0)
         for (let x = Math.floor(-reach); x <= Math.ceil(reach); x++) {
           const h = rand(x, 17), e = 1 - Math.abs(x) / (reach + 1);
-          p.dot(x, 0, h < 0.3 ? WHITE : C4[6], k * Math.min(1, e * 2));
-          if (h < 0.5) p.dot(x, 1, C4[5], k * e);
-          if (h < 0.35 && e > 0.3) p.dot(x, -1, C4[6], k * e);
+          p.dot(x, 0, h < 0.3 ? WHITE : C5[6], k * Math.min(1, e * 2));
+          if (h < 0.5) p.dot(x, 1, C5[5], k * e);
+          if (h < 0.35 && e > 0.3) p.dot(x, -1, C5[6], k * e);
         }
-      if (k > 0) p.glow(0, -2, 26, C4[4], 0.25 * k);
+      if (k > 0) p.glow(0, -2, 26, C5[4], 0.25 * k);
       for (const r of rime) {
         const a = clamp((t - r.t0) / 0.08) * (1 - smooth(meta28.duration - 1, meta28.duration - 0.15, t));
         for (let x = Math.floor(r.x - r.w); x <= r.x + r.w; x++) {
           const h = rand(x, 23);
-          if (h < 0.7) p.dot(x, 0, h < 0.25 ? WHITE : C4[6], a);
-          if (h < 0.3) p.dot(x, 1, C4[5], a * 0.7);
+          if (h < 0.7) p.dot(x, 0, h < 0.25 ? WHITE : C5[6], a);
+          if (h < 0.3) p.dot(x, 1, C5[5], a * 0.7);
         }
       }
       ps.draw(p, "back");
@@ -8743,36 +8932,36 @@ function create17(o) {
       if (!burst2) {
         const lv = level2(t), shake3 = t > CRACK2 && t < BURST ? (Math.floor(t * 50) % 2 ? 1 : -1) * (t > BURST - 0.15 ? 1 : 0.5) : 0;
         const glint2 = t > LOCK ? (t - LOCK) * 0.9 % 1.6 : -1;
-        for (let y = 0; y < H5; y++) {
+        for (let y = 0; y < H4; y++) {
           if (y < Math.floor(lv)) continue;
-          for (let x = 0; x < W8; x++) {
-            const i = y * W8 + x;
+          for (let x = 0; x < W7; x++) {
+            const i = y * W7 + x;
             if (ice[i] < 0) continue;
-            let c = y === Math.floor(lv) && t < LOCK ? rand(x, 5) < 0.6 ? WHITE : C4[6] : t >= LOCK && t < LOCK + 0.05 ? WHITE : col[i];
-            const g = Math.abs((x + (H5 - y) * 0.6) / (W8 + H5 * 0.6) - glint2), on = glint2 >= 0 && glint2 <= 1;
+            let c = y === Math.floor(lv) && t < LOCK ? rand(x, 5) < 0.6 ? WHITE : C5[6] : t >= LOCK && t < LOCK + 0.05 ? WHITE : col[i];
+            const g = Math.abs((x + (H4 - y) * 0.6) / (W7 + H4 * 0.6) - glint2), on = glint2 >= 0 && glint2 <= 1;
             if (on && g < 0.035) c = WHITE;
-            else if (on && g < 0.07 && c !== C4[3]) c = C4[6];
+            else if (on && g < 0.07 && c !== C5[3]) c = C5[6];
             p.px(X0 + x + shake3, Y0 + y, c);
             if (!solid2[i] && c === col[i]) p.blend(X0 + x + shake3, Y0 + y, glass[i], 0.3);
           }
         }
-        for (let y = Math.max(0, Math.floor(lv) - 1); y <= H5; y++)
-          for (let x = -1; x <= W8; x++) if (!at8(x, y) && (at8(x - 1, y) || at8(x + 1, y) || at8(x, y + 1) && y + 1 >= lv || at8(x, y - 1)) && y < H5) p.px(X0 + x + shake3, Y0 + y, C4[0]);
+        for (let y = Math.max(0, Math.floor(lv) - 1); y <= H4; y++)
+          for (let x = -1; x <= W7; x++) if (!at8(x, y) && (at8(x - 1, y) || at8(x + 1, y) || at8(x, y + 1) && y + 1 >= lv || at8(x, y - 1)) && y < H4) p.px(X0 + x + shake3, Y0 + y, C5[0]);
         for (const s of spikes2) {
           const g = ease.outBack(clamp((t - s.at) / 0.12), 2.4);
-          if (g > 0) crystal(p, s.x + shake3, s.base, s.h * g, s.w, s.lean * g, C4, { white: t < s.at + 0.04 });
+          if (g > 0) crystal(p, s.x + shake3, s.base, s.h * g, s.w, s.lean * g, C5, { white: t < s.at + 0.04 });
         }
         if (cracked) {
           const k = clamp((t - CRACK2) / 0.25);
           for (const pts of cracks3)
             for (let i = 0, n = Math.floor(pts.length * k); i < n; i++) {
               const [x, y] = pts[i], fresh = i > n - 3 && t - CRACK2 < 0.3;
-              p.px(X0 + x + shake3, Y0 + y, fresh ? WHITE : C4[7]);
-              if (!fresh) p.px(X0 + x + shake3, Y0 + y + 1, C4[1]);
+              p.px(X0 + x + shake3, Y0 + y, fresh ? WHITE : C5[7]);
+              if (!fresh) p.px(X0 + x + shake3, Y0 + y + 1, C5[1]);
             }
         }
-        p.glow(0, -18, 30, C4[4], 0.18 * smooth(0, LOCK, t));
-        if (t > LOCK && t < LOCK + 0.18) sparkle(p, -4, Y0 + 8, Math.round(8 * (1 - (t - LOCK) / 0.18)), WHITE, C4[5], 0.6);
+        p.glow(0, -18, 30, C5[4], 0.18 * smooth(0, LOCK, t));
+        if (t > LOCK && t < LOCK + 0.18) sparkle(p, -4, Y0 + 8, Math.round(8 * (1 - (t - LOCK) / 0.18)), WHITE, C5[5], 0.6);
       } else if (t < BURST + 0.08) {
         const k = (t - BURST) / 0.08;
         p.circle(X0 + IX, Y0 + IY, 10 * (1 - k) + 3, WHITE);
@@ -8784,7 +8973,7 @@ function create17(o) {
             const ux = Math.round(px * ca + py * sa), uy = Math.round(-px * sa + py * ca), c = q.map.get(`${ux},${uy}`);
             if (c && rand(ux, uy, q.id) < fade) p.px(Math.floor(q.x) + px, Math.floor(q.y) + py, q.max - q.life < 0.05 ? WHITE : c);
           }
-        if (q.n > 6) p.glow(q.x, q.y, 6, C4[5], 0.2 * fade);
+        if (q.n > 6) p.glow(q.x, q.y, 6, C5[5], 0.2 * fade);
       }
       bits.draw(p);
       ps.draw(p, "front");
@@ -8833,54 +9022,54 @@ function radius2(t, RX2) {
 }
 var spinAt = (t) => t * 2.4 + 1.5 * smooth(BURST2 - 0.1, BURST2 + 0.3, t) + 10 * Math.pow(clamp((t - SHUT) / (POP2 - SHUT)), 2.2);
 var lipAt = (th, spin) => 1 + 0.05 * noise(th * 3 + spin * 0.6, 5) + 0.035 * noise(th * 8 - spin * 1.3, 9);
-function hole(p, C4, rx, spin, heat2, wind = 2.3) {
+function hole(p, C5, rx, spin, heat2, wind = 2.3) {
   if (rx < 1) return;
   const ry = rx * SY3;
   p.shade(-rx - 2, -ry - 2, rx + 2, ry + 2, (x, y, out) => {
     const u = x / rx, v = y / ry, q = Math.hypot(u, v), th = Math.atan2(v, u), lip2 = lipAt(th, spin);
     if (q > lip2) return;
     const w = q / lip2;
-    out.c = v < 0 && w > 0.72 ? w > 0.86 ? C4[2] : C4[1] : w > 0.55 ? C4[0] : VOID;
+    out.c = v < 0 && w > 0.72 ? w > 0.86 ? C5[2] : C5[1] : w > 0.55 ? C5[0] : VOID;
   });
   const n = Math.max(40, Math.round(rx * 5));
   for (let i = 0; i < 3; i++)
     for (let j = 0; j <= n; j++) {
       const q = 0.14 + 0.82 * (j / n), th = spin + i * TAU / 3 - wind * Math.log(q), lip2 = lipAt(th, spin);
       const x = Math.cos(th) * q * lip2 * rx, y = Math.sin(th) * q * lip2 * ry;
-      const c = q > 0.8 ? heat2 > 1.1 ? WHITE : C4[6] : q > 0.55 ? C4[5] : q > 0.32 ? C4[4] : C4[3];
+      const c = q > 0.8 ? heat2 > 1.1 ? WHITE : C5[6] : q > 0.55 ? C5[5] : q > 0.32 ? C5[4] : C5[3];
       p.dot(x, y, c, q > 0.3 ? 1 : q / 0.3);
       if (q > 0.4 && j % 2 === 0) {
         const t2 = th - 0.32, x2 = Math.cos(t2) * q * 0.94 * lip2 * rx, y2 = Math.sin(t2) * q * 0.94 * lip2 * ry;
-        p.dot(x2, y2, q > 0.7 ? C4[4] : C4[3], 0.85);
+        p.dot(x2, y2, q > 0.7 ? C5[4] : C5[3], 0.85);
       }
     }
-  p.glow(0, 0, rx * 0.45, C4[3], 0.35 * heat2);
+  p.glow(0, 0, rx * 0.45, C5[3], 0.35 * heat2);
 }
-function lip(p, C4, rx, spin, heat2, near) {
+function lip(p, C5, rx, spin, heat2, near) {
   if (rx < 1) return;
   const ry = rx * SY3, n = Math.ceil(rx * 7);
   for (let j = 0; j < n; j++) {
     const th = j / n * TAU, s = Math.sin(th);
     if (s >= 0 !== near) continue;
     const l = lipAt(th, spin), x = Math.cos(th) * rx * l, y = s * ry * l, f = noise(th * 9 + spin * 3, 13);
-    p.dot(Math.cos(th) * (rx * l + 1.2), s * (ry * l + 1), C4[1]);
-    p.dot(x, y, near ? f > -0.3 || heat2 > 1.1 ? WHITE : C4[6] : f > 0.2 ? C4[6] : C4[5]);
-    if (j % 6 === 0) p.glow(x, y, 7, C4[5], (near ? 0.3 : 0.2) * Math.min(1.4, heat2));
+    p.dot(Math.cos(th) * (rx * l + 1.2), s * (ry * l + 1), C5[1]);
+    p.dot(x, y, near ? f > -0.3 || heat2 > 1.1 ? WHITE : C5[6] : f > 0.2 ? C5[6] : C5[5]);
+    if (j % 6 === 0) p.glow(x, y, 7, C5[5], (near ? 0.3 : 0.2) * Math.min(1.4, heat2));
   }
 }
 function create18(o) {
-  const C4 = fit(o.palette, 8), RX2 = o.width, R4 = new Rng(o.seed), floor = () => 0;
-  const SM = [mix(C4[4], FUME, 0.4), mix(C4[3], FUME, 0.3), mix(C4[5], FUME, 0.55)];
-  const ps = new Particles({ rng: R4, ground: floor, sparks: [C4[7], C4[6], C4[5], C4[3]] });
+  const C5 = fit(o.palette, 8), RX2 = o.width, R4 = new Rng(o.seed), floor = () => 0;
+  const SM = [mix(C5[4], FUME, 0.4), mix(C5[3], FUME, 0.3), mix(C5[5], FUME, 0.55)];
+  const ps = new Particles({ rng: R4, ground: floor, sparks: [C5[7], C5[6], C5[5], C5[3]] });
   const rocks = new Bits({ ground: floor }), lights = new Lights();
   const swirl = [], wisps = [], rings = [];
   const done = {};
   let t = 0;
-  const addSwirl = (r0) => swirl.push({ a: R4.range(0, TAU), r: r0, w: R4.range(2.2, 4), in: R4.range(0.3, 0.7), c: R4.pick([WHITE, C4[6], C4[6], C4[5]]) });
+  const addSwirl = (r0) => swirl.push({ a: R4.range(0, TAU), r: r0, w: R4.range(2.2, 4), in: R4.range(0.3, 0.7), c: R4.pick([WHITE, C5[6], C5[6], C5[5]]) });
   const pull = () => {
     const a = R4.range(Math.PI * 1.03, Math.PI * 1.97), D17 = R4.range(40, 86), T4 = R4.range(0.24, 0.42);
     const x = Math.cos(a) * D17 * 1.08, y = Math.sin(a) * D17 * 0.85, l = Math.hypot(x, y), v = 0.6 * l / (1 - Math.exp(-0.6 * T4));
-    ps.spawn(P.MOTE, x, y, -x / l * v, -y / l * v, T4, R4.pick([WHITE, C4[6], C4[5], C4[5], C4[4]]), R4.range(1, 1.7));
+    ps.spawn(P.MOTE, x, y, -x / l * v, -y / l * v, T4, R4.pick([WHITE, C5[6], C5[5], C5[5], C5[4]]), R4.range(1, 1.7));
   };
   const puff = (n, big, sp) => {
     for (let i = 0; i < n; i++) {
@@ -8901,19 +9090,19 @@ function create18(o) {
       const shutting = t > SHUT && t < POP2;
       if ((t < OPEN2 + 0.15 || shutting) && R4.chance(0.55)) {
         const s = R4.sign(), D17 = R4.range(RX2 * 1.3, RX2 * 2.4), T4 = R4.range(0.18, 0.3), v = D17 * 3 / (Math.exp(3 * T4) - 1);
-        ps.spawn(P.STREAK, s * D17, -R4.range(0, 3), -s * v, R4.range(-2, 2), T4, R4.chance(0.5) ? C4[6] : C4[5]);
+        ps.spawn(P.STREAK, s * D17, -R4.range(0, 3), -s * v, R4.range(-2, 2), T4, R4.chance(0.5) ? C5[6] : C5[5]);
       }
       if (t > 0.1 && t < POP2 - 0.1 && R4.chance(shutting ? 0.85 : t < BURST2 ? 0.55 : 0.1)) pull();
       if (t < POP2 && t > 0.12 && R4.chance(shutting ? 0.5 : 0.25)) addSwirl(R4.range(1.1, 1.5));
       if (once("open", OPEN2 * 0.7)) {
-        lights.add(0, -8, 50, C4[4], 0.75, 0.45);
+        lights.add(0, -8, 50, C5[4], 0.75, 0.45);
         rings.push({ t0: t, life: 0.42, r0: RX2 * 0.8, r1: RX2 * 1.9, th: 2.5, hot: true });
         for (let i = 0; i < 8; i++) ps.spawn(P.DUST, R4.sign() * R4.range(0.7, 1.1) * RX2, -1, R4.sign() * R4.range(10, 45), -R4.range(4, 14), R4.range(0.4, 0.7), DUST6, R4.range(1.5, 3));
       }
-      if (once("b0", BELCH[0])) puff(6, false, 34), sparks(8, 210, 0.55), lights.add(0, -6, 44, C4[4], 0.6, 0.3);
-      if (once("b1", BELCH[1])) puff(8, false, 40), sparks(12, 240, 0.6), lights.add(0, -6, 48, C4[4], 0.65, 0.3);
+      if (once("b0", BELCH[0])) puff(6, false, 34), sparks(8, 210, 0.55), lights.add(0, -6, 44, C5[4], 0.6, 0.3);
+      if (once("b1", BELCH[1])) puff(8, false, 40), sparks(12, 240, 0.6), lights.add(0, -6, 48, C5[4], 0.65, 0.3);
       if (once("burst", BURST2)) {
-        lights.add(0, -26, 74, C4[4], 1, 0.75);
+        lights.add(0, -26, 74, C5[4], 1, 0.75);
         lights.add(0, -10, 40, WHITE, 0.85, 0.14);
         rings.push({ t0: t, life: 0.55, r0: RX2 * 1, r1: RX2 * 2.5, th: 3.5, hot: true }, { t0: t + 0.06, life: 0.45, r0: RX2 * 0.8, r1: RX2 * 1.8, th: 2, hot: false });
         puff(18, true, 70);
@@ -8924,12 +9113,12 @@ function create18(o) {
         }
         for (let i = 0; i < 12; i++)
           rocks.add({ kind: B.CHUNK, x: R4.sign() * R4.range(0.75, 1.05) * RX2, y: -1, vx: R4.range(-100, 100), vy: -R4.range(150, 280), g: 1, drag: 0.4, bounce: 0.3, life: R4.range(1.3, 1.9), a: R4.range(0, TAU), va: R4.range(-14, 14), s: R4.range(1, 2.4), ramp: STONE4 });
-        for (let i = 0; i < 14; i++) ps.spawn(P.STAR, R4.range(-0.8, 0.8) * RX2, -R4.range(4, 34), R4.range(-30, 30), -R4.range(10, 60), R4.range(0.5, 1.1), R4.pick([WHITE, C4[6], C4[5]]), R4.range(0.8, 2));
+        for (let i = 0; i < 14; i++) ps.spawn(P.STAR, R4.range(-0.8, 0.8) * RX2, -R4.range(4, 34), R4.range(-30, 30), -R4.range(10, 60), R4.range(0.5, 1.1), R4.pick([WHITE, C5[6], C5[5]]), R4.range(0.8, 2));
       }
       if (t > OPEN2 && t < SHUT && R4.chance(0.16)) puff(1, false, 22);
       if (t > OPEN2 && t < SHUT + 0.1 && R4.chance(0.06)) sparks(1, 160, 0.4);
       if (once("pop", POP2)) {
-        lights.add(0, -4, 50, C4[4], 0.95, 0.5);
+        lights.add(0, -4, 50, C5[4], 0.95, 0.5);
         lights.add(0, -2, 28, WHITE, 0.9, 0.12);
         rings.push({ t0: t, life: 0.35, r0: 2, r1: RX2 * 1.9, th: 2.5, hot: true });
         for (let i = 0; i < 18; i++) {
@@ -8938,10 +9127,10 @@ function create18(o) {
         }
         for (let i = 0; i < 9; i++) {
           const a = R4.range(0, TAU), sp = R4.range(30, 95);
-          ps.spawn(P.STAR, 0, -2, Math.cos(a) * sp, Math.sin(a) * sp * 0.5 - 20, R4.range(0.4, 0.9), R4.pick([WHITE, C4[6]]), R4.range(0.8, 1.8));
+          ps.spawn(P.STAR, 0, -2, Math.cos(a) * sp, Math.sin(a) * sp * 0.5 - 20, R4.range(0.4, 0.9), R4.pick([WHITE, C5[6]]), R4.range(0.8, 1.8));
         }
         for (let i = 0; i < 6; i++) ps.spawn(P.SMOKE, R4.range(-6, 6), -R4.range(1, 4), R4.range(-34, 34), -R4.range(10, 30), R4.range(0.8, 1.3), SM[2], R4.range(2.5, 4.5));
-        for (let i = 0; i < 14; i++) ps.spawn(P.STAR, R4.range(-1, 1) * RX2 * 0.9, -R4.range(0.5, 2), R4.range(-4, 4), -R4.range(0, 4), R4.range(0.6, 1.4), R4.pick([C4[6], C4[5], C4[5]]), R4.range(0.4, 0.9), R4.range(0, 0.25));
+        for (let i = 0; i < 14; i++) ps.spawn(P.STAR, R4.range(-1, 1) * RX2 * 0.9, -R4.range(0.5, 2), R4.range(-4, 4), -R4.range(0, 4), R4.range(0.6, 1.4), R4.pick([C5[6], C5[5], C5[5]]), R4.range(0.4, 0.9), R4.range(0, 0.25));
       }
       for (let i = swirl.length - 1; i >= 0; i--) {
         const s = swirl[i], k = shutting ? 2.4 : 1;
@@ -8959,7 +9148,7 @@ function create18(o) {
             ps.spawn(P.SPARK, w.x, w.y, Math.cos(a) * sp + w.vx * 0.2, Math.sin(a) * sp + w.vy * 0.2, R4.range(0.2, 0.5));
           }
           ps.spawn(P.STAR, w.x, w.y, 0, -6, 0.45, WHITE, 2.4);
-          lights.add(w.x, w.y, 24, C4[5], 0.65, 0.25);
+          lights.add(w.x, w.y, 24, C5[5], 0.65, 0.25);
           wisps.splice(i, 1);
           continue;
         }
@@ -8970,7 +9159,7 @@ function create18(o) {
         w.x += w.vx * dt;
         w.y += w.vy * dt;
         for (w.acc += dt; w.acc > 0.03; w.acc -= 0.03) ps.spawn(P.SMOKE, w.x, w.y, w.vx * 0.05, w.vy * 0.05 - 4, R4.range(0.6, 1), SM[0], R4.range(1.5, 2.4));
-        if (R4.chance(0.3)) ps.spawn(P.MOTE, w.x, w.y, -w.vx * 0.2 + R4.range(-15, 15), -w.vy * 0.2 + R4.range(-15, 15), R4.range(0.2, 0.4), C4[6], 0.6);
+        if (R4.chance(0.3)) ps.spawn(P.MOTE, w.x, w.y, -w.vx * 0.2 + R4.range(-15, 15), -w.vy * 0.2 + R4.range(-15, 15), R4.range(0.2, 0.4), C5[6], 0.6);
       }
       for (let i = rings.length - 1; i >= 0; i--) if (t - rings[i].t0 > rings[i].life) rings.splice(i, 1);
       rocks.update(dt);
@@ -8985,26 +9174,26 @@ function create18(o) {
     drawBack(p) {
       const rx = radius2(t, RX2), spin = spinAt(t), heat2 = 0.85 + 0.15 * Math.sin(t * 7) + 0.6 * Math.exp(-((t - BURST2) ** 2) / 0.01);
       if (t < POP2) {
-        p.glow(0, -4, rx * 1.8 + 10, C4[4], 0.32 * clamp(rx / RX2));
-        p.glowLine(0, -2, 0, -44, rx * 0.7 + 6, C4[4], 0.16 * clamp(rx / RX2));
+        p.glow(0, -4, rx * 1.8 + 10, C5[4], 0.32 * clamp(rx / RX2));
+        p.glowLine(0, -2, 0, -44, rx * 0.7 + 6, C5[4], 0.16 * clamp(rx / RX2));
       }
       if (t < OPEN2 * 0.6) {
-        const k = t / (OPEN2 * 0.6), L3 = RX2 * 1.1 * ease.outCubic(k);
-        p.line(-L3, 0, L3, 0, (u) => Math.abs(u - 0.5) < 0.3 ? WHITE : C4[6]);
-        p.glowLine(-L3, 0, L3, 0, 7, C4[5], 0.6);
+        const k = t / (OPEN2 * 0.6), L4 = RX2 * 1.1 * ease.outCubic(k);
+        p.line(-L4, 0, L4, 0, (u) => Math.abs(u - 0.5) < 0.3 ? WHITE : C5[6]);
+        p.glowLine(-L4, 0, L4, 0, 7, C5[5], 0.6);
       }
       if (t > OPEN2 * 0.35 && t < POP2) {
-        hole(p, C4, rx, spin, heat2 + 0.4 * smooth(SHUT, POP2, t), 2.3 + 2.6 * smooth(SHUT, POP2 - 0.05, t));
-        lip(p, C4, rx, spin, heat2, false);
+        hole(p, C5, rx, spin, heat2 + 0.4 * smooth(SHUT, POP2, t), 2.3 + 2.6 * smooth(SHUT, POP2 - 0.05, t));
+        lip(p, C5, rx, spin, heat2, false);
       }
-      for (const r of rings) ring2(p, C4, r, t, false);
+      for (const r of rings) ring2(p, C5, r, t, false);
       drawSwirl(p, false);
       ps.draw(p, "back");
     },
     draw(p) {
       const rx = radius2(t, RX2), spin = spinAt(t), heat2 = 0.85 + 0.15 * Math.sin(t * 7) + 0.6 * Math.exp(-((t - BURST2) ** 2) / 0.01);
-      if (t > OPEN2 * 0.35 && t < POP2) lip(p, C4, rx, spin, heat2, true);
-      for (const r of rings) ring2(p, C4, r, t, true);
+      if (t > OPEN2 * 0.35 && t < POP2) lip(p, C5, rx, spin, heat2, true);
+      for (const r of rings) ring2(p, C5, r, t, true);
       drawSwirl(p, true);
       const b = t - BURST2;
       if (b > 0 && b < 0.45) {
@@ -9013,25 +9202,25 @@ function create18(o) {
           const u = (y - bot) / (top - bot), half = w0 * Math.pow(1 - u, 0.8) * (0.85 + 0.15 * Math.sin(y * 0.7 + t * 40));
           const d = Math.abs(x) / Math.max(0.5, half);
           if (d > 1) return;
-          out.c = d < 0.35 ? WHITE : d < 0.7 ? C4[6] : C4[5];
+          out.c = d < 0.35 ? WHITE : d < 0.7 ? C5[6] : C5[5];
         });
-        p.glowLine(0, bot, 0, top, w0 + 12, C4[5], 0.55 * (1 - k));
-        if (b < 0.14) flare(p, 0, -4, 36 * (1 - b / 0.14), 1 - b / 0.14, C4);
+        p.glowLine(0, bot, 0, top, w0 + 12, C5[5], 0.55 * (1 - k));
+        if (b < 0.14) flare(p, 0, -4, 36 * (1 - b / 0.14), 1 - b / 0.14, C5);
       }
       const q = t - POP2;
-      if (q > -0.08 && q < 0.25) sparkle(p, 0, -1, Math.round((q < 0 ? 4 : 12) * (1 - clamp(q / 0.25))), WHITE, C4[5], 0.7 * (1 - clamp(q / 0.25)));
+      if (q > -0.08 && q < 0.25) sparkle(p, 0, -1, Math.round((q < 0 ? 4 : 12) * (1 - clamp(q / 0.25))), WHITE, C5[5], 0.7 * (1 - clamp(q / 0.25)));
       rocks.draw(p);
       for (const w of wisps) {
         const k = w.life / w.max;
         for (let i = 1; i < w.tr.length; i++) {
           const [x0, y0] = w.tr[i - 1], [x1, y1] = w.tr[i], u = i / w.tr.length;
-          p.line(x0, y0, x1, y1, u < 0.25 ? WHITE : u < 0.55 ? C4[6] : C4[4], 1.15 - u);
-          if (u < 0.35) p.line(x0 + 1, y0, x1 + 1, y1, C4[5], 1);
+          p.line(x0, y0, x1, y1, u < 0.25 ? WHITE : u < 0.55 ? C5[6] : C5[4], 1.15 - u);
+          if (u < 0.35) p.line(x0 + 1, y0, x1 + 1, y1, C5[5], 1);
         }
-        p.circle(w.x, w.y, 2, C4[5]);
-        p.circle(w.x, w.y, 1.2, C4[6]);
+        p.circle(w.x, w.y, 2, C5[5]);
+        p.circle(w.x, w.y, 1.2, C5[6]);
         p.px(w.x, w.y, WHITE);
-        p.glow(w.x, w.y, 12, C4[5], 0.5 * k + 0.2);
+        p.glow(w.x, w.y, 12, C5[5], 0.5 * k + 0.2);
       }
       ps.draw(p, "front");
       lights.draw(p);
@@ -9043,16 +9232,16 @@ function create18(o) {
       for (let j = 0; j < 3; j++) {
         const a = s.a - j * 0.08 * (1.4 / Math.max(0.3, s.r)), x = Math.cos(a) * s.r * rx, y = Math.sin(a) * s.r * rx * SY3;
         if (Math.sin(a) >= 0 !== near) continue;
-        p.dot(x, y - 0.5, j ? C4[5] : s.c, j ? 0.9 - j * 0.3 : 1);
-        if (!j) p.glow(x, y, 3, C4[5], 0.35);
+        p.dot(x, y - 0.5, j ? C5[5] : s.c, j ? 0.9 - j * 0.3 : 1);
+        if (!j) p.glow(x, y, 3, C5[5], 0.35);
       }
     }
   }
 }
-function ring2(p, C4, r, t, near) {
+function ring2(p, C5, r, t, near) {
   const k = (t - r.t0) / r.life;
   if (k < 0 || k >= 1) return;
-  band(p, 0, 0, r.r0 + (r.r1 - r.r0) * ease.outCubic(k), SY3 * 0.62, Math.max(1, r.th * (1 - k)), 1.15 - k, C4, (g) => Math.sin(g) >= 0 === near, r.hot && k < 0.15);
+  band(p, 0, 0, r.r0 + (r.r1 - r.r0) * ease.outCubic(k), SY3 * 0.62, Math.max(1, r.th * (1 - k)), 1.15 - k, C5, (g) => Math.sin(g) >= 0 === near, r.hot && k < 0.15);
 }
 
 // ../pixelfx/src/fx/ui/level-up.js
@@ -9092,9 +9281,9 @@ function drawWord(p, items, st) {
   y0 = Math.floor(y0) - 1 - ow;
   x1 = Math.ceil(x1) + 2 + ow;
   y1 = Math.ceil(y1) + 3 + ow;
-  const W8 = x1 - x0, H5 = y1 - y0;
-  if (W8 * H5 > ids.length) ids = new Int16Array(W8 * H5 * 2), edges = new Uint8Array(W8 * H5 * 2);
-  ids.fill(0, 0, W8 * H5);
+  const W7 = x1 - x0, H4 = y1 - y0;
+  if (W7 * H4 > ids.length) ids = new Int16Array(W7 * H4 * 2), edges = new Uint8Array(W7 * H4 * 2);
+  ids.fill(0, 0, W7 * H4);
   items.forEach((it, k) => {
     const g = it.g, gh = g.rows.length, h = gh * it.sy, bot = it.y + h, sl = it.slant ?? 0;
     for (let py = Math.floor(it.y); py < Math.ceil(bot); py++) {
@@ -9105,8 +9294,8 @@ function drawWord(p, items, st) {
       for (let px = Math.floor(it.x + shift2) - 1; px <= Math.ceil(it.x + shift2 + g.w * it.sx); px++) {
         const fx = px + 0.5 - it.x - shift2, gx = Math.floor(fx / it.sx);
         if (gx < 0 || gx >= g.w || !row[gx]) continue;
-        const i = (py - y0) * W8 + (px - x0);
-        if (i < 0 || i >= W8 * H5) continue;
+        const i = (py - y0) * W7 + (px - x0);
+        if (i < 0 || i >= W7 * H4) continue;
         ids[i] = k + 1;
         const rx = fx - gx * it.sx, up = gy > 0 ? g.rows[gy - 1] : null, dn = gy < gh - 1 ? g.rows[gy + 1] : null;
         const open = (r) => !r || !r[gx] && !r[gx - 1] && !r[gx + 1];
@@ -9114,7 +9303,7 @@ function drawWord(p, items, st) {
       }
     }
   });
-  const at8 = (x, y) => x < x0 || y < y0 || x >= x1 || y >= y1 ? 0 : ids[(y - y0) * W8 + (x - x0)];
+  const at8 = (x, y) => x < x0 || y < y0 || x >= x1 || y >= y1 ? 0 : ids[(y - y0) * W7 + (x - x0)];
   const F = st.fill, nF = F.length, shine = st.shine, glint2 = st.glint ?? WHITE, sy0 = st.shineY ?? y0;
   for (let y = y0; y < y1; y++)
     for (let x = x0; x < x1; x++) {
@@ -9123,7 +9312,7 @@ function drawWord(p, items, st) {
         const it = items[id - 1], v = (y + 0.5 - it.y) / (it.g.rows.length * it.sy);
         let i = Math.min(nF - 1, Math.max(0, Math.floor((1 - v) * nF)));
         let c = F[i];
-        const e = edges[(y - y0) * W8 + (x - x0)];
+        const e = edges[(y - y0) * W7 + (x - x0)];
         if (e & 1) c = st.edge ?? F[nF - 1];
         else if (e & 2) c = st.under ?? F[0];
         else if (e & 4 && i < nF - 1) c = F[i + 1];
@@ -9175,10 +9364,60 @@ function haloActor(p, A2, c, k, t = 0) {
   if (!A2 || k <= 0.02) return;
   p.outline(A2.mask, A2.x, A2.y, c, (mx, my) => k * (0.75 + 0.45 * noise(my * 0.45 - t * 7, mx * 3)));
 }
+function panel(p, x, y, w, h, col, { r = 3, a = 1, shine = null } = {}) {
+  if (w < 2 || h < 2) return;
+  const X1 = x + w, Y1 = y + h;
+  p.shade(x, y, X1, Y1, (px, py, o) => {
+    const cx = Math.max(x + r - px, 0, px - (X1 - r)), cy = Math.max(y + r - py, 0, py - (Y1 - r));
+    const e = cx > 0 && cy > 0 ? r - Math.hypot(cx, cy) : Math.min(px - x, X1 - px, py - y, Y1 - py);
+    if (e < 0) return;
+    o.a = a;
+    if (e < 1) return col.outline;
+    if (py - y < 2) return col.rim;
+    if (Y1 - py < 2) return col.low;
+    if (shine !== null) {
+      const d = Math.abs(px - (py - y) * 0.6 - shine);
+      if (d < 1.3) return WHITE;
+      if (d < 3) return col.rim;
+    }
+    return py - y < h * 0.45 ? col.top : col.body;
+  });
+}
 function shake(t, amp, t0 = 0, len2 = 0.3, seed = 1, hz = 32) {
   if (t < t0 || t > t0 + len2) return [0, 0];
   const k = 1 - (t - t0) / len2;
   return [Math.round(noise(t * hz, seed) * amp * k * 1.7), Math.round(noise(t * hz, seed + 7) * amp * k * 1.3)];
+}
+var UI_GOLD = ["#2a1405", "#5c3008", "#9a5a0e", "#d48e18", "#f5b92c", "#ffde5e", "#fff4bc", "#ffffff"];
+var UI_INK = { outline: hex("#0d0a14"), rim: hex("#5a4f74"), top: hex("#2a2338"), body: hex("#211b2d"), low: hex("#15111c") };
+var UI_TONES = {
+  hp: ["#1a0508", "#4a0b12", "#8c1420", "#d42a2e", "#ff5a4a", "#ff9a86", "#ffd8cc", "#ffffff"],
+  mp: ["#06121f", "#0c2a4a", "#144a7a", "#1f6fa8", "#3a9ad0", "#7cc8f0", "#c8f0ff", "#ffffff"],
+  xp: ["#141a05", "#2a3a08", "#4a5c0e", "#6e8a18", "#9ab828", "#c8e05a", "#efffb0", "#ffffff"],
+  boss: ["#14081f", "#2a1040", "#4a1a6a", "#6e2a94", "#9450c0", "#c08ae0", "#e8ccff", "#ffffff"],
+  gold: UI_GOLD
+};
+function bar(p, x, y, w, h, value, C5, { cells = 10, rim = true } = {}) {
+  value = clamp(value, 0, 1);
+  if (w < 2 || h < 2) return;
+  x = Math.round(x);
+  y = Math.round(y);
+  w = Math.round(w);
+  h = Math.round(h);
+  p.rect(x - 1, y - 1, w + 2, h + 2, UI_INK.outline);
+  p.rect(x, y, w, h, hex("#171320"));
+  const fw = Math.round(w * value);
+  if (fw > 0) {
+    p.shade(x, y, x + fw, y + h, (px, py, o) => {
+      const v = (py - y) / h;
+      o.c = v < 0.16 ? C5[6] : v < 0.38 ? C5[5] : v < 0.72 ? C5[4] : v < 0.9 ? C5[3] : C5[2];
+    });
+    p.rect(x, y + h - 1, fw, 1, C5[1]);
+    p.rect(x + fw - 1, y, 1, h, WHITE);
+  }
+  if (rim) p.rect(x, y, w, 1, UI_INK.rim);
+  const n = Math.max(1, Math.min(cells, Math.floor(w / 10)));
+  for (let i = 1; i < n; i++) p.rect(x + Math.round(w * i / n), y, 1, h, UI_INK.outline);
 }
 
 // ../pixelfx/src/fx/ui/level-up.js
@@ -9230,53 +9469,53 @@ var SHINE = 1.24;
 var EXIT = 2.3;
 var STRANDS = Array.from({ length: 9 }, (_, i) => ({ x: (i / 8 - 0.5) * 1.5 + (rand(i, 1) - 0.5) * 0.16, sp: 170 + rand(i, 2) * 170, per: 10 + rand(i, 3) * 16, duty: 0.3 + rand(i, 4) * 0.35, ph: rand(i, 5), lvl: rand(i, 6) < 0.35 ? 1 : 2, end: 0.5 + rand(i, 7) * 0.42 }));
 var widthAt = (t) => t < REL ? 0 : 12 * (1 + 0.4 * Math.exp(-(t - REL) * 10)) * (1 - 0.82 * smooth(RET - 0.12, RET + 0.16, t));
-function column(p, C4, t) {
+function column(p, C5, t) {
   const a = t - REL;
   if (a < 0 || t > GONE) return;
-  const top = -TOP3 * ease.outExpo(clamp(a / 0.12)), bot = -TOP3 * ease.inCubic(seg(t, RET, GONE)), W8 = widthAt(t), k = 1 - smooth(RET, GONE, t);
-  p.glowLine(0, top, 0, Math.min(bot, -34), W8 * 1.6 + 6, C4[5], 0.2 * k + 0.06);
+  const top = -TOP3 * ease.outExpo(clamp(a / 0.12)), bot = -TOP3 * ease.inCubic(seg(t, RET, GONE)), W7 = widthAt(t), k = 1 - smooth(RET, GONE, t);
+  p.glowLine(0, top, 0, Math.min(bot, -34), W7 * 1.6 + 6, C5[5], 0.2 * k + 0.06);
   p.glowLine(0, top, 0, Math.min(bot, -40), 5, WHITE, 0.18 * k);
   if (a < 0.04) {
     for (let y = Math.floor(top); y < bot; y++) {
-      const wr = W8 * 0.55 * (1 - 0.3 * (-y / TOP3));
-      for (let x = Math.floor(-wr); x <= Math.ceil(wr); x++) p.dot(x, y, Math.abs(x + 0.5) < wr - 1.5 ? WHITE : C4[6], clamp((y + TOP3) / 20) * 1.5);
+      const wr = W7 * 0.55 * (1 - 0.3 * (-y / TOP3));
+      for (let x = Math.floor(-wr); x <= Math.ceil(wr); x++) p.dot(x, y, Math.abs(x + 0.5) < wr - 1.5 ? WHITE : C5[6], clamp((y + TOP3) / 20) * 1.5);
     }
     return;
   }
   for (let y = Math.ceil(top); y < Math.ceil(bot); y++) {
     const h = -y / TOP3, fade = clamp((y + TOP3) / 16) * (t < RET ? 1 : clamp((bot - y) / 10)), head4 = y - top < 3 && a < 0.16;
-    const wr = W8 * (1 - 0.3 * h) + 0.9 * noise2(y * 0.2, t * 12, 3);
+    const wr = W7 * (1 - 0.3 * h) + 0.9 * noise2(y * 0.2, t * 12, 3);
     for (const s of [-1, 1]) {
       const run = fract(y * 0.06 + t * 3.4 + (s > 0 ? 0.5 : 0)) < 0.78, xw = s * wr;
-      p.dot(xw, y, head4 ? WHITE : run ? C4[6] : C4[5], fade * 1.4);
-      p.dot(xw + s, y, C4[4], fade * (run ? 0.5 : 0.25));
-      if (run) p.dot(xw - s, y, C4[5], fade * 1.2);
+      p.dot(xw, y, head4 ? WHITE : run ? C5[6] : C5[5], fade * 1.4);
+      p.dot(xw + s, y, C5[4], fade * (run ? 0.5 : 0.25));
+      if (run) p.dot(xw - s, y, C5[5], fade * 1.2);
     }
     p.dot(0, y, WHITE, fade * 1.6);
-    p.dot(-1, y, noise2(y * 0.3, t * 14, 5) > -0.2 ? WHITE : C4[6], fade * 1.3);
-    if (noise2(y * 0.25, t * 9, 8) > 0.25) p.dot(1, y, C4[6], fade * 1.2);
+    p.dot(-1, y, noise2(y * 0.3, t * 14, 5) > -0.2 ? WHITE : C5[6], fade * 1.3);
+    if (noise2(y * 0.25, t * 9, 8) > 0.25) p.dot(1, y, C5[6], fade * 1.2);
     for (const S of STRANDS) {
       if (h > S.end) continue;
       const ph = fract((y + t * S.sp) / S.per + S.ph);
       if (ph > S.duty) continue;
       const u = ph / S.duty;
-      p.px(S.x * wr, y, head4 || u < 0.2 ? WHITE : u < 0.65 ? C4[7 - S.lvl] : C4[6 - S.lvl]);
+      p.px(S.x * wr, y, head4 || u < 0.2 ? WHITE : u < 0.65 ? C5[7 - S.lvl] : C5[6 - S.lvl]);
     }
   }
 }
-function plate(p, C4, t, k) {
+function plate(p, C5, t, k) {
   if (k <= 0.02) return;
   const rx = 9 + 9 * k + Math.sin(t * 9), ry = 2.2;
   p.shade(-rx, -ry, rx, ry, (x, y, o) => {
     const dx = x / rx, dy = y / ry, d = Math.sqrt(dx * dx + dy * dy);
     if (d > 1) return;
     const u = d / Math.max(0.05, k);
-    o.c = u < 0.3 ? WHITE : u < 0.55 ? C4[6] : u < 0.8 ? C4[5] : C4[4];
+    o.c = u < 0.3 ? WHITE : u < 0.55 ? C5[6] : u < 0.8 ? C5[5] : C5[4];
     o.a = d < 0.6 * k ? 1 : k * (1 - d) * 2.2;
   });
-  p.glow(0, -1, rx * 2.2, C4[4], 0.35 * k);
+  p.glow(0, -1, rx * 2.2, C5[4], 0.35 * k);
 }
-function rays(p, C4, t, k, cx, cy) {
+function rays(p, C5, t, k, cx, cy) {
   if (k <= 0.02) return;
   for (let i = 0; i < 20; i++) {
     const an = i / 20 * TAU + 0.08, ca = Math.cos(an), sa = Math.sin(an), long = i % 2 === 0;
@@ -9284,15 +9523,15 @@ function rays(p, C4, t, k, cx, cy) {
     const r0 = 1 / Math.sqrt((ca / 52) ** 2 + (sa / 12) ** 2) + 2 * k, len2 = (long ? 15 + 7 * rand(i, 9) : 7 + 4 * rand(i, 8)) * k;
     if (len2 < 1) continue;
     const sh = 0.75 + 0.25 * Math.sin(t * 7 + i * 2.1), x0 = cx + ca * r0, y0 = cy + sa * r0;
-    p.line(x0, y0, x0 + ca * len2, y0 + sa * len2, (u) => u < 0.3 ? C4[7] : u < 0.6 ? C4[6] : C4[5], (u) => sh * (u < 0.55 ? 1.3 : 1.3 * (1 - u) / 0.45));
+    p.line(x0, y0, x0 + ca * len2, y0 + sa * len2, (u) => u < 0.3 ? C5[7] : u < 0.6 ? C5[6] : C5[5], (u) => sh * (u < 0.55 ? 1.3 : 1.3 * (1 - u) / 0.45));
   }
 }
 function create19(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), A2 = o.actor, SHADOW2 = scale(C4[0], 0.5);
-  const ps = new Particles({ rng: R4, ground: () => 0, sparks: [C4[7], C4[6], C4[5], C4[3]] }), lights = new Lights();
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed), A2 = o.actor, SHADOW2 = scale(C5[0], 0.5);
+  const ps = new Particles({ rng: R4, ground: () => 0, sparks: [C5[7], C5[6], C5[5], C5[3]] }), lights = new Lights();
   const spawn = (k, x, y, vx, vy, life, ...rest) => ps.spawn(k, x, y, vx, vy, Math.min(life, meta30.duration - 0.05 - t), ...rest);
   const word = spell(o.text), BASE = TY + 14, X0 = -word.w;
-  const lets = word.letters.filter((L3) => L3.g).map((L3, i) => ({ g: L3.g, w: L3.w, cx: X0 + (L3.x + L3.w / 2) * 2, born: DROP + i * STAG, pop: EXIT + i * 0.04, off: -18, v: 60, sq: 0, flash: 0, on: false, landed: false, rest: false, burst: false }));
+  const lets = word.letters.filter((L4) => L4.g).map((L4, i) => ({ g: L4.g, w: L4.w, cx: X0 + (L4.x + L4.w / 2) * 2, born: DROP + i * STAG, pop: EXIT + i * 0.04, off: -18, v: 60, sq: 0, flash: 0, on: false, landed: false, rest: false, burst: false }));
   const right = X0 + word.w * 2;
   const sats = Array.from({ length: 8 }, (_, i) => {
     const s = i % 2 ? 1 : -1, x = s * R4.range(20, 60), y = TY + 7 + (Math.abs(x) < 50 ? R4.sign() * R4.range(11, 18) : R4.range(-14, 14));
@@ -9304,10 +9543,10 @@ function create19(o) {
   const drawRush = (p, back) => {
     for (const m of rush) {
       if (m.back !== back) continue;
-      const sp = Math.hypot(m.vx, m.vy), ux = m.vx / sp, uy = m.vy / sp, L3 = m.len;
-      p.line(m.x - ux * L3, m.y - uy * L3, m.x - ux * L3 * 0.4, m.y - uy * L3 * 0.4, m.c);
-      p.line(m.x - ux * L3 * 0.35, m.y - uy * L3 * 0.35, m.x, m.y, WHITE);
-      p.glow(m.x, m.y, 4, C4[5], 0.25);
+      const sp = Math.hypot(m.vx, m.vy), ux = m.vx / sp, uy = m.vy / sp, L4 = m.len;
+      p.line(m.x - ux * L4, m.y - uy * L4, m.x - ux * L4 * 0.4, m.y - uy * L4 * 0.4, m.c);
+      p.line(m.x - ux * L4 * 0.35, m.y - uy * L4 * 0.35, m.x, m.y, WHITE);
+      p.glow(m.x, m.y, 4, C5[5], 0.25);
     }
   };
   return {
@@ -9327,80 +9566,80 @@ function create19(o) {
           x = R4.range(-9, 9), y = -1, tx = x * 0.7, ty = -R4.range(26, 44);
         }
         const dx = tx - x, dy = ty - y, l = Math.hypot(dx, dy) || 1;
-        rush.push({ x, y, vx: dx / l * sp, vy: dy / l * sp, life: Math.min(l / sp, REL + 0.06 - t), len: R4.range(5, 9), c: R4.chance(0.45) ? C4[6] : C4[5], back: kind > 0.84 && R4.chance(0.5) });
+        rush.push({ x, y, vx: dx / l * sp, vy: dy / l * sp, life: Math.min(l / sp, REL + 0.06 - t), len: R4.range(5, 9), c: R4.chance(0.45) ? C5[6] : C5[5], back: kind > 0.84 && R4.chance(0.5) });
       }
       for (let i = rush.length - 1; i >= 0; i--) {
         const m = rush[i];
         if ((m.life -= dt) <= 0) rush.splice(i, 1);
         else m.x += m.vx * dt, m.y += m.vy * dt;
       }
-      if (t < REL && R4.chance(0.12)) spawn(P.STAR, R4.range(-30, 30), -R4.range(0, 3), 0, -R4.range(10, 30), R4.range(0.3, 0.5), C4[6], 0.6);
+      if (t < REL && R4.chance(0.12)) spawn(P.STAR, R4.range(-30, 30), -R4.range(0, 3), 0, -R4.range(10, 30), R4.range(0.3, 0.5), C5[6], 0.6);
       if (!released && t >= REL) {
         released = true;
-        lights.add(0, -24, 90, C4[5], 0.6, 0.7);
+        lights.add(0, -24, 90, C5[5], 0.6, 0.7);
         lights.add(0, -8, 40, WHITE, 0.6, 0.12);
         for (let i = 0; i < 22; i++) {
           const an = i / 22 * TAU + R4.range(-0.12, 0.12), sp = R4.range(260, 460);
           const y0 = -18 + Math.sin(an) * 8, vy = Math.sin(an) * sp * 0.8, life = Math.min(R4.range(0.1, 0.2), vy > 0 ? -y0 / vy : vy < 0 ? (y0 + 104) / -vy : 1, 78 / Math.abs(Math.cos(an) * sp));
-          spawn(P.MOTE, Math.cos(an) * 6, y0, Math.cos(an) * sp, vy, life, R4.chance(0.4) ? C4[7] : C4[6], 1, 0, an > 0.3 && an < Math.PI - 0.3 ? PF.BACK : 0);
+          spawn(P.MOTE, Math.cos(an) * 6, y0, Math.cos(an) * sp, vy, life, R4.chance(0.4) ? C5[7] : C5[6], 1, 0, an > 0.3 && an < Math.PI - 0.3 ? PF.BACK : 0);
         }
         for (let i = 0; i < 26; i++) {
           const an = -Math.PI / 2 + R4.range(-1.3, 1.3), sp = R4.range(120, 290);
           spawn(P.SPARK, R4.range(-5, 5), -2, Math.cos(an) * sp, Math.sin(an) * sp, R4.range(0.35, 0.8));
         }
         for (let i = 0; i < 16; i++)
-          spawn(P.STAR, R4.range(-10, 10), R4.range(-36, -4), R4.range(-30, 30), -R4.range(15, 60), R4.range(0.6, 1.3), R4.pick([C4[7], C4[6], C4[5]]), R4.chance(0.35) ? R4.range(1.5, 2.6) : R4.range(0.4, 0.9), 0, R4.chance(0.4) ? PF.BACK : 0);
+          spawn(P.STAR, R4.range(-10, 10), R4.range(-36, -4), R4.range(-30, 30), -R4.range(15, 60), R4.range(0.6, 1.3), R4.pick([C5[7], C5[6], C5[5]]), R4.chance(0.35) ? R4.range(1.5, 2.6) : R4.range(0.4, 0.9), 0, R4.chance(0.4) ? PF.BACK : 0);
       }
-      const W8 = widthAt(t);
+      const W7 = widthAt(t);
       if (t >= nextHalo && t < RET - 0.1) halos.push(t), nextHalo += 0.16;
       if (t > REL && t < RET + 0.1 && R4.chance(0.5)) {
         const s = R4.sign();
         const y = R4.range(-4, -60), vy = -R4.range(140, 260);
-        spawn(P.MOTE, s * R4.range(0.75, 1.6) * W8, y, 0, vy, Math.min(R4.range(0.16, 0.32), (y + 96) / -vy), R4.chance(0.5) ? C4[7] : C4[6], R4.range(0.6, 1), 0, R4.chance(0.5) ? PF.BACK : 0);
+        spawn(P.MOTE, s * R4.range(0.75, 1.6) * W7, y, 0, vy, Math.min(R4.range(0.16, 0.32), (y + 96) / -vy), R4.chance(0.5) ? C5[7] : C5[6], R4.range(0.6, 1), 0, R4.chance(0.5) ? PF.BACK : 0);
       }
       if (t > REL && t < 2.4 && R4.chance(0.14 * (1 - seg(t, 1.6, 2.4)))) {
-        spawn(P.EMBER, R4.range(-20, 20), -R4.range(1, 30), R4.range(-15, 15), -R4.range(20, 55), R4.range(0.8, 1.6), C4[5], R4.range(1, 2), 0, R4.chance(0.4) ? PF.BACK : 0);
+        spawn(P.EMBER, R4.range(-20, 20), -R4.range(1, 30), R4.range(-15, 15), -R4.range(20, 55), R4.range(0.8, 1.6), C5[5], R4.range(1, 2), 0, R4.chance(0.4) ? PF.BACK : 0);
       }
       if (A2 && t > REL + 0.1 && t < 2.2 && R4.chance(0.09)) {
         const m = A2.mask;
         for (let n = 0; n < 12; n++) {
           const i = R4.int(0, m.w - 1), j = R4.int(0, m.h - 1);
           if (!m.data[j * m.w + i]) continue;
-          spawn(P.STAR, A2.x + i + 0.5, A2.y + j + 0.5, R4.range(-8, 8), -R4.range(14, 34), R4.range(0.6, 1.1), R4.pick([C4[7], C4[6], C4[5]]), R4.chance(0.2) ? 1.5 : 0.6, 0, R4.chance(0.5) ? PF.BACK : 0);
+          spawn(P.STAR, A2.x + i + 0.5, A2.y + j + 0.5, R4.range(-8, 8), -R4.range(14, 34), R4.range(0.6, 1.1), R4.pick([C5[7], C5[6], C5[5]]), R4.chance(0.2) ? 1.5 : 0.6, 0, R4.chance(0.5) ? PF.BACK : 0);
           break;
         }
       }
       if (t > 1 && t < 2.5 && R4.chance(0.13)) {
         const up = R4.chance(0.6), x = up ? R4.range(-58, 58) : R4.range(-20, 20), y = up ? TY + 7 + R4.range(-16, 16) : R4.range(-44, -6);
-        spawn(P.STAR, x, y, R4.range(-6, 6), -R4.range(4, 14), R4.range(0.4, 0.8), R4.pick([C4[7], C4[6], C4[6], C4[5]]), R4.chance(0.3) ? R4.range(1.5, 2.4) : 0.6, 0, R4.chance(0.3) ? PF.BACK : 0);
+        spawn(P.STAR, x, y, R4.range(-6, 6), -R4.range(4, 14), R4.range(0.4, 0.8), R4.pick([C5[7], C5[6], C5[6], C5[5]]), R4.chance(0.3) ? R4.range(1.5, 2.4) : 0.6, 0, R4.chance(0.3) ? PF.BACK : 0);
       }
-      for (const L3 of lets) {
-        if (t < L3.born) continue;
-        L3.on = true;
-        if (!L3.rest) {
-          L3.v += 1700 * dt;
-          L3.off += L3.v * dt;
-          if (L3.off >= 0 && L3.v > 0) {
-            L3.off = 0;
-            if (L3.v > 110) {
-              L3.sq = 1;
-              if (!L3.landed) {
-                L3.landed = true;
-                L3.flash = 1;
-                lights.add(L3.cx, BASE - 7, 18, C4[5], 0.55, 0.25);
-                for (const s of [-1, 1]) spawn(P.STAR, L3.cx + s * L3.w, BASE - R4.range(0, 3), s * R4.range(15, 40), -R4.range(5, 25), R4.range(0.25, 0.45), C4[6], R4.range(0.5, 1.2));
+      for (const L4 of lets) {
+        if (t < L4.born) continue;
+        L4.on = true;
+        if (!L4.rest) {
+          L4.v += 1700 * dt;
+          L4.off += L4.v * dt;
+          if (L4.off >= 0 && L4.v > 0) {
+            L4.off = 0;
+            if (L4.v > 110) {
+              L4.sq = 1;
+              if (!L4.landed) {
+                L4.landed = true;
+                L4.flash = 1;
+                lights.add(L4.cx, BASE - 7, 18, C5[5], 0.55, 0.25);
+                for (const s of [-1, 1]) spawn(P.STAR, L4.cx + s * L4.w, BASE - R4.range(0, 3), s * R4.range(15, 40), -R4.range(5, 25), R4.range(0.25, 0.45), C5[6], R4.range(0.5, 1.2));
               }
-              L3.v = -L3.v * 0.3;
-            } else L3.v = 0, L3.rest = true;
+              L4.v = -L4.v * 0.3;
+            } else L4.v = 0, L4.rest = true;
           }
         }
-        L3.sq = Math.max(0, L3.sq - dt / 0.1);
-        L3.flash = Math.max(0, L3.flash - dt / 0.12);
-        if (!L3.burst && t >= L3.pop + 0.06) {
-          L3.burst = true;
+        L4.sq = Math.max(0, L4.sq - dt / 0.1);
+        L4.flash = Math.max(0, L4.flash - dt / 0.12);
+        if (!L4.burst && t >= L4.pop + 0.06) {
+          L4.burst = true;
           for (let i = 0; i < 3; i++) {
             const an = R4.range(0, TAU), sp = R4.range(20, 55);
-            spawn(P.STAR, L3.cx + R4.range(-3, 3), BASE - 7 + R4.range(-4, 4), Math.cos(an) * sp, Math.sin(an) * sp - 15, R4.range(0.3, 0.6), R4.pick([C4[7], C4[6]]), i ? 0.6 : R4.range(1.2, 2));
+            spawn(P.STAR, L4.cx + R4.range(-3, 3), BASE - 7 + R4.range(-4, 4), Math.cos(an) * sp, Math.sin(an) * sp - 15, R4.range(0.3, 0.6), R4.pick([C5[7], C5[6]]), i ? 0.6 : R4.range(1.2, 2));
           }
         }
       }
@@ -9408,202 +9647,80 @@ function create19(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      rays(p, C4, t, ease.outExpo(seg(t, LANDED, LANDED + 0.2)) * (1 - ease.inQuad(seg(t, EXIT - 0.15, EXIT + 0.1))), 0, TY + 7);
+      rays(p, C5, t, ease.outExpo(seg(t, LANDED, LANDED + 0.2)) * (1 - ease.inQuad(seg(t, EXIT - 0.15, EXIT + 0.1))), 0, TY + 7);
       if (t < REL) {
         const k = seg(t, 0.02, REL);
-        band(p, 0, 0, 4 + 52 * (1 - ease.inQuad(k)), 0.2, 1.5, k * 1.1, C4, (g) => Math.sin(g) < 0);
+        band(p, 0, 0, 4 + 52 * (1 - ease.inQuad(k)), 0.2, 1.5, k * 1.1, C5, (g) => Math.sin(g) < 0);
       }
       for (const [d, r1, th] of [[0, 72, 4], [0.08, 46, 2.5]]) {
         const k = (t - REL - d) / 0.55;
-        if (k > 0 && k < 1) band(p, 0, 0, 5 + r1 * ease.outCubic(k), 0.2, Math.max(1, th * (1 - k)), 1.15 - k, C4, (g) => Math.sin(g) < 0, k < 0.15);
+        if (k > 0 && k < 1) band(p, 0, 0, 5 + r1 * ease.outCubic(k), 0.2, Math.max(1, th * (1 - k)), 1.15 - k, C5, (g) => Math.sin(g) < 0, k < 0.15);
       }
       for (const h0 of halos) {
         const k = (t - h0) / 0.6;
-        if (k > 0 && k < 1) band(p, 0, -2 - 72 * ease.outQuad(k), (widthAt(t) * 1.45 + 4) * (1 - 0.4 * k), 0.3, 1.5, (1 - k) * 1.4, C4, (g) => Math.sin(g) < 0, k < 0.12);
+        if (k > 0 && k < 1) band(p, 0, -2 - 72 * ease.outQuad(k), (widthAt(t) * 1.45 + 4) * (1 - 0.4 * k), 0.3, 1.5, (1 - k) * 1.4, C5, (g) => Math.sin(g) < 0, k < 0.12);
       }
-      column(p, C4, t);
-      plate(p, C4, t, t < REL ? 0.55 * seg(t, 0.05, REL) : 1 - smooth(RET - 0.1, GONE + 0.2, t));
+      column(p, C5, t);
+      plate(p, C5, t, t < REL ? 0.55 * seg(t, 0.05, REL) : 1 - smooth(RET - 0.1, GONE + 0.2, t));
       ps.draw(p, "back");
       drawRush(p, true);
     },
     draw(p) {
       if (t < REL) {
         const k = seg(t, 0.02, REL);
-        band(p, 0, 0, 4 + 52 * (1 - ease.inQuad(k)), 0.2, 1.5, k * 1.1, C4, (g2) => Math.sin(g2) >= 0);
+        band(p, 0, 0, 4 + 52 * (1 - ease.inQuad(k)), 0.2, 1.5, k * 1.1, C5, (g2) => Math.sin(g2) >= 0);
       }
       for (const [d, r1, th] of [[0, 72, 4], [0.08, 46, 2.5]]) {
         const k = (t - REL - d) / 0.55;
-        if (k > 0 && k < 1) band(p, 0, 0, 5 + r1 * ease.outCubic(k), 0.2, Math.max(1, th * (1 - k)), 1.15 - k, C4, (g2) => Math.sin(g2) >= 0, k < 0.15);
+        if (k > 0 && k < 1) band(p, 0, 0, 5 + r1 * ease.outCubic(k), 0.2, Math.max(1, th * (1 - k)), 1.15 - k, C5, (g2) => Math.sin(g2) >= 0, k < 0.15);
       }
       for (const h0 of halos) {
         const k = (t - h0) / 0.6;
-        if (k > 0 && k < 1) band(p, 0, -2 - 72 * ease.outQuad(k), (widthAt(t) * 1.45 + 4) * (1 - 0.4 * k), 0.3, 1.5, (1 - k) * 1.4, C4, (g2) => Math.sin(g2) >= 0, k < 0.12);
+        if (k > 0 && k < 1) band(p, 0, -2 - 72 * ease.outQuad(k), (widthAt(t) * 1.45 + 4) * (1 - 0.4 * k), 0.3, 1.5, (1 - k) * 1.4, C5, (g2) => Math.sin(g2) >= 0, k < 0.12);
       }
       const lit = smooth(REL - 0.02, REL + 0.04, t) * (1 - smooth(RET, 2.5, t));
-      tintActor(p, A2, t < REL ? 0 : t < REL + 0.06 ? 1 : Math.exp(-(t - REL - 0.06) / 0.07), [C4[4], C4[5], C4[6]]);
-      lightActor(p, A2, C4[5], 0.1 * seg(t, 0.05, REL) * (1 - lit) + 0.06 * lit, 0.6 * lit, t);
-      haloActor(p, A2, C4[5], 0.85 * lit * (1 - smooth(RET, GONE + 0.3, t)) + 0.3 * lit, t);
+      tintActor(p, A2, t < REL ? 0 : t < REL + 0.06 ? 1 : Math.exp(-(t - REL - 0.06) / 0.07), [C5[4], C5[5], C5[6]]);
+      lightActor(p, A2, C5[5], 0.1 * seg(t, 0.05, REL) * (1 - lit) + 0.06 * lit, 0.6 * lit, t);
+      haloActor(p, A2, C5[5], 0.85 * lit * (1 - smooth(RET, GONE + 0.3, t)) + 0.3 * lit, t);
       if (t < REL) {
         const k = seg(t, 0.05, REL), beat3 = 1 + 0.4 * Math.exp(-((t - REL * 0.6) ** 2) / 1e-3);
-        sparkle(p, 0, -2, (1 + 4 * k * k) * beat3, C4[6], C4[5], 0.3 + 0.4 * k);
+        sparkle(p, 0, -2, (1 + 4 * k * k) * beat3, C5[6], C5[5], 0.3 + 0.4 * k);
       } else if (t < REL + 0.22) {
         const a = (t - REL) / 0.22;
-        flare(p, 0, -4, 28 * Math.pow(1 - a, 1.5), 1 - a, C4);
+        flare(p, 0, -4, 28 * Math.pow(1 - a, 1.5), 1 - a, C5);
         p.glow(0, -16, 48, WHITE, 0.3 * (1 - a));
       }
       ps.draw(p, "front");
       drawRush(p, false);
       const items = [], done = (t - LANDED) / 0.12;
-      for (const L3 of lets) {
-        if (!L3.on) continue;
-        let sx = 2, sy = 2, flash = L3.flash;
-        if (!L3.landed && L3.v > 150) sx = 1.8, sy = 2.3;
-        if (L3.sq > 0) sx = 2 * (1 + 0.22 * L3.sq), sy = 2 * (1 - 0.22 * L3.sq);
-        const pu = (t - L3.pop) / 0.07, hop = seg(t, L3.pop - 0.1, L3.pop);
+      for (const L4 of lets) {
+        if (!L4.on) continue;
+        let sx = 2, sy = 2, flash = L4.flash;
+        if (!L4.landed && L4.v > 150) sx = 1.8, sy = 2.3;
+        if (L4.sq > 0) sx = 2 * (1 + 0.22 * L4.sq), sy = 2 * (1 - 0.22 * L4.sq);
+        const pu = (t - L4.pop) / 0.07, hop = seg(t, L4.pop - 0.1, L4.pop);
         if (pu >= 1) continue;
         if (hop > 0 && pu <= 0) sx = 2 * (1 - 0.1 * hop), sy = 2 * (1 + 0.15 * hop);
         if (pu > 0) sx = sy = 2 * (1 + 0.3 * pu), flash = 1;
         flash = Math.max(flash, done > 0 && done < 1 ? 1 - done : 0);
-        const h = 7 * sy, w = L3.w * sx;
-        items.push({ g: L3.g, x: L3.cx - w / 2, y: BASE + L3.off - h - 3 * ease.outQuad(hop), sx, sy, a: clamp((t - L3.born) / 0.05), flash });
+        const h = 7 * sy, w = L4.w * sx;
+        items.push({ g: L4.g, x: L4.cx - w / 2, y: BASE + L4.off - h - 3 * ease.outQuad(hop), sx, sy, a: clamp((t - L4.born) / 0.05), flash });
       }
       const sh = seg(t, SHINE, SHINE + 0.34), shine = sh > 0 && sh < 1 ? X0 - 14 + (right - X0 + 30) * ease.inOutSine(sh) : null;
-      drawWord(p, items, { fill: [C4[3], C4[4], C4[5], C4[6]], edge: WHITE, under: C4[2], outline: C4[0], shadow: SHADOW2, shine, shineY: TY, glint: C4[6] });
-      if (shine !== null && shine > X0 && shine < right) p.glowLine(shine, TY, shine + 8.4, BASE, 9, C4[6], 0.3);
+      drawWord(p, items, { fill: [C5[3], C5[4], C5[5], C5[6]], edge: WHITE, under: C5[2], outline: C5[0], shadow: SHADOW2, shine, shineY: TY, glint: C5[6] });
+      if (shine !== null && shine > X0 && shine < right) p.glowLine(shine, TY, shine + 8.4, BASE, 9, C5[6], 0.3);
       const hold = smooth(0.9, 1.2, t) * (1 - smooth(EXIT, EXIT + 0.4, t));
-      if (hold > 0) p.glow(0, TY + 7, 50, C4[5], 0.22 * hold + (done > 0 && done < 1 ? 0.3 * (1 - done) : 0));
-      for (const L3 of lets) {
-        const u = (t - L3.pop - 0.07) / 0.16;
-        if (u > 0 && u < 1) sparkle(p, L3.cx, BASE - 7, 6 * (1 - u) * (1 - u), C4[6], C4[5], 0.5);
+      if (hold > 0) p.glow(0, TY + 7, 50, C5[5], 0.22 * hold + (done > 0 && done < 1 ? 0.3 * (1 - done) : 0));
+      for (const L4 of lets) {
+        const u = (t - L4.pop - 0.07) / 0.16;
+        if (u > 0 && u < 1) sparkle(p, L4.cx, BASE - 7, 6 * (1 - u) * (1 - u), C5[6], C5[5], 0.5);
       }
       const g = (t - SHINE - 0.3) / 0.26;
-      if (g > 0 && g < 1) sparkle(p, right - 2, TY + 1, 7 * Math.sin(g * Math.PI), C4[6], C4[5], 0.6);
+      if (g > 0 && g < 1) sparkle(p, right - 2, TY + 1, 7 * Math.sin(g * Math.PI), C5[6], C5[5], 0.6);
       for (const s of sats) {
         const u = (t - s.t0) / s.dur;
-        if (u > 0 && u < 1) sparkle(p, s.x, s.y, s.L * Math.pow(Math.sin(u * Math.PI), 0.7), C4[6], C4[5], 0.5);
+        if (u > 0 && u < 1) sparkle(p, s.x, s.y, s.L * Math.pow(Math.sin(u * Math.PI), 0.7), C5[6], C5[5], 0.5);
       }
-      lights.draw(p);
-    }
-  };
-}
-
-// ../pixelfx/src/fx/ui/combo-counter.js
-var combo_counter_exports = {};
-__export(combo_counter_exports, {
-  create: () => create20,
-  meta: () => meta31
-});
-var meta31 = {
-  name: "Combo counter",
-  desc: "x5 COMBO rockets in on streaming speed lines, smearing, and slams to a stop: a white flash, a ring, sparks; it pulses while a timer bar drains, then whooshes out.",
-  tags: ["ui", "combo", "counter", "combat", "text", "one-shot"],
-  size: [208, 100],
-  origin: [104, 50],
-  duration: 1.45,
-  loop: false,
-  fps: 30,
-  bg: "dark",
-  options: { palette: ["#1a0516", "#3d0a33", "#701560", "#b0228f", "#f53cd1", "#ff86e6", "#ffd2f6", "#ffffff"], count: 5, label: "COMBO", seed: 6 }
-};
-var HIT4 = 0.1;
-var BEAT = 0.5;
-var OUT2 = 1.1;
-function speedLines(p, C4, t, k, dir) {
-  if (k <= 0.02) return;
-  const f = Math.floor(t * 30);
-  for (let i = 0; i < 18; i++) {
-    if (rand(f, i, 3) > k) continue;
-    const y = Math.round((rand(f, i, 1) - 0.5) * 60), L3 = 16 + rand(f, i, 2) * 50, x = (rand(f, i, 4) - 0.5) * 190;
-    const x0 = Math.max(-100, x - L3 / 2), x1 = Math.min(100, x + L3 / 2);
-    p.line(x0, y, x1, y, (u) => (dir > 0 ? u : 1 - u) > 0.75 ? WHITE : (dir > 0 ? u : 1 - u) > 0.35 ? C4[6] : C4[4], (u) => (dir > 0 ? u : 1 - u) < 0.25 ? 0.6 : 1);
-  }
-}
-function create20(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), SHADOW2 = scale(C4[0], 0.5);
-  const ps = new Particles({ rng: R4, sparks: [C4[7], C4[6], C4[5], C4[3]] }), lights = new Lights();
-  const big = spell("x" + Math.round(o.count)), lab = spell(o.label);
-  const BS = 4, LS = 2, W8 = big.w * BS + 4 + lab.w * LS, X0 = -W8 / 2, BASE = 12;
-  const spikes2 = Array.from({ length: 10 }, (_, i) => [i / 10 * TAU + R4.range(-0.15, 0.15), R4.range(14, 24)]);
-  let t = 0, hit = false, out = false;
-  const xAt = (t2) => {
-    t2 = Math.max(0, t2);
-    if (t2 < HIT4) return -32 * Math.pow(1 - t2 / HIT4, 2);
-    if (t2 < OUT2) return 7 * Math.exp(-(t2 - HIT4) * 18) * Math.sin((t2 - HIT4) * 34);
-    const u = seg(t2, OUT2, OUT2 + 0.2);
-    return u < 0.3 ? -4 * ease.outQuad(u / 0.3) : -4 + 24 * ease.inQuad((u - 0.3) / 0.7);
-  };
-  return {
-    update(dt) {
-      t += dt;
-      if (!hit && t >= HIT4) {
-        hit = true;
-        lights.add(0, 0, 70, C4[5], 0.7, 0.4);
-        lights.add(-20, 0, 34, WHITE, 0.8, 0.1);
-        for (let i = 0; i < 26; i++) {
-          const an = R4.range(-1.2, 1.2) + (R4.chance(0.3) ? Math.PI : 0), sp = R4.range(120, 300);
-          ps.spawn(P.SPARK, R4.range(-20, 20), R4.range(-8, 8), Math.cos(an) * sp, Math.sin(an) * sp * 0.6 - 20, R4.range(0.12, 0.3));
-        }
-      }
-      if (t > BEAT && t < OUT2 && R4.chance(0.1)) {
-        const x = X0 + R4.range(0, big.w * BS), y = BASE - R4.range(0, 30);
-        ps.spawn(P.STAR, x, y, R4.range(-10, 10), -R4.range(5, 20), R4.range(0.25, 0.45), R4.pick([C4[7], C4[6]]), R4.chance(0.3) ? 1.6 : 0.6);
-      }
-      if (!out && t >= OUT2 + 0.06) {
-        out = true;
-        for (let i = 0; i < 10; i++) ps.spawn(P.MOTE, R4.range(-50, 30), R4.range(-14, 10), R4.range(220, 320), R4.range(-10, 10), R4.range(0.06, 0.14), R4.pick([C4[7], C4[6]]), 1);
-      }
-      ps.update(dt);
-      lights.update(dt);
-    },
-    draw(p) {
-      const [sx, sy] = shake(t, 3, HIT4, 0.25, o.seed);
-      speedLines(p, C4, t, t < HIT4 ? 1 : t < OUT2 ? Math.max(0, 1 - (t - HIT4) / 0.35) * 0.9 : seg(t, OUT2 + 0.04, OUT2 + 0.12) * (1 - seg(t, OUT2 + 0.18, OUT2 + 0.3)), t >= OUT2 ? -1 : 1);
-      const hk = t - HIT4;
-      if (hk >= 0 && hk < 0.07) {
-        const cx = X0 + big.w * BS / 2, k = hk < 0.035 ? 1 : 1.3;
-        for (const [an, L3] of spikes2) {
-          const ca = Math.cos(an) * 1.4, sa = Math.sin(an);
-          if (k === 1) p.beam(cx, 0, cx + ca * L3, sa * L3, 3, (u) => u < 0.5 ? WHITE : C4[6]);
-          else p.line(cx + ca * L3 * 0.5, sa * L3 * 0.5, cx + ca * L3 * k, sa * L3 * k, C4[5]);
-        }
-      }
-      const rk = (t - HIT4) / 0.32;
-      if (rk > 0 && rk < 1) {
-        const r = 20 + 34 * ease.outCubic(rk);
-        p.ellipse(sx, sy, r * 1.5, r * 0.75, rk < 0.3 ? WHITE : C4[5], (d) => d > 1 - 1.5 / (r * 0.75) ? 1.25 - rk : 0);
-      }
-      ps.draw(p);
-      const x = xAt(t), moving = t < HIT4 || t > OUT2 + 0.06, stretch = moving ? t < HIT4 ? 1.22 : 1.12 : 1;
-      const pulse2 = Math.exp(-(((t - BEAT) / 0.05) ** 2)), flash = t >= HIT4 && t < HIT4 + 0.07 || pulse2 > 0.6 ? 1 : 0;
-      const a = t > OUT2 ? 1 - seg(t, OUT2 + 0.08, OUT2 + 0.2) : t < 0.035 ? 0.5 : 1;
-      const layout = (dx) => {
-        const bs = BS * (1 + 0.12 * pulse2), items = [];
-        const bx = X0 + dx - big.w * BS * (stretch - 1) / 2, by = BASE - 7 * bs;
-        big.letters.forEach((L3) => L3.g && items.push({ g: L3.g, x: bx + L3.x * BS * stretch, y: by, sx: BS * stretch, sy: bs, slant: 1, flash, a }));
-        const lx = X0 + dx + big.w * BS * stretch + 4;
-        lab.letters.forEach((L3) => L3.g && items.push({ g: L3.g, x: lx + L3.x * LS * stretch, y: BASE - 7 * LS, sx: LS * stretch, sy: LS, slant: 0.5, flash, a }));
-        return items;
-      };
-      if (moving && a > 0) {
-        for (const [lag, c] of [[0.03, C4[2]], [0.015, C4[3]]]) {
-          const items = layout(xAt(t - (t < HIT4 ? lag : -lag)) + sx);
-          drawWord(p, items.map((it) => ({ ...it, flash: 0 })), { fill: [c], edge: c, under: c, outline: 0, shadow: 0 });
-        }
-      }
-      if (a > 0) {
-        const sh = seg(t, 0.62, 0.86), items = layout(x + sx);
-        drawWord(p, items.map((it) => ({ ...it, y: it.y + sy })), { fill: [C4[4], C4[5], C4[6], C4[7]], edge: WHITE, under: C4[3], outline: C4[0], ow: 2, shadow: SHADOW2, shine: sh > 0 && sh < 1 ? X0 - 10 + (W8 + 24) * sh : null, shineY: BASE - 28, glint: C4[6] });
-        const bk = seg(t, HIT4 + 0.1, HIT4 + 0.2) * (t > OUT2 ? 0 : 1);
-        if (bk > 0) {
-          const bw = W8 * bk, left = 1 - seg(t, HIT4 + 0.2, OUT2), bx = X0 + x + sx, by = BASE + 5 + sy;
-          p.rect(bx - 1, by - 1, bw + 2, 4, C4[0]);
-          p.rect(bx, by, bw, 2, C4[1]);
-          if (left > 0) p.rect(bx, by, bw * left, 2, C4[5]), p.rect(bx, by, bw * left, 1, C4[6]), p.px(bx + bw * left - 1, by, WHITE);
-        }
-      }
-      p.glow(sx - 20, 0, 60, C4[4], 0.2 * a + (t >= HIT4 && t < HIT4 + 0.15 ? 0.5 * (1 - (t - HIT4) / 0.15) : 0) + 0.25 * pulse2);
-      const g = (t - 0.86) / 0.22;
-      if (g > 0 && g < 1) sparkle(p, X0 + W8 - 2, BASE - 14, 6 * Math.sin(g * Math.PI), C4[7], C4[5], 0.5);
       lights.draw(p);
     }
   };
@@ -9614,7 +9731,7 @@ var rune_circle_exports = {};
 __export(rune_circle_exports, {
   draw: () => draw12,
   drawBack: () => drawBack10,
-  meta: () => meta32
+  meta: () => meta31
 });
 
 // ../pixelfx/src/fx/arcane/_lib.js
@@ -9679,7 +9796,7 @@ var RI = 23;
 var RC = 7;
 var SY4 = 0.3;
 var NR = 12;
-var meta32 = {
+var meta31 = {
   name: "Rune circle",
   desc: "A rune circle turns on the floor in perspective: a carousel of runes lit by chasing light, a turning square, ticks, motes rising off it.",
   tags: ["arcane", "rune", "circle", "magic", "aura", "ground", "loop"],
@@ -9693,19 +9810,19 @@ var meta32 = {
 };
 var at6 = (g, r) => [Math.cos(g) * r, Math.sin(g) * r * SY4];
 var gap = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
-function circle2(p, C4, t, far) {
+function circle2(p, C5, t, far) {
   const ph = t / D13, spin = ph * TAU / 4, keep2 = far ? (g) => Math.sin(g) < 0 : (g) => Math.sin(g) >= 0;
   const chase = ph * TAU * 2, lit = (g, w) => gap(g, chase) < w || gap(g, chase + Math.PI) < w;
   const tone = (g, hi, lo) => Math.sin(g) < 0 ? lo : hi;
-  floorRing(p, 0, 0, R3, SY4, (g) => lit(g, 0.22) ? WHITE : lit(g, 0.5) ? C4[6] : tone(g, C4[6], C4[5]), 1, keep2);
-  floorRing(p, 0, 0, RI, SY4, (g) => tone(g, C4[5], C4[4]), 1, keep2);
-  floorRing(p, 0, 0, RC, SY4, (g) => tone(g, C4[6], C4[5]), 1, keep2);
+  floorRing(p, 0, 0, R3, SY4, (g) => lit(g, 0.22) ? WHITE : lit(g, 0.5) ? C5[6] : tone(g, C5[6], C5[5]), 1, keep2);
+  floorRing(p, 0, 0, RI, SY4, (g) => tone(g, C5[5], C5[4]), 1, keep2);
+  floorRing(p, 0, 0, RC, SY4, (g) => tone(g, C5[6], C5[5]), 1, keep2);
   for (let j = 0; j < 16; j++) {
     const g = spin + (j + 0.5) * TAU / 16;
     if (Math.sin(g) < 0 !== far) continue;
     const [x, y] = at6(g, R3 + 3.5), hot = lit(g, 0.3);
-    p.px(x, y, hot ? WHITE : tone(g, j % 2 ? C4[5] : C4[6], C4[4]));
-    if (j % 2 === 0) for (const [dx, dy] of [[1, 0], [-1, 0]]) p.px(x + dx, y + dy, hot ? C4[6] : tone(g, C4[4], C4[3]));
+    p.px(x, y, hot ? WHITE : tone(g, j % 2 ? C5[5] : C5[6], C5[4]));
+    if (j % 2 === 0) for (const [dx, dy] of [[1, 0], [-1, 0]]) p.px(x + dx, y + dy, hot ? C5[6] : tone(g, C5[4], C5[3]));
   }
   const pts = [0, 1, 2, 3].map((k) => at6(-spin + k * TAU / 4 + Math.PI / 4, RI));
   for (let k = 0; k < 4; k++) {
@@ -9715,61 +9832,61 @@ function circle2(p, C4, t, far) {
       if (ay < 0 === far) bx = mx, by = 0;
       else ax = mx, ay = 0;
     } else if (ay < 0 !== far) continue;
-    p.line(ax, ay, bx, by, far ? C4[4] : C4[5]);
+    p.line(ax, ay, bx, by, far ? C5[4] : C5[5]);
   }
   const gs = [...Array(NR).keys()].map((k) => [k, spin + (k + 0.5) * TAU / NR]).filter(([, g]) => Math.sin(g) < 0 === far);
   gs.sort((a, b) => Math.sin(a[1]) - Math.sin(b[1]));
   for (const [k, g] of gs) {
     const [x, y] = at6(g, RR), hot = lit(g, 0.2), bob2 = Math.sin(ph * TAU * 4 + 4 * g) * 0.5;
-    glyph(p, [0, 3, 5][k % 3], x, y - 1 + bob2, hot ? WHITE : far ? C4[5] : C4[6], 1, hot ? C4[5] : far ? C4[2] : C4[3]);
-    p.glow(x, y - 3, hot ? 10 : 6, C4[5], hot ? 0.5 : far ? 0.12 : 0.22);
-    p.glow(x, y, 5, C4[4], 0.15);
+    glyph(p, [0, 3, 5][k % 3], x, y - 1 + bob2, hot ? WHITE : far ? C5[5] : C5[6], 1, hot ? C5[5] : far ? C5[2] : C5[3]);
+    p.glow(x, y - 3, hot ? 10 : 6, C5[5], hot ? 0.5 : far ? 0.12 : 0.22);
+    p.glow(x, y, 5, C5[4], 0.15);
   }
 }
-function motes2(p, C4, t, S, far) {
+function motes2(p, C5, t, S, far) {
   cycle(t, D13, 76, S * 5 + 1, (g) => g.range(1.1, 1.9), (age, life, r) => {
     const g0 = r.range(0, TAU), r0 = r.pick([R3, R3, RR, RR, RI]), q = age / life, g = g0 + q * r.range(0.6, 1.4);
     if (Math.sin(g) < 0 !== far) return;
     const rr = r0 * (1 - 0.35 * q), h = 2 + ease.outQuad(q) * r.range(26, 52), x = Math.cos(g) * rr, y = Math.sin(g) * rr * SY4 - h;
     const a = Math.min(1, q * 5) * (1 - smooth(0.65, 1, q)), big = r.chance(0.2);
-    mote(p, x, y, -Math.sin(g) * rr * 0.8, -36 * (1 - q) - 10, r.chance(0.3) ? WHITE : r.chance(0.6) ? C4[6] : C4[5], big ? 1.1 : r.range(0.55, 0.9), a, big ? 0.5 : 0.3);
+    mote(p, x, y, -Math.sin(g) * rr * 0.8, -36 * (1 - q) - 10, r.chance(0.3) ? WHITE : r.chance(0.6) ? C5[6] : C5[5], big ? 1.1 : r.range(0.55, 0.9), a, big ? 0.5 : 0.3);
   });
   cycle(t, D13, 14, S * 5 + 2, 0.45, (age, life, r) => {
     const g = r.range(0, TAU);
     if (Math.sin(g) < 0 !== far) return;
     const rr = r.range(8, R3), x = Math.cos(g) * rr, y = Math.sin(g) * rr * SY4 - r.range(6, 34), k = Math.sin(age / life * Math.PI);
-    sparkle(p, x, y, 1 + 2.4 * k, C4[6], C4[5], 0.35 * k);
+    sparkle(p, x, y, 1 + 2.4 * k, C5[6], C5[5], 0.35 * k);
   });
 }
 function drawBack10(p, t, o) {
-  const C4 = fit(o.palette, 8), pulse2 = 0.85 + 0.15 * Math.sin(t / D13 * TAU * 4);
-  p.glow(0, 0, R3 * 1.4, C4[4], 0.24 * pulse2);
-  for (const s of [-1, 1]) p.glow(s * R3 * 0.55, 1, R3 * 0.7, C4[5], 0.12 * pulse2);
-  for (let h = 0; h < 66; h += 6) p.glow(0, -h, 26, C4[4], 0.11 * pulse2 * (1 - h / 80));
-  circle2(p, C4, t, true);
-  motes2(p, C4, t, o.seed, true);
+  const C5 = fit(o.palette, 8), pulse2 = 0.85 + 0.15 * Math.sin(t / D13 * TAU * 4);
+  p.glow(0, 0, R3 * 1.4, C5[4], 0.24 * pulse2);
+  for (const s of [-1, 1]) p.glow(s * R3 * 0.55, 1, R3 * 0.7, C5[5], 0.12 * pulse2);
+  for (let h = 0; h < 66; h += 6) p.glow(0, -h, 26, C5[4], 0.11 * pulse2 * (1 - h / 80));
+  circle2(p, C5, t, true);
+  motes2(p, C5, t, o.seed, true);
 }
 function draw12(p, t, o) {
-  const C4 = fit(o.palette, 8), chase = t / D13 * TAU * 2;
-  circle2(p, C4, t, false);
-  motes2(p, C4, t, o.seed, false);
+  const C5 = fit(o.palette, 8), chase = t / D13 * TAU * 2;
+  circle2(p, C5, t, false);
+  motes2(p, C5, t, o.seed, false);
   for (const g of [chase, chase + Math.PI]) {
     const [x, y] = at6(g, R3);
-    sparkle(p, x, y, 2.5 + Math.sin(t * 30) * 0.8, C4[6], C4[5], 0.5);
-    p.glow(x, y, 14, C4[5], 0.4);
+    sparkle(p, x, y, 2.5 + Math.sin(t * 30) * 0.8, C5[6], C5[5], 0.5);
+    p.glow(x, y, 14, C5[5], 0.4);
   }
 }
 
 // ../pixelfx/src/fx/arcane/mana-burst.js
 var mana_burst_exports = {};
 __export(mana_burst_exports, {
-  create: () => create21,
-  meta: () => meta33
+  create: () => create20,
+  meta: () => meta32
 });
 var CY4 = -28;
 var GATHER = 0.22;
 var N3 = 9;
-var meta33 = {
+var meta32 = {
   name: "Mana burst",
   desc: "Energy rushes into a point and blows out in a white flash and rings, flinging glowing runes that flare and pop into sparks one after another.",
   tags: ["arcane", "burst", "mana", "rune", "nova", "magic", "ground", "one-shot"],
@@ -9781,9 +9898,9 @@ var meta33 = {
   bg: "ground",
   options: { palette: PAL.arcane, seed: 9 }
 };
-function create21(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed);
-  const ps = new Particles({ rng: R4, ground: () => 0, sparks: [WHITE, C4[6], C4[5], C4[4]] }), lights = new Lights();
+function create20(o) {
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed);
+  const ps = new Particles({ rng: R4, ground: () => 0, sparks: [WHITE, C5[6], C5[5], C5[4]] }), lights = new Lights();
   const runes = Array.from({ length: N3 }, (_, i) => {
     const a = i / N3 * TAU + R4.range(-0.25, 0.25) - Math.PI / 2, sp = R4.range(150, 210);
     return { g: i, x: 0, y: CY4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * (Math.sin(a) > 0 ? 0.42 : 0.85), pop: GATHER + 0.42 + i * 0.065 + R4.range(0, 0.05), popped: false, ph: R4.range(0, TAU) };
@@ -9797,16 +9914,16 @@ function create21(o) {
         for (let i = 0; i < 2; i++) {
           const a = R4.range(0, TAU), D17 = R4.range(24, 52), T4 = R4.range(0.12, 0.18), v = D17 * 3 / (Math.exp(3 * T4) - 1);
           const x = Math.cos(a) * D17, y = Math.min(-2, CY4 + Math.sin(a) * D17 * 0.85), l = Math.hypot(x, y - CY4) || 1;
-          ps.spawn(P.STREAK, x, y, -x / l * v, (CY4 - y) / l * v, T4, R4.chance(0.5) ? C4[6] : C4[5]);
+          ps.spawn(P.STREAK, x, y, -x / l * v, (CY4 - y) / l * v, T4, R4.chance(0.5) ? C5[6] : C5[5]);
         }
       }
       if (t >= GATHER && !released) {
         released = true;
-        lights.add(0, CY4 - 12, 96, C4[5], 1, 0.5);
+        lights.add(0, CY4 - 12, 96, C5[5], 1, 0.5);
         lights.add(0, CY4, 40, WHITE, 0.9, 0.1);
         for (let i = 0; i < 96; i++) {
           const a = R4.range(0, TAU), sp = R4.range(100, 250), dn = Math.sin(a) > 0 ? 0.45 : 1;
-          ps.spawn(R4.chance(0.65) ? P.MOTE : P.STAR, 0, CY4, Math.cos(a) * sp, Math.sin(a) * sp * dn, R4.range(0.25, 0.55), R4.pick([WHITE, C4[6], C4[5]]), R4.range(0.8, 1.8));
+          ps.spawn(R4.chance(0.65) ? P.MOTE : P.STAR, 0, CY4, Math.cos(a) * sp, Math.sin(a) * sp * dn, R4.range(0.25, 0.55), R4.pick([WHITE, C5[6], C5[5]]), R4.range(0.8, 1.8));
         }
         for (let i = 0; i < 20; i++) {
           const a = R4.range(0, TAU), sp = R4.range(130, 280);
@@ -9820,11 +9937,11 @@ function create21(o) {
           r.vy -= r.vy * 4.2 * dt + 8 * dt;
           r.x += r.vx * dt;
           r.y += r.vy * dt;
-          if (R4.chance(0.35)) ps.spawn(P.MOTE, r.x + R4.range(-1.5, 1.5), r.y, r.vx * 0.2 + R4.range(-10, 10), r.vy * 0.2 - R4.range(5, 25), R4.range(0.2, 0.4), C4[5], 0.5);
+          if (R4.chance(0.35)) ps.spawn(P.MOTE, r.x + R4.range(-1.5, 1.5), r.y, r.vx * 0.2 + R4.range(-10, 10), r.vy * 0.2 - R4.range(5, 25), R4.range(0.2, 0.4), C5[5], 0.5);
           if (t >= r.pop) {
             r.popped = true;
             pops.push({ t, x: r.x, y: r.y });
-            lights.add(r.x, r.y, 34, C4[5], 0.9, 0.22);
+            lights.add(r.x, r.y, 34, C5[5], 0.9, 0.22);
             lights.add(r.x, r.y, 12, WHITE, 0.8, 0.06);
             for (let i = 0; i < 9; i++) {
               const a = R4.range(0, TAU), sp = R4.range(70, 200);
@@ -9832,7 +9949,7 @@ function create21(o) {
             }
             for (let i = 0; i < 5; i++) {
               const a = R4.range(0, TAU), sp = R4.range(20, 80);
-              ps.spawn(i % 2 ? P.STAR : P.MOTE, r.x, r.y, Math.cos(a) * sp, Math.sin(a) * sp - 20, R4.range(0.3, 0.6), R4.pick([WHITE, C4[6]]), R4.range(0.8, 1.6));
+              ps.spawn(i % 2 ? P.STAR : P.MOTE, r.x, r.y, Math.cos(a) * sp, Math.sin(a) * sp - 20, R4.range(0.3, 0.6), R4.pick([WHITE, C5[6]]), R4.range(0.8, 1.6));
             }
           }
         }
@@ -9841,43 +9958,43 @@ function create21(o) {
     },
     drawBack(p) {
       const k = t < GATHER ? 0.4 * (t / GATHER) : Math.max(0, 1 - (t - GATHER) / 1.1);
-      if (k > 0) p.glow(0, -1, 50, C4[4], 0.3 * k);
+      if (k > 0) p.glow(0, -1, 50, C5[4], 0.3 * k);
     },
     draw(p) {
       if (t < GATHER) {
         const k = t / GATHER, r = 1 + 3.5 * k * k;
-        p.circle(0, CY4, r + 1.2, C4[4]);
-        p.circle(0, CY4, r, C4[6]);
+        p.circle(0, CY4, r + 1.2, C5[4]);
+        p.circle(0, CY4, r, C5[6]);
         p.circle(0, CY4, r * 0.5, WHITE);
-        p.glow(0, CY4, 10 + 20 * k, C4[5], 0.4 + 0.4 * k);
+        p.glow(0, CY4, 10 + 20 * k, C5[5], 0.4 + 0.4 * k);
         const q = clamp((t - GATHER * 0.35) / (GATHER * 0.65));
-        if (q > 0 && q < 1) p.ring(0, CY4, r + 2 + 16 * (1 - ease.outCubic(q)), 1, q > 0.6 ? WHITE : C4[6], 1 - q * 0.5);
+        if (q > 0 && q < 1) p.ring(0, CY4, r + 2 + 16 * (1 - ease.outCubic(q)), 1, q > 0.6 ? WHITE : C5[6], 1 - q * 0.5);
       } else {
         const q = (t - GATHER) / 0.6;
         if (q < 1) {
           const e = ease.outCubic(q);
           if (q < 0.12) {
-            p.circle(0, CY4, 12 * (1 - q / 0.12) + 2, C4[5]);
+            p.circle(0, CY4, 12 * (1 - q / 0.12) + 2, C5[5]);
             p.circle(0, CY4, 12 * (1 - q / 0.12), WHITE);
           }
-          if (q < 0.32) flare(p, 0, CY4, 30 * (1 - q / 0.32) + 4, 1 - q / 0.32, C4);
-          p.ring(0, CY4, 4 + 62 * e, Math.max(1, 5 * (1 - q)), q < 0.2 ? WHITE : C4[6], (v, ang) => CY4 + Math.sin(ang) * (4 + 62 * e) > 0 ? 0 : 1.2 - q);
-          p.ring(0, CY4, 2 + 38 * ease.outCubic(Math.min(1, q * 1.4)), Math.max(1, 2 * (1 - q)), C4[5], (v, ang) => CY4 + Math.sin(ang) * 40 > 0 ? 0 : 1 - q);
-          p.glow(0, CY4, 60 * (0.4 + 0.6 * e), C4[5], 0.9 * (1 - q));
+          if (q < 0.32) flare(p, 0, CY4, 30 * (1 - q / 0.32) + 4, 1 - q / 0.32, C5);
+          p.ring(0, CY4, 4 + 62 * e, Math.max(1, 5 * (1 - q)), q < 0.2 ? WHITE : C5[6], (v, ang) => CY4 + Math.sin(ang) * (4 + 62 * e) > 0 ? 0 : 1.2 - q);
+          p.ring(0, CY4, 2 + 38 * ease.outCubic(Math.min(1, q * 1.4)), Math.max(1, 2 * (1 - q)), C5[5], (v, ang) => CY4 + Math.sin(ang) * 40 > 0 ? 0 : 1 - q);
+          p.glow(0, CY4, 60 * (0.4 + 0.6 * e), C5[5], 0.9 * (1 - q));
         }
       }
       for (const r of runes) {
         if (!released || r.popped) continue;
         const left = r.pop - t, hot = t - GATHER < 0.08 || left < 0.06, bob2 = Math.sin(t * 9 + r.ph) * 0.6;
-        sigil2(p, r.g, r.x, r.y + bob2, hot ? WHITE : C4[6], 1, hot ? C4[4] : C4[3]);
-        p.glow(r.x, r.y + bob2, 10, C4[5], hot ? 0.7 : 0.35);
-        if (left < 0.06) sparkle(p, r.x, r.y + bob2, 3 + 4 * (1 - left / 0.06), C4[6], C4[5], 0.5);
+        sigil2(p, r.g, r.x, r.y + bob2, hot ? WHITE : C5[6], 1, hot ? C5[4] : C5[3]);
+        p.glow(r.x, r.y + bob2, 10, C5[5], hot ? 0.7 : 0.35);
+        if (left < 0.06) sparkle(p, r.x, r.y + bob2, 3 + 4 * (1 - left / 0.06), C5[6], C5[5], 0.5);
       }
       for (const q of pops) {
         const k = (t - q.t) / 0.32;
         if (k >= 1) continue;
-        if (k < 0.35) flare(p, q.x, q.y, 11 * (1 - k / 0.35) + 2, 1 - k / 0.35, C4);
-        p.ring(q.x, q.y, 2 + 11 * ease.outCubic(k), Math.max(1, 2 * (1 - k)), k < 0.3 ? WHITE : C4[6], 1.15 - k);
+        if (k < 0.35) flare(p, q.x, q.y, 11 * (1 - k / 0.35) + 2, 1 - k / 0.35, C5);
+        p.ring(q.x, q.y, 2 + 11 * ease.outCubic(k), Math.max(1, 2 * (1 - k)), k < 0.3 ? WHITE : C5[6], 1.15 - k);
       }
       ps.draw(p);
       lights.draw(p);
@@ -9892,7 +10009,7 @@ __export(frozen_exports, {
   actorAlpha: () => actorAlpha2,
   draw: () => draw13,
   drawBack: () => drawBack11,
-  meta: () => meta34
+  meta: () => meta33
 });
 
 // ../pixelfx/src/fx/status/_lib.js
@@ -9951,9 +10068,9 @@ function tongue3(p, x, y, h, w, sx, F, t, D17, n, layers = LAYERS3) {
   if (h < 1) return;
   for (const [lw, lh, ri] of layers) {
     if (ri === 0 && h < 4) continue;
-    const H5 = h * lh, col = F[ri];
-    for (let r = 0; r <= H5; r++) {
-      const u = r / Math.max(1, H5);
+    const H4 = h * lh, col = F[ri];
+    for (let r = 0; r <= H4; r++) {
+      const u = r / Math.max(1, H4);
       const half = w * lw * Math.pow(1 - u, 0.85) * Math.min(1, (r + 1.5) / 3.5) + tnoise(t, D17, 9, n, r * 0.45) * 0.5;
       if (half < 0.3) continue;
       const cx = x + sx * u * u * lh + tnoise(t, D17, 4, n + 7, r * 0.2) * u * 1.1;
@@ -10030,19 +10147,19 @@ function eyes(a) {
     EYES.set(a.mask, list);
     return list;
   }
-  const S = shape(a), W8 = S.w, col = (x, y) => S.on(x, y) ? colorAt(a, x, y) : 0;
+  const S = shape(a), W7 = S.w, col = (x, y) => S.on(x, y) ? colorAt(a, x, y) : 0;
   const dark = (x, y) => S.on(x, y) && y < S.h * 0.4 && luma(col(x, y)) < 0.15 && S.on(x - 1, y) && S.on(x + 1, y) && S.on(x, y - 1) && S.on(x, y + 1);
   const seen = /* @__PURE__ */ new Set();
   list = [];
   for (const [x0, y0] of S.body) {
-    if (seen.has(y0 * W8 + x0) || !dark(x0, y0)) continue;
+    if (seen.has(y0 * W7 + x0) || !dark(x0, y0)) continue;
     const px = [], q = [[x0, y0]];
-    seen.add(y0 * W8 + x0);
+    seen.add(y0 * W7 + x0);
     while (q.length) {
       const [x, y] = q.pop();
       px.push([x, y]);
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nx = x + dx, ny = y + dy, k = ny * W8 + nx;
+        const nx = x + dx, ny = y + dy, k = ny * W7 + nx;
         if (seen.has(k) || !(dark(nx, ny) || S.on(nx, ny) && luma(col(nx, ny)) > 0.95)) continue;
         seen.add(k);
         q.push([nx, ny]);
@@ -10066,7 +10183,7 @@ function eyes(a) {
 }
 
 // ../pixelfx/src/fx/status/frozen.js
-var meta34 = {
+var meta33 = {
   name: "Frozen",
   desc: "Chilled to the bone: frost ferns creep over the body, icicles hang from chin and hands and drip, breath steams, snow settles, a shiver every second, frost spreads underfoot.",
   tags: ["status", "ice", "freeze", "frozen", "cold", "chill", "debuff", "loop"],
@@ -10084,7 +10201,7 @@ var act11 = {
   onBody: true,
   poses: [[0, { ...STIFF, crouch: 2 }], [0.22, STIFF], [1, STIFF], [1, { ...STIFF, crouch: 2 }, "snap"], [1.22, STIFF], [2, { ...STIFF, crouch: 2 }]]
 };
-var D14 = meta34.duration;
+var D14 = meta33.duration;
 var SHIVER = 1;
 var since = (t) => (t % SHIVER + SHIVER) % SHIVER;
 var actorAlpha2 = () => 0;
@@ -10094,9 +10211,9 @@ function plan(a, seed) {
   let m = PLANS.get(a.mask);
   if (!m) PLANS.set(a.mask, m = /* @__PURE__ */ new Map());
   if (m.has(seed)) return m.get(seed);
-  const S = shape(a), H5 = S.h, W8 = S.w, R4 = new Rng(seed * 11 + 1);
+  const S = shape(a), H4 = S.h, W7 = S.w, R4 = new Rng(seed * 11 + 1);
   const ferns = [];
-  const roots = S.side.filter(([, y]) => y > H5 * 0.2 && y < H5 * 0.85).sort(() => R4.next() - 0.5).slice(0, 6);
+  const roots = S.side.filter(([, y]) => y > H4 * 0.2 && y < H4 * 0.85).sort(() => R4.next() - 0.5).slice(0, 6);
   roots.forEach(([x0, y0, dir], i) => {
     let x = x0, y = y0, ang = dir < 0 ? -0.5 : Math.PI + 0.5;
     ang += R4.range(-0.4, 0.4);
@@ -10108,8 +10225,8 @@ function plan(a, seed) {
       ferns.push([px, py, s / 9, i]);
       if (s % 2 === 1)
         for (const side of [-1, 1]) {
-          const ba = ang + side * 1.05, L3 = 1 + Math.round(R4.range(0, 2) * (1 - s / 9));
-          for (let k = 1; k <= L3; k++) {
+          const ba = ang + side * 1.05, L4 = 1 + Math.round(R4.range(0, 2) * (1 - s / 9));
+          for (let k = 1; k <= L4; k++) {
             const bx = Math.round(x + Math.cos(ba) * k), by = Math.round(y + Math.sin(ba) * k);
             if (S.on(bx, by)) ferns.push([bx, by, (s + k * 0.6) / 9, i]);
           }
@@ -10119,92 +10236,92 @@ function plan(a, seed) {
   });
   const clear = (x, y) => {
     let n = 0;
-    while (n < 7 && y + 1 + n < H5 && !S.on(x, y + 1 + n)) n++;
+    while (n < 7 && y + 1 + n < H4 && !S.on(x, y + 1 + n)) n++;
     return n;
   };
-  const hangs = S.body.filter(([x, y]) => !S.on(x, y + 1) && S.on(x, y - 1) && y < H5 * 0.72 && y > 4).map(([x, y]) => [x, y, clear(x, y)]).filter(([, , c]) => c >= 4);
-  const best = (f, key2) => hangs.filter(f).sort(key2)[0];
+  const hangs = S.body.filter(([x, y]) => !S.on(x, y + 1) && S.on(x, y - 1) && y < H4 * 0.72 && y > 4).map(([x, y]) => [x, y, clear(x, y)]).filter(([, , c]) => c >= 4);
+  const best = (f, key) => hangs.filter(f).sort(key)[0];
   const icicles = [
-    best(([, y]) => y < H5 * 0.36, (p, q) => p[0] - q[0]),
-    best(([, y]) => y < H5 * 0.36, (p, q) => q[0] - p[0]),
-    best(([x, y]) => y >= H5 * 0.36 && y < H5 * 0.5 && x < W8 / 2, (p, q) => q[0] - p[0]),
-    best(([x, y]) => y >= H5 * 0.36 && y < H5 * 0.5 && x >= W8 / 2, (p, q) => p[0] - q[0]),
-    best(([x, y]) => y >= H5 * 0.5 && x < W8 / 2, (p, q) => p[0] - q[0]),
-    best(([x, y]) => y >= H5 * 0.5 && x >= W8 / 2, (p, q) => q[0] - p[0])
+    best(([, y]) => y < H4 * 0.36, (p, q) => p[0] - q[0]),
+    best(([, y]) => y < H4 * 0.36, (p, q) => q[0] - p[0]),
+    best(([x, y]) => y >= H4 * 0.36 && y < H4 * 0.5 && x < W7 / 2, (p, q) => q[0] - p[0]),
+    best(([x, y]) => y >= H4 * 0.36 && y < H4 * 0.5 && x >= W7 / 2, (p, q) => p[0] - q[0]),
+    best(([x, y]) => y >= H4 * 0.5 && x < W7 / 2, (p, q) => p[0] - q[0]),
+    best(([x, y]) => y >= H4 * 0.5 && x >= W7 / 2, (p, q) => q[0] - p[0])
   ].filter(Boolean).map(([x, y, c], i) => ({ x, y: y + 1, len: Math.min(c - 1, R4.range(3, 5.5)), phase: R4.next(), period: i % 2 ? 1 : 2 }));
-  const snow = S.up.filter(([, y]) => y < H5 * 0.6).map(([x, y]) => [x, y, 1 + (rand(x, seed, 3) < 0.45 ? 1 : 0)]);
-  const E = eyes(a), mouth = E.length === 2 ? [(E[0].x1 + E[1].x0 + 1) / 2, Math.max(E[0].y1, E[1].y1) + 2] : [W8 / 2, H5 * 0.38];
+  const snow = S.up.filter(([, y]) => y < H4 * 0.6).map(([x, y]) => [x, y, 1 + (rand(x, seed, 3) < 0.45 ? 1 : 0)]);
+  const E = eyes(a), mouth = E.length === 2 ? [(E[0].x1 + E[1].x0 + 1) / 2, Math.max(E[0].y1, E[1].y1) + 2] : [W7 / 2, H4 * 0.38];
   const out = { ferns, icicles, snow, mouth };
   m.set(seed, out);
   return out;
 }
-function frost2(p, C4, t, reach) {
+function frost2(p, C5, t, reach) {
   for (let x = -Math.ceil(reach) - 1; x <= reach + 1; x++) {
     const q = Math.abs(x + 0.5) / reach, h = rand(x, 17), k = 1 - q * q;
     if (q > 1 + h * 0.15) continue;
     const tw = Math.sin(t / D14 * TAU * 2 + rand(x, 3) * TAU) > 0.94;
-    p.px(x, 0, tw || h < 0.3 ? C4[7] : q > 0.85 ? C4[5] : C4[6]);
-    if (h < 0.3 * k) p.px(x, -1, C4[6]);
-    for (let j = 1; j <= 1 + Math.round(2 * k); j++) p.dot(x, j, j === 1 ? C4[5] : C4[4], (1.05 - j / 4) * 0.85);
+    p.px(x, 0, tw || h < 0.3 ? C5[7] : q > 0.85 ? C5[5] : C5[6]);
+    if (h < 0.3 * k) p.px(x, -1, C5[6]);
+    for (let j = 1; j <= 1 + Math.round(2 * k); j++) p.dot(x, j, j === 1 ? C5[5] : C5[4], (1.05 - j / 4) * 0.85);
   }
 }
 function drawBack11(p, t, o) {
-  const C4 = fit(o.palette, 8), reach = 13 + 3.5 * Math.sin(t / D14 * TAU);
+  const C5 = fit(o.palette, 8), reach = 13 + 3.5 * Math.sin(t / D14 * TAU);
   p.shade(-28, -3, 28, 6, (x, y, out) => {
     const d = Math.hypot(x / 24, (y - 0.5) / 4);
-    if (d < 1) out.l = C4[4], out.k = 0.24 * (1 - d) * (1 - d);
+    if (d < 1) out.l = C5[4], out.k = 0.24 * (1 - d) * (1 - d);
   });
-  frost2(p, C4, t, reach);
+  frost2(p, C5, t, reach);
 }
 function draw13(p, t, o) {
-  const C4 = fit(o.palette, 8), a = o.actor, S = shape(a), H5 = S.h, P3 = plan(a, o.seed), dx = shake2(t), ph = since(t);
+  const C5 = fit(o.palette, 8), a = o.actor, S = shape(a), H4 = S.h, P3 = plan(a, o.seed), dx = shake2(t), ph = since(t);
   const X = (mx) => a.x + mx + dx, Y = (my) => a.y + my;
   for (const [mx, my] of S.body) {
-    const c = colorAt(a, mx, my), ice = C4[clamp(1 + Math.round(luma(c) * 5.6), 1, 7)];
+    const c = colorAt(a, mx, my), ice = C5[clamp(1 + Math.round(luma(c) * 5.6), 1, 7)];
     const rim = !S.on(mx - 1, my) || !S.on(mx, my - 1) || !S.on(mx + 1, my);
-    p.px(X(mx), Y(my), rim && luma(c) < 0.3 ? my < H5 * 0.5 || !S.on(mx - 1, my) ? C4[5] : C4[3] : mix(c, ice, 0.38));
+    p.px(X(mx), Y(my), rim && luma(c) < 0.3 ? my < H4 * 0.5 || !S.on(mx - 1, my) ? C5[5] : C5[3] : mix(c, ice, 0.38));
   }
   const grow = 0.2 + 0.65 * smooth(0.05, 0.95, ph);
-  for (const [x, y, u] of P3.ferns) if (u < grow) p.px(X(x), Y(y), u > grow - 0.1 ? WHITE : rand(x, y, 5) < 0.5 ? C4[6] : C4[5]);
+  for (const [x, y, u] of P3.ferns) if (u < grow) p.px(X(x), Y(y), u > grow - 0.1 ? WHITE : rand(x, y, 5) < 0.5 ? C5[6] : C5[5]);
   for (const [x, y, d] of P3.snow) {
-    p.px(X(x), Y(y) - 1, C4[7]);
-    if (d > 1) p.px(X(x), Y(y) - 2, rand(x, y, 9) < 0.5 ? C4[7] : C4[6]);
+    p.px(X(x), Y(y) - 1, C5[7]);
+    if (d > 1) p.px(X(x), Y(y) - 2, rand(x, y, 9) < 0.5 ? C5[7] : C5[6]);
   }
   for (const ic of P3.icicles) {
-    const per = ic.period, u = ((t / per + ic.phase) % 1 + 1) % 1, L3 = ic.len * (0.55 + 0.45 * smooth(0, 0.7, u)), x = X(ic.x), y0 = Y(ic.y);
-    for (let j = 0; j < L3; j++) {
-      const v = j / L3;
-      p.px(x, y0 + j, v > 0.75 ? WHITE : v < 0.3 ? C4[7] : C4[6]);
-      if (v < 0.5) p.px(x + 1, y0 + j, C4[4]);
+    const per = ic.period, u = ((t / per + ic.phase) % 1 + 1) % 1, L4 = ic.len * (0.55 + 0.45 * smooth(0, 0.7, u)), x = X(ic.x), y0 = Y(ic.y);
+    for (let j = 0; j < L4; j++) {
+      const v = j / L4;
+      p.px(x, y0 + j, v > 0.75 ? WHITE : v < 0.3 ? C5[7] : C5[6]);
+      if (v < 0.5) p.px(x + 1, y0 + j, C5[4]);
     }
-    if (u > 0.7 && u < 0.86) p.px(x, y0 + L3, C4[6]);
+    if (u > 0.7 && u < 0.86) p.px(x, y0 + L4, C5[6]);
     else if (u >= 0.86) {
-      const f = (u - 0.86) * per, y = y0 + L3 + 0.5 * 760 * f * f;
-      if (y < -1) p.px(x, y, C4[6]), p.px(x, y - 1, C4[5]);
+      const f = (u - 0.86) * per, y = y0 + L4 + 0.5 * 760 * f * f;
+      if (y < -1) p.px(x, y, C5[6]), p.px(x, y - 1, C5[5]);
     }
-    p.glow(x, y0 + L3 * 0.6, 4, C4[5], 0.18);
+    p.glow(x, y0 + L4 * 0.6, 4, C5[5], 0.18);
   }
   const [mx0, my0] = P3.mouth;
   for (let i = 0; i < 4; i++) {
     const age = ph - 0.35 - i * 0.05;
     if (age < 0 || age > 0.65) continue;
     const u = age / 0.65, x = X(mx0) + 1 + travel2(16, 0, 2.2, age) + i, y = Y(my0) - travel2(6, 3, 1, age) - i * 0.5, rad2 = 0.8 + 2.4 * Math.sqrt(u);
-    p.disc(x, y, rad2, C4[7], 0.5 * (1 - u) * Math.min(1, u * 8));
+    p.disc(x, y, rad2, C5[7], 0.5 * (1 - u) * Math.min(1, u * 8));
     p.disc(x - rad2 * 0.2, y - rad2 * 0.3, rad2 * 0.5, WHITE, 0.4 * (1 - u));
   }
   cycle(t, D14, 9, o.seed + 2, (r) => r.range(1.2, 1.8), (age, life, r) => {
     const x = r.range(-14, 14) + Math.sin(age * 3 + r.next() * TAU) * 1.5, y = a.y - 16 + age * 14;
     if (y > a.y + 2) return;
-    p.dot(x, y, r.next() < 0.5 ? WHITE : C4[6], Math.min(1, age * 4));
+    p.dot(x, y, r.next() < 0.5 ? WHITE : C5[6], Math.min(1, age * 4));
   });
   if (ph < 0.5)
     for (let i = 0; i < 8; i++) {
       const side = i % 2 ? 1 : -1, vx = side * (20 + 30 * rand(i, 4)), vy = -(20 + 30 * rand(i, 5)), x = side * (6 + 6 * rand(i, 6)) + vx * ph, y = a.y + 3 * rand(i, 7) + vy * ph + 0.5 * 300 * ph * ph;
-      p.dot(x, y, i % 3 ? C4[6] : WHITE, 1.2 - ph * 2);
+      p.dot(x, y, i % 3 ? C5[6] : WHITE, 1.2 - ph * 2);
     }
-  if (ph < 0.25) sparkle(p, X(Math.round(S.w * 0.3)), Y(4), Math.round(3 * (1 - ph / 0.25)), C4[6], C4[5], 0.4);
-  p.glow(0, a.y + H5 * 0.45, 30, C4[4], 0.2 + 0.12 * Math.exp(-ph / 0.2));
-  p.glow(0, a.y + 2, 16, C4[5], 0.1);
+  if (ph < 0.25) sparkle(p, X(Math.round(S.w * 0.3)), Y(4), Math.round(3 * (1 - ph / 0.25)), C5[6], C5[5], 0.4);
+  p.glow(0, a.y + H4 * 0.45, 30, C5[4], 0.2 + 0.12 * Math.exp(-ph / 0.2));
+  p.glow(0, a.y + 2, 16, C5[5], 0.1);
 }
 
 // ../pixelfx/src/fx/status/burning.js
@@ -10214,9 +10331,9 @@ __export(burning_exports, {
   actorAlpha: () => actorAlpha3,
   draw: () => draw14,
   drawBack: () => drawBack12,
-  meta: () => meta35
+  meta: () => meta34
 });
-var meta35 = {
+var meta34 = {
   name: "Burning",
   desc: "Burning over time: small flames lick from four hot spots, trailing sparks and thin smoke; every 0.6 s they flare, the body flashes white then orange, scorch marks spread.",
   tags: ["status", "fire", "burn", "dot", "debuff", "loop"],
@@ -10240,7 +10357,7 @@ var act12 = {
   onBody: true,
   poses: [[0, A_], [0.15, B_, "snap"], [0.3, A_, "snap"], [0.45, B_, "snap"], [0.6, A_, "snap"], [0.75, B_, "snap"], [0.9, A_, "snap"], [1.05, B_, "snap"], [1.2, A_, "snap"]]
 };
-var D15 = meta35.duration;
+var D15 = meta34.duration;
 var TICK = 0.6;
 var WIND3 = -14;
 var since2 = (t) => (t % TICK + TICK) % TICK;
@@ -10251,13 +10368,13 @@ function spots(a, seed) {
   let s = SPOTS.get(a.mask);
   if (!s) SPOTS.set(a.mask, s = /* @__PURE__ */ new Map());
   if (s.has(seed)) return s.get(seed);
-  const S = shape(a), H5 = S.h, W8 = S.w, R4 = new Rng(seed * 13 + 5);
+  const S = shape(a), H4 = S.h, W7 = S.w, R4 = new Rng(seed * 13 + 5);
   const at8 = (q, side) => {
-    const my = Math.round(H5 * q), [l, r] = S.rows[my];
+    const my = Math.round(H4 * q), [l, r] = S.rows[my];
     return [side < 0 ? l : r, my];
   };
-  const hair = S.up.filter(([x]) => x < W8 * 0.42).sort((p, q) => p[1] - q[1] || p[0] - q[0])[0];
-  const shoulder = S.up.filter(([x, y]) => x > W8 / 2 && y > H5 * 0.4 && y < H5 * 0.62).sort((p, q) => p[1] - q[1])[0] ?? at8(0.5, 1);
+  const hair = S.up.filter(([x]) => x < W7 * 0.42).sort((p, q) => p[1] - q[1] || p[0] - q[0])[0];
+  const shoulder = S.up.filter(([x, y]) => x > W7 / 2 && y > H4 * 0.4 && y < H4 * 0.62).sort((p, q) => p[1] - q[1])[0] ?? at8(0.5, 1);
   const list = [
     { at: hair, side: -1, n: 3, h: 4.5 },
     { at: shoulder, side: 1, n: 2, h: 4 },
@@ -10266,8 +10383,8 @@ function spots(a, seed) {
   ].map((sp, i) => ({ ...sp, x: a.x + sp.at[0] + 0.5, y: a.y + sp.at[1] + 1.5, tongues: Array.from({ length: sp.n }, (_, j) => ({ dx: (j - (sp.n - 1) / 2) * 1.6 + R4.range(-0.4, 0.4), h: sp.h * R4.range(0.8, 1.2), n: i * 17 + j * 5 + seed })) }));
   const scorch3 = [0, 1].map((tick) => [0, 1].map((k) => {
     const sp = list[(tick * 2 + k + 1) % list.length], lum = (x2, y2) => luma(colorAt(a, x2, y2));
-    let cand = S.body.filter(([x2, y2]) => Math.hypot(a.x + x2 + 0.5 - sp.x, a.y + y2 + 0.5 - sp.y) < 9 && y2 > H5 * 0.42 && lum(x2, y2) > 0.3 && lum(x2, y2) < 0.6);
-    if (!cand.length) cand = S.body.filter(([, y2]) => y2 > H5 * 0.45);
+    let cand = S.body.filter(([x2, y2]) => Math.hypot(a.x + x2 + 0.5 - sp.x, a.y + y2 + 0.5 - sp.y) < 9 && y2 > H4 * 0.42 && lum(x2, y2) > 0.3 && lum(x2, y2) < 0.6);
+    if (!cand.length) cand = S.body.filter(([, y2]) => y2 > H4 * 0.45);
     const [x, y] = cand[Math.floor(R4.next() * cand.length)];
     return { x: a.x + x + 0.5, y: a.y + y + 0.5, r: R4.range(3.2, 4.4) };
   }));
@@ -10334,9 +10451,9 @@ __export(stunned_exports, {
   act: () => act13,
   draw: () => draw15,
   drawBack: () => drawBack13,
-  meta: () => meta36
+  meta: () => meta35
 });
-var meta36 = {
+var meta35 = {
   name: "Stunned",
   desc: "Seeing stars: three spinning stars and two little birds circle the head on a tilted ring, ducking behind it and sweeping round in front, trailing glitter.",
   tags: ["status", "stun", "dizzy", "daze", "stars", "birds", "debuff", "loop"],
@@ -10365,7 +10482,7 @@ var act13 = {
     [2, { ...DAZE, x: -1, lean: -3, hx: -1 }]
   ]
 };
-var D16 = meta36.duration;
+var D16 = meta35.duration;
 var TURNS = 2;
 var N4 = 5;
 var STAR7 = ["...#...", "..###..", "#######", ".#####.", "..###..", ".##.##.", ".#...#."];
@@ -10388,7 +10505,7 @@ function ring3(t, a) {
   });
 }
 function draw1(p, t, o, layer) {
-  const C4 = fit(o.palette, 7), Bd = fit(o.birds, 4), a = o.actor, far = layer === "back";
+  const C5 = fit(o.palette, 7), Bd = fit(o.birds, 4), a = o.actor, far = layer === "back";
   const dim = (c) => far ? mix(c, Bd[0], 0.3) : c;
   for (const it of ring3(t, a)) {
     if (it.near === far) continue;
@@ -10396,22 +10513,22 @@ function draw1(p, t, o, layer) {
       for (let k = 1; k <= 12; k++) {
         const th = it.th - k * 0.085, x = Math.cos(th) * it.rx, y = it.cy - 1 + Math.sin(th) * it.ry;
         if (Math.sin(th) >= 0 === far || rand(it.i, k, Math.floor((t / D16 * TURNS + k * 0.37) * 9)) < 0.25) continue;
-        p.dot(x, y, dim(k < 4 ? C4[6] : k < 8 ? C4[5] : C4[4]), 1.1 - k / 13);
-        if (k < 6) p.light(x, y, C4[4], 0.3 * (1 - k / 6));
+        p.dot(x, y, dim(k < 4 ? C5[6] : k < 8 ? C5[5] : C5[4]), 1.1 - k / 13);
+        if (k < 6) p.light(x, y, C5[4], 0.3 * (1 - k / 6));
       }
     if (it.bird) {
       const up = Math.floor(t * 8 + it.i * 0.5) % 2 === 0, bob2 = Math.sin(t / D16 * TAU * 4 + it.i) * 0.7, flip = it.near;
       const f = BIRD[up ? 0 : 1], ins = flip ? (dx, dy) => f(-dx, dy) : f;
       icon(p, it.x, it.y - 3 + bob2, 7, ins, [Bd[0], dim(Bd[1]), dim(Bd[2]), dim(Bd[3])], 1, { e: Bd[0], b: dim(hex(o.beak)), w: dim(Bd[1]) });
     } else {
-      const spin = t / D16 * TAU * 3 + it.i, R4 = [C4[0], dim(C4[3]), dim(C4[4]), dim(C4[5])];
+      const spin = t / D16 * TAU * 3 + it.i, R4 = [C5[0], dim(C5[3]), dim(C5[4]), dim(C5[5])];
       if (it.depth > 0.55) icon(p, it.x, it.y - 1, 7, STAR(4 + 0.8 * it.depth, spin), R4);
       else icon(p, it.x, it.y - 1, 5, bitmap(STAR7), R4);
-      p.px(it.x, it.y - 1, far ? C4[5] : C4[6]);
-      p.glow(it.x, it.y - 1, 11, C4[4], 0.24 + 0.3 * it.depth);
-      p.glow(it.x, it.y - 1, 4, C4[6], 0.3 * it.depth);
+      p.px(it.x, it.y - 1, far ? C5[5] : C5[6]);
+      p.glow(it.x, it.y - 1, 11, C5[4], 0.24 + 0.3 * it.depth);
+      p.glow(it.x, it.y - 1, 4, C5[6], 0.3 * it.depth);
       const fr = Math.exp(-((Math.atan2(Math.sin(it.th - Math.PI / 2), Math.cos(it.th - Math.PI / 2)) / 0.32) ** 2));
-      if (!far && fr > 0.08) flare(p, it.x, it.y - 1, 9 * fr, fr, [C4[3], C4[4], C4[5], C4[6]]);
+      if (!far && fr > 0.08) flare(p, it.x, it.y - 1, 9 * fr, fr, [C5[3], C5[4], C5[5], C5[6]]);
     }
   }
 }
@@ -10419,29 +10536,29 @@ function drawBack13(p, t, o) {
   draw1(p, t, o, "back");
 }
 function draw15(p, t, o) {
-  const C4 = fit(o.palette, 7), a = o.actor;
+  const C5 = fit(o.palette, 7), a = o.actor;
   draw1(p, t, o, "front");
   cycle(t, D16, 14, o.seed + 3, (r) => r.range(0.25, 0.5), (age, life, r) => {
     const th = r.range(0, TAU), u = age / life, x = Math.cos(th) * a.w * r.range(0.45, 0.95), y = a.y + 1 + Math.sin(th) * 7 - r.range(0, 9);
     const arm = Math.round(r.range(1, 2.6) * Math.sin(Math.PI * u));
-    if (arm < 1) p.dot(x, y, C4[6], Math.sin(Math.PI * u) * 1.4);
-    sparkle(p, x, y, arm, C4[5], C4[4], 0.35 * Math.sin(Math.PI * u));
+    if (arm < 1) p.dot(x, y, C5[6], Math.sin(Math.PI * u) * 1.4);
+    sparkle(p, x, y, arm, C5[5], C5[4], 0.35 * Math.sin(Math.PI * u));
   });
-  p.glow(0, a.y + 1, 26, C4[4], 0.13);
+  p.glow(0, a.y + 1, 26, C5[4], 0.13);
 }
 
 // ../pixelfx/src/fx/projectiles/plasma-shot.js
 var plasma_shot_exports = {};
 __export(plasma_shot_exports, {
   draw: () => draw16,
-  meta: () => meta37
+  meta: () => meta36
 });
 
 // ../pixelfx/src/fx/projectiles/_lib.js
 function beat(t, period, n, seed, life, fn) {
   for (let i = 0; i < n; i++) {
-    const L3 = typeof life === "function" ? life(rng(seed, i, 911)) : life;
-    for (let age = wrap(t - i * period / n + 1e-7, period); age < L3; age += period) fn(age, L3, rng(seed, i), i);
+    const L4 = typeof life === "function" ? life(rng(seed, i, 911)) : life;
+    for (let age = wrap(t - i * period / n + 1e-7, period); age < L4; age += period) fn(age, L4, rng(seed, i), i);
   }
 }
 function wake(x, y, vx, vy, age, V, k, g = 0) {
@@ -10457,7 +10574,7 @@ function spark2(p, x, y, vx, vy, k, S, glow = 0.45, stretch = 0.022, max = 9) {
 }
 
 // ../pixelfx/src/fx/projectiles/plasma-shot.js
-var meta37 = {
+var meta36 = {
   name: "Plasma shot",
   desc: "A glowing plasma blob: hot knots churning in its core, a corona crackling over its skin, its tail necking into droplets that tear off, cool and wink out behind.",
   tags: ["projectile", "plasma", "energy", "sci-fi", "directional", "loop"],
@@ -10475,13 +10592,13 @@ var meta37 = {
   }
 };
 function draw16(p, t, o) {
-  const C4 = fit(o.palette, 8), R4 = o.size, V = o.speed, S = o.seed, D17 = meta37.duration, w = TAU * t / D17;
-  const fr = Math.floor(t * 30 + 1e-6), left = -meta37.origin[0] + 2;
+  const C5 = fit(o.palette, 8), R4 = o.size, V = o.speed, S = o.seed, D17 = meta36.duration, w = TAU * t / D17;
+  const fr = Math.floor(t * 30 + 1e-6), left = -meta36.origin[0] + 2;
   const T02 = -R4 * 3.2, tail = (x) => Math.sin(x * 0.2 + w * 2) * (0.3 + (T02 - x) / 44 * 1.8);
   for (let x = T02; x > T02 - 44; x -= 1) {
     const u = (T02 - x) / 44, y = tail(x);
-    p.dot(x, y, u < 0.2 ? C4[6] : u < 0.45 ? C4[5] : C4[4], u < 0.55 ? 1 : (1 - u) / 0.45);
-    if (u < 0.3) p.px(x, y + 1, u < 0.15 ? C4[5] : C4[4]);
+    p.dot(x, y, u < 0.2 ? C5[6] : u < 0.45 ? C5[5] : C5[4], u < 0.55 ? 1 : (1 - u) / 0.45);
+    if (u < 0.3) p.px(x, y + 1, u < 0.15 ? C5[5] : C5[4]);
   }
   const balls = [{ x: 0, y: 0, r: R4, h: 1, core: 0.8 }];
   for (let i = 0; i < 3; i++) {
@@ -10513,7 +10630,7 @@ function draw16(p, t, o) {
     }
     if (f < 1) return;
     const lvl = hh > 10 ? 7 : hh > 4.6 ? 6 : hh > 2.2 ? 5 : f > 1.4 ? 4 : 3, cap = Math.round(2 + heat2 / f * 5.4);
-    return C4[Math.max(2, Math.min(x > R4 * 0.3 && lvl < 5 ? lvl + 1 : lvl, cap))];
+    return C5[Math.max(2, Math.min(x > R4 * 0.3 && lvl < 5 ? lvl + 1 : lvl, cap))];
   });
   for (let j = 0; j < 3; j++) {
     const g = rng(fr, j, S), a0 = g.range(-2.3, 2.3), span = g.range(0.45, 0.9) * g.sign(), n = 6, hgt = g.range(1.5, 3.5);
@@ -10522,29 +10639,29 @@ function draw16(p, t, o) {
       const a = a0 + span * i / n, rr = R4 + 0.6 + hgt * Math.sin(Math.PI * i / n) + (i % n ? g.range(-0.5, 0.5) : 0);
       pts.push([Math.cos(a) * rr - 0.4, Math.sin(a) * rr * 0.92]);
     }
-    p.polyline(pts, j ? C4[5] : C4[6]);
+    p.polyline(pts, j ? C5[5] : C5[6]);
     p.px(pts[3][0], pts[3][1], WHITE);
-    p.glow(pts[3][0], pts[3][1], 6, C4[5], 0.4);
+    p.glow(pts[3][0], pts[3][1], 6, C5[5], 0.4);
   }
   for (let j = 0; j < 4; j++) {
     const g = rng(fr, j + 9, S), a = g.range(-2.2, 2.2), l = g.range(1.5, 4), r0 = R4 + 1;
     const x0 = Math.cos(a) * r0 - 0.4, y0 = Math.sin(a) * r0 * 0.92;
-    p.line(x0, y0, x0 + Math.cos(a) * l, y0 + Math.sin(a) * l, j % 2 ? C4[4] : C4[5]);
+    p.line(x0, y0, x0 + Math.cos(a) * l, y0 + Math.sin(a) * l, j % 2 ? C5[4] : C5[5]);
   }
-  const SP = [WHITE, C4[6], C4[5], C4[3]];
+  const SP = [WHITE, C5[6], C5[5], C5[3]];
   beat(t, D17, 14, S + 5, (r) => r.range(0.12, 0.3), (age, life, r) => {
     const a = r.range(-2.4, 2.4), sp = r.range(60, 130), [x, y, vx, vy] = wake(Math.cos(a) * (R4 + 1), Math.sin(a) * (R4 + 1), Math.cos(a) * sp, Math.sin(a) * sp, age, V * 0.7, 4, 0);
     if (x > left + 4 && Math.abs(y) < 26) spark2(p, x, y, vx, vy, 1 - age / life, SP, 0.4, 0.015, 6);
   });
   const pulse2 = 0.85 + 0.15 * Math.sin(w * 4);
-  p.glow(-2, 0, 34, C4[3], 0.8 * pulse2);
-  p.glow(0, 0, 16, C4[4], 0.35 * pulse2);
-  p.glow(1, 0, 7, C4[6], 0.3 * pulse2);
-  p.glowLine(-R4, 0, -R4 * 4.6, 0, 7, C4[3], 0.3);
+  p.glow(-2, 0, 34, C5[3], 0.8 * pulse2);
+  p.glow(0, 0, 16, C5[4], 0.35 * pulse2);
+  p.glow(1, 0, 7, C5[6], 0.3 * pulse2);
+  p.glowLine(-R4, 0, -R4 * 4.6, 0, 7, C5[3], 0.3);
   for (const d of drops) {
     if (d.x < left + 4) continue;
-    if (d.k < 0.6 && d.x < -R4 * 3.5) p.px(d.x, d.y, d.k < 0.3 ? C4[7] : C4[6]);
-    p.glow(d.x, d.y, 3 + d.r * 2, C4[2], 0.6 * (1 - d.k));
+    if (d.k < 0.6 && d.x < -R4 * 3.5) p.px(d.x, d.y, d.k < 0.3 ? C5[7] : C5[6]);
+    p.glow(d.x, d.y, 3 + d.r * 2, C5[2], 0.6 * (1 - d.k));
   }
 }
 
@@ -10553,7 +10670,7 @@ var heart_pickup_exports = {};
 __export(heart_pickup_exports, {
   draw: () => draw17,
   drawBack: () => drawBack14,
-  meta: () => meta38
+  meta: () => meta37
 });
 
 // ../pixelfx/src/fx/pickups/_lib.js
@@ -10594,40 +10711,40 @@ var Layer = class {
   }
   /** A 1 px outline around everything drawn: c is a color or fn(x, y, neighbour color). corners adds diagonals. */
   outline(c, corners = false) {
-    const f = this.f, C4 = f.color, T4 = this.tmp, w = f.w, h = f.h;
+    const f = this.f, C5 = f.color, T4 = this.tmp, w = f.w, h = f.h;
     T4.fill(0);
     for (let j = 0; j < h; j++)
       for (let i = 0; i < w; i++) {
         const k = j * w + i;
-        if (C4[k]) continue;
-        let n = i > 0 && C4[k - 1] || i < w - 1 && C4[k + 1] || j > 0 && C4[k - w] || j < h - 1 && C4[k + w];
-        if (!n && corners) n = i > 0 && j > 0 && C4[k - w - 1] || i < w - 1 && j > 0 && C4[k - w + 1] || i > 0 && j < h - 1 && C4[k + w - 1] || i < w - 1 && j < h - 1 && C4[k + w + 1];
+        if (C5[k]) continue;
+        let n = i > 0 && C5[k - 1] || i < w - 1 && C5[k + 1] || j > 0 && C5[k - w] || j < h - 1 && C5[k + w];
+        if (!n && corners) n = i > 0 && j > 0 && C5[k - w - 1] || i < w - 1 && j > 0 && C5[k - w + 1] || i > 0 && j < h - 1 && C5[k + w - 1] || i < w - 1 && j < h - 1 && C5[k + w + 1];
         if (n) T4[k] = typeof c === "function" ? c(i + f.ox, j + f.oy, n) : c;
       }
-    for (let k = 0; k < w * h; k++) if (T4[k]) C4[k] = T4[k];
+    for (let k = 0; k < w * h; k++) if (T4[k]) C5[k] = T4[k];
     return this;
   }
   /** Recolor every drawn pixel: fn(x, y, c) returns the new color. */
   map(fn) {
-    const f = this.f, C4 = f.color;
-    for (let k = 0; k < C4.length; k++) if (C4[k]) C4[k] = fn(k % f.w + f.ox, Math.floor(k / f.w) + f.oy, C4[k]) || C4[k];
+    const f = this.f, C5 = f.color;
+    for (let k = 0; k < C5.length; k++) if (C5[k]) C5[k] = fn(k % f.w + f.ox, Math.floor(k / f.w) + f.oy, C5[k]) || C5[k];
     return this;
   }
   /** Stamp the layer onto p, offset by (dx, dy), at alpha a (dithered); clip [x0, x1] keeps x0 <= x < x1. */
   draw(p, dx = 0, dy = 0, a = 1, clip = null) {
-    const f = this.f, C4 = f.color;
-    for (let k = 0; k < C4.length; k++) {
-      if (!C4[k]) continue;
+    const f = this.f, C5 = f.color;
+    for (let k = 0; k < C5.length; k++) {
+      if (!C5[k]) continue;
       const x = k % f.w + f.ox + dx;
       if (clip && (x < clip[0] || x >= clip[1])) continue;
-      p.dot(x, Math.floor(k / f.w) + f.oy + dy, C4[k], a);
+      p.dot(x, Math.floor(k / f.w) + f.oy + dy, C5[k], a);
     }
     return this;
   }
 };
 var SHADOW = hex("#100e17");
-function pillow(L3, x0, y0, x1, y1, sdf, color, { bevel = 3, light = [-0.5, -0.6, 0.62], clip = null } = {}) {
-  L3.fill(x0, y0, x1, y1, (x, y) => {
+function pillow(L4, x0, y0, x1, y1, sdf, color, { bevel = 3, light = [-0.5, -0.6, 0.62], clip = null } = {}) {
+  L4.fill(x0, y0, x1, y1, (x, y) => {
     const d = sdf(x, y);
     if (d > 0 || clip && clip(x, y)) return 0;
     const e = -d;
@@ -10678,7 +10795,7 @@ function pool2(p, x, y, rx, ry, c, k) {
 }
 
 // ../pixelfx/src/fx/pickups/heart-pickup.js
-var meta38 = {
+var meta37 = {
   name: "Heart pickup",
   desc: "A plump glossy heart hovering over its shadow beats lub-dub: a big squash and stretch, a smaller echo, light and a thin ring pulsing out, tiny hearts drifting off.",
   tags: ["pickup", "heart", "health", "life", "loop"],
@@ -10704,31 +10821,31 @@ var beat2 = (ph, at8, s) => {
 };
 var pulse = (ph) => beat2(ph, LUB, 1) + beat2(ph, DUB, 0.55) + beat2(ph + 1, LUB, 1);
 function drawBack14(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta38.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU);
+  const C5 = fit(o.palette, 8), ph = t / meta37.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU);
   blobShadow(p, 0, 8 + 1.5 * pulse(ph), 0.8);
-  cycle(t, meta38.duration, 4, o.seed, 0.95, (age, life, r, i) => {
+  cycle(t, meta37.duration, 4, o.seed, 0.95, (age, life, r, i) => {
     const side = i % 2 ? 1 : -1, k = age / life;
     const x = side * (r.range(2, 5) + age * r.range(9, 15)) + Math.sin(age * 7 + r.range(0, TAU)) * 1.5, yy = y - 5 - age * r.range(14, 19);
     const a = Math.min(1, age / 0.12) * (1 - k * k);
-    p.sprite(MINI2, { a: k < 0.5 ? C4[5] : C4[4], b: k < 0.3 ? WHITE : C4[6] }, Math.round(x - 2.5), Math.round(yy - 2), { a: a * 1.3 });
-    p.glow(x, yy, 5, C4[4], 0.3 * a);
+    p.sprite(MINI2, { a: k < 0.5 ? C5[5] : C5[4], b: k < 0.3 ? WHITE : C5[6] }, Math.round(x - 2.5), Math.round(yy - 2), { a: a * 1.3 });
+    p.glow(x, yy, 5, C5[4], 0.3 * a);
   });
 }
 function draw17(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta38.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU), b = pulse(ph);
+  const C5 = fit(o.palette, 8), ph = t / meta37.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU), b = pulse(ph);
   const sx = 1 + 0.16 * b, sy = 1 - 0.13 * b, cy = Math.round(y);
-  p.glow(0, cy, 22 + 6 * Math.max(0, b), C4[4], 0.26 + 0.3 * Math.max(0, b));
+  p.glow(0, cy, 22 + 6 * Math.max(0, b), C5[4], 0.26 + 0.3 * Math.max(0, b));
   L.begin(-20, cy - 20);
   pillow(L, -12, cy - 11, 12, cy + 11, (x, yy) => heartSdf(x, yy, 0, cy, W6 * sx, W6 * sy), (lt, e) => {
     if (lt > 0.92 && e > 1.2) return WHITE;
-    return lt > 0.8 ? C4[6] : lt > 0.6 ? C4[5] : lt > 0.38 ? C4[4] : lt > 0.12 ? C4[3] : C4[2];
+    return lt > 0.8 ? C5[6] : lt > 0.6 ? C5[5] : lt > 0.38 ? C5[4] : lt > 0.12 ? C5[3] : C5[2];
   }, { bevel: 3.6 });
   L.outline(INK4).draw(p);
   const u = ((ph - LUB) % 1 + 1) % 1;
   if (u < 0.28) {
     const k = u / 0.28, r = 9 + 8 * (1 - (1 - k) ** 3);
-    p.ring(0, cy, r, 1, k < 0.2 ? C4[6] : C4[5], 0.85 * (1 - k));
-    p.glowRing(0, cy, r, 4, C4[4], 0.25 * (1 - k));
+    p.ring(0, cy, r, 1, k < 0.2 ? C5[6] : C5[5], 0.85 * (1 - k));
+    p.glowRing(0, cy, r, 4, C5[4], 0.25 * (1 - k));
   }
   const g = ((ph - LUB - 0.08) % 0.5 + 0.5) % 0.5;
   if (g < 0.12) glint(p, -3.5, cy - 4, 2.6 * Math.sin(g / 0.12 * Math.PI), WHITE, 0.45);
@@ -10739,9 +10856,9 @@ var potion_exports = {};
 __export(potion_exports, {
   draw: () => draw18,
   drawBack: () => drawBack15,
-  meta: () => meta39
+  meta: () => meta38
 });
-var meta39 = {
+var meta38 = {
   name: "Potion",
   desc: "A round glass flask of glowing brew rocks in the air: the brew sloshes behind the rock, bubbles rise and pop, light glows through the glass, wisps curl off the cork.",
   tags: ["pickup", "potion", "flask", "brew", "magic", "loop"],
@@ -10764,82 +10881,82 @@ var CORK = ["#2a160c", "#4e2c16", "#7a4a26", "#a8703a", "#d09a5a"].map(hex);
 var L2 = new Layer(40, 44);
 var pose3 = (ph) => ({ y: -HOVER2 - 1.4 * Math.sin(ph * TAU), tilt: 0.13 * Math.sin(ph * TAU + 0.4) });
 var surface = (x, ph) => -0.5 + 0.17 * Math.sin(ph * TAU - 0.9) * x + 0.45 * Math.sin(x * 0.85 + ph * TAU * 3);
-function flask(p, C4, t, ph, cy, tilt, seed) {
+function flask(p, C5, t, ph, cy, tilt, seed) {
   const ct = Math.cos(tilt), st = Math.sin(tilt);
   L2.begin(-20, Math.floor(cy) - 22);
   L2.fill(-20, Math.floor(cy) - 22, 19, Math.floor(cy) + 12, (px, py) => {
     const wx = px, wy = py - cy, fx = wx * ct + wy * st, fy = -wx * st + wy * ct, d = Math.hypot(fx, fy);
     if (fy < LIP - 0.5 && fy >= CORK_TOP && Math.abs(fx) <= NECK + 0.2) return CORK[fy < CORK_TOP + 1 ? 4 : fx < -0.6 ? 3 : fx > 1 ? 1 : 2];
-    if (fy >= LIP - 0.5 && fy < LIP + 1 && Math.abs(fx) <= NECK + 1.4) return fx < 0 ? mix(WHITE, C4[6], 0.4) : mix(GLASS, C4[5], 0.45);
+    if (fy >= LIP - 0.5 && fy < LIP + 1 && Math.abs(fx) <= NECK + 1.4) return fx < 0 ? mix(WHITE, C5[6], 0.4) : mix(GLASS, C5[5], 0.45);
     const inNeck = fy >= LIP + 1 && fy < -RB + 2 && Math.abs(fx) <= NECK + 0.6;
     if (d > RB && !inNeck) return 0;
     const wall = inNeck ? Math.abs(fx) > NECK - 0.5 : d > RB - 1;
     const s = surface(wx, ph), depth = wy - s;
     if (!wall && !inNeck && depth > 0) {
       const core = 1 - Math.hypot(wx * 0.85, wy - 1.8) / RB;
-      if (depth < 0.9) return wx < -1.5 && wx > -4.5 ? WHITE : C4[6];
+      if (depth < 0.9) return wx < -1.5 && wx > -4.5 ? WHITE : C5[6];
       let k = core > 0.62 ? 5 : core > 0.38 ? 4 : core > 0.18 ? 3 : 2;
       if (depth < 1.9 && k < 5) k++;
       if (wx > 1.5 && wy > 2) k--;
-      return C4[Math.max(2, Math.min(6, k))];
+      return C5[Math.max(2, Math.min(6, k))];
     }
     if (wall) {
       const lit = (-fx * 0.75 - fy * 0.66) / Math.max(1, d);
-      if (inNeck) return fx < 0 ? mix(GLASS, C4[6], 0.55) : mix(GLASS, C4[5], 0.3);
-      if (lit > 0.82) return mix(WHITE, C4[6], 0.3);
-      if (lit > 0.3) return mix(GLASS, C4[6], 0.5);
-      return depth > 0 ? C4[3] : mix(GLASS, C4[5], 0.28);
+      if (inNeck) return fx < 0 ? mix(GLASS, C5[6], 0.55) : mix(GLASS, C5[5], 0.3);
+      if (lit > 0.82) return mix(WHITE, C5[6], 0.3);
+      if (lit > 0.3) return mix(GLASS, C5[6], 0.5);
+      return depth > 0 ? C5[3] : mix(GLASS, C5[5], 0.28);
     }
     return GLASS;
   });
   L2.outline(INK5).draw(p);
   for (let a = 3.45; a < 4.35; a += 0.04) {
     const lx = Math.cos(a + tilt) * (RB - 2.2), ly = Math.sin(a + tilt) * (RB - 2.2);
-    p.px(lx, cy + ly, a > 3.7 && a < 4.1 ? WHITE : mix(WHITE, C4[6], 0.5));
+    p.px(lx, cy + ly, a > 3.7 && a < 4.1 ? WHITE : mix(WHITE, C5[6], 0.5));
   }
   p.px(Math.round(2 * Math.cos(tilt) + 3 * Math.sin(tilt)), Math.round(cy - 3), WHITE);
-  cycle(t, meta39.duration, 10, seed, (g) => g.range(0.7, 1.3), (age, life, r) => {
+  cycle(t, meta38.duration, 10, seed, (g) => g.range(0.7, 1.3), (age, life, r) => {
     const x0 = r.range(-4, 4), r0 = r.range(0.6, 1.7), vy = r.range(7, 13);
-    const x = x0 + Math.sin(age * r.range(5, 9) + r.range(0, TAU)) * 0.7, y = cy + 5.5 - vy * age, ph2 = (t + age) / meta39.duration;
+    const x = x0 + Math.sin(age * r.range(5, 9) + r.range(0, TAU)) * 0.7, y = cy + 5.5 - vy * age, ph2 = (t + age) / meta38.duration;
     const top = cy + surface(x, ph2);
     if (y > top + 0.8) {
       const rr = r0 * (0.7 + 0.5 * (age / life));
       if (Math.hypot(x, y - cy) > RB - 1.5) return;
-      if (rr < 0.95) p.px(x, y, C4[6]);
+      if (rr < 0.95) p.px(x, y, C5[6]);
       else {
-        p.px(x, y, C4[3]), p.px(x + 1, y, C4[6]), p.px(x, y - 1, WHITE), p.px(x + 1, y - 1, C4[6]);
-        if (rr > 1.4) p.px(x - 1, y, C4[5]), p.px(x, y + 1, C4[4]);
+        p.px(x, y, C5[3]), p.px(x + 1, y, C5[6]), p.px(x, y - 1, WHITE), p.px(x + 1, y - 1, C5[6]);
+        if (rr > 1.4) p.px(x - 1, y, C5[5]), p.px(x, y + 1, C5[4]);
       }
-      p.glow(x + 0.5, y, 3, C4[6], 0.15);
+      p.glow(x + 0.5, y, 3, C5[6], 0.15);
     } else {
       const k = clamp((top + 0.8 - y) / 3);
       if (k >= 1) return;
-      for (let a = Math.PI; a < TAU; a += 0.6) p.dot(x + Math.cos(a) * (1 + k * 2), top - 0.5 + Math.sin(a) * (1 + k * 2) * 0.5, k < 0.5 ? WHITE : C4[6], 1.2 - k);
-      p.dot(x - 1, top - 1.5 - k * 3, C4[6], 1 - k), p.dot(x + 1.5, top - 2 - k * 4, WHITE, 1 - k);
+      for (let a = Math.PI; a < TAU; a += 0.6) p.dot(x + Math.cos(a) * (1 + k * 2), top - 0.5 + Math.sin(a) * (1 + k * 2) * 0.5, k < 0.5 ? WHITE : C5[6], 1.2 - k);
+      p.dot(x - 1, top - 1.5 - k * 3, C5[6], 1 - k), p.dot(x + 1.5, top - 2 - k * 4, WHITE, 1 - k);
     }
   });
 }
 function drawBack15(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta39.duration, { y } = pose3(ph);
+  const C5 = fit(o.palette, 8), ph = t / meta38.duration, { y } = pose3(ph);
   blobShadow(p, 0, 7.5, 0.8 - (-y - HOVER2 + 1.4) * 0.06);
-  pool2(p, 0, 0.5, 18, 3, C4[5], 0.3);
-  cycle(t, meta39.duration, 7, o.seed + 1, (g) => g.range(1.2, 1.8), (age, life, r) => {
+  pool2(p, 0, 0.5, 18, 3, C5[5], 0.3);
+  cycle(t, meta38.duration, 7, o.seed + 1, (g) => g.range(1.2, 1.8), (age, life, r) => {
     const side = r.sign(), f = r.range(3, 4.5), ph0 = r.range(0, TAU), vy = r.range(11, 16), x0 = r.range(-1, 1);
     const at8 = (a) => [x0 + Math.sin(a * f + ph0) * (0.8 + a * 3.2) * side, y + CORK_TOP - 1 - a * vy];
     for (let i = 0; i < 9; i++) {
       const a = age - i * 0.04;
       if (a < 0) break;
       const [x, yy] = at8(a), k = (1 - a / life) * Math.min(1, a / 0.15) * (1 - i / 9);
-      p.dot(x, yy, i === 0 ? WHITE : i < 3 ? C4[6] : C4[5], k * 1.4);
-      if (i === 0) p.glow(x, yy, 4, C4[5], 0.3 * k);
+      p.dot(x, yy, i === 0 ? WHITE : i < 3 ? C5[6] : C5[5], k * 1.4);
+      if (i === 0) p.glow(x, yy, 4, C5[5], 0.3 * k);
     }
   });
 }
 function draw18(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta39.duration, { y, tilt } = pose3(ph);
-  p.glow(0, y + 1.5, 26, C4[4], 0.22);
-  flask(p, C4, t, ph, y, tilt, o.seed);
-  p.glow(0, y + 2, 10, C4[5], 0.38 + 0.08 * Math.sin(ph * TAU * 2));
+  const C5 = fit(o.palette, 8), ph = t / meta38.duration, { y, tilt } = pose3(ph);
+  p.glow(0, y + 1.5, 26, C5[4], 0.22);
+  flask(p, C5, t, ph, y, tilt, o.seed);
+  p.glow(0, y + 2, 10, C5[5], 0.38 + 0.08 * Math.sin(ph * TAU * 2));
   const g = (ph + 0.2) % 0.5 / 0.5;
   if (g < 0.16) glint(p, -4, y - 4, 2.6 * Math.sin(g / 0.16 * Math.PI), WHITE, 0.4);
 }
@@ -10849,9 +10966,9 @@ var xp_orb_exports = {};
 __export(xp_orb_exports, {
   draw: () => draw19,
   drawBack: () => drawBack16,
-  meta: () => meta40
+  meta: () => meta39
 });
-var meta40 = {
+var meta39 = {
   name: "XP orb",
   desc: "A small glowing orb races a figure-eight, a comet tail tapering behind it along its path, flecks shed from the tail winking out, its light following it over the floor.",
   tags: ["pickup", "xp", "orb", "experience", "energy", "loop"],
@@ -10869,50 +10986,50 @@ var HOVER3 = 20;
 var TAIL = 0.48;
 var INK6 = hex("#0a1406");
 var at7 = (t) => {
-  const a = t / meta40.duration * TAU;
+  const a = t / meta39.duration * TAU;
   return [A * Math.sin(a), -HOVER3 + B2 * Math.sin(a) * Math.cos(a) - 1.2 * Math.cos(a * 2)];
 };
 function drawBack16(p, t, o) {
-  const C4 = fit(o.palette, 8), [x, y] = at7(t);
+  const C5 = fit(o.palette, 8), [x, y] = at7(t);
   blobShadow(p, x, 3.5, 0.55);
-  pool2(p, x, 0.5, 14, 3, C4[5], 0.3);
-  cycle(t, meta40.duration, 16, o.seed, (g) => g.range(0.35, 0.7), (age, life, r) => {
+  pool2(p, x, 0.5, 14, 3, C5[5], 0.3);
+  cycle(t, meta39.duration, 16, o.seed, (g) => g.range(0.35, 0.7), (age, life, r) => {
     const [fx, fy] = at7(t - age), k = 1 - age / life, tw = Math.sin(age * r.range(20, 30) + r.range(0, TAU));
     const x2 = fx + r.range(-2, 2) + age * r.range(-6, 6), y2 = fy + r.range(-2, 2) + age * r.range(4, 10);
-    if (tw * k > -0.2) p.px(x2, y2, tw > 0.6 && k > 0.5 ? WHITE : k > 0.5 ? C4[6] : C4[5]);
-    p.glow(x2 + 0.5, y2 + 0.5, 3, C4[5], 0.3 * k);
+    if (tw * k > -0.2) p.px(x2, y2, tw > 0.6 && k > 0.5 ? WHITE : k > 0.5 ? C5[6] : C5[5]);
+    p.glow(x2 + 0.5, y2 + 0.5, 3, C5[5], 0.3 * k);
   });
 }
 function draw19(p, t, o) {
-  const C4 = fit(o.palette, 8), [x, y] = at7(t), beat3 = 0.5 + 0.5 * Math.sin(t / meta40.duration * TAU * 3);
+  const C5 = fit(o.palette, 8), [x, y] = at7(t), beat3 = 0.5 + 0.5 * Math.sin(t / meta39.duration * TAU * 3);
   const n = 60;
   for (let i = n; i >= 1; i--) {
     const u = i / n, [tx, ty] = at7(t - u * TAIL), r = 3.1 * Math.pow(1 - u, 1.1);
-    const c = u < 0.25 ? C4[5] : u < 0.55 ? C4[4] : C4[3];
+    const c = u < 0.25 ? C5[5] : u < 0.55 ? C5[4] : C5[3];
     if (r > 0.6) p.circle(tx, ty, r, c, u < 0.7 ? 1 : (1 - u) * 3.3);
     else p.dot(tx, ty, c, (1 - u) * 3);
-    if (i % 6 === 0) p.glow(tx, ty, 7 * (1 - u) + 2, C4[5], 0.24 * (1 - u));
+    if (i % 6 === 0) p.glow(tx, ty, 7 * (1 - u) + 2, C5[5], 0.24 * (1 - u));
   }
   for (let i = Math.floor(n * 0.6); i >= 1; i--) {
     const u = i / n, [tx, ty] = at7(t - u * TAIL);
-    p.dot(tx, ty, u < 0.2 ? WHITE : C4[6], (0.6 - u) * 4);
+    p.dot(tx, ty, u < 0.2 ? WHITE : C5[6], (0.6 - u) * 4);
   }
   const X = Math.round(x), Y = Math.round(y);
   p.circle(X, Y, 4.4, INK6);
-  p.circle(X, Y, 3.6, (d, a) => d > 0.72 ? Math.cos(a + 2.4) > 0.3 ? C4[5] : C4[3] : d > 0.4 ? Math.cos(a + 2.4) > -0.2 ? C4[6] : C4[5] : WHITE);
-  p.px(X - 2, Y - 2, WHITE), p.px(X - 1, Y - 2, C4[7]);
-  p.glow(x, y, 16 + 3 * beat3, C4[5], 0.36 + 0.14 * beat3);
-  const g = t / meta40.duration * 3 % 1;
+  p.circle(X, Y, 3.6, (d, a) => d > 0.72 ? Math.cos(a + 2.4) > 0.3 ? C5[5] : C5[3] : d > 0.4 ? Math.cos(a + 2.4) > -0.2 ? C5[6] : C5[5] : WHITE);
+  p.px(X - 2, Y - 2, WHITE), p.px(X - 1, Y - 2, C5[7]);
+  p.glow(x, y, 16 + 3 * beat3, C5[5], 0.36 + 0.14 * beat3);
+  const g = t / meta39.duration * 3 % 1;
   if (g < 0.12) glint(p, X - 2, Y - 2, 2.4 * Math.sin(g / 0.12 * Math.PI), WHITE, 0.4);
 }
 
 // ../pixelfx/src/fx/pickups/collect-burst.js
 var collect_burst_exports = {};
 __export(collect_burst_exports, {
-  create: () => create22,
-  meta: () => meta41
+  create: () => create21,
+  meta: () => meta40
 });
-var meta41 = {
+var meta40 = {
   name: "Collect burst",
   desc: "The moment of pickup: a white flash and a cross of light, a thin ring snapping out ahead of a softer one, twinkles thrown wide on curving paths that brake, hang and wink out.",
   tags: ["pickup", "collect", "burst", "sparkle", "reward", "one-shot"],
@@ -10925,13 +11042,13 @@ var meta41 = {
   options: { palette: ["#1a0516", "#3d0a33", "#701560", "#b0228f", "#f53cd1", "#ff86e6", "#ffd2f6", "#ffffff"], seed: 3 }
 };
 var CY5 = -30;
-function create22(o) {
-  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), lights = new Lights();
-  lights.add(0, CY5, 36, C4[5], 0.85, 0.32);
+function create21(o) {
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed), lights = new Lights();
+  lights.add(0, CY5, 36, C5[5], 0.85, 0.32);
   lights.add(0, CY5, 14, WHITE, 0.75, 0.08);
   const stars2 = Array.from({ length: 14 }, (_, i) => {
     const a = i / 14 * TAU + R4.range(-0.2, 0.2), sp = R4.range(145, 225) * (i % 3 === 0 ? 1.12 : 0.85);
-    return { x: 0, y: CY5, a, sp, turn: (i % 2 ? 1 : -1) * R4.range(2.5, 5), life: R4.range(0.75, 1.15), age: 0, size: i % 3 === 0 ? 2.6 : R4.range(1.2, 2), tr: [], c: i % 4 === 0 ? WHITE : i % 2 ? C4[6] : C4[5], ph: R4.range(0, TAU) };
+    return { x: 0, y: CY5, a, sp, turn: (i % 2 ? 1 : -1) * R4.range(2.5, 5), life: R4.range(0.75, 1.15), age: 0, size: i % 3 === 0 ? 2.6 : R4.range(1.2, 2), tr: [], c: i % 4 === 0 ? WHITE : i % 2 ? C5[6] : C5[5], ph: R4.range(0, TAU) };
   });
   const motes3 = Array.from({ length: 7 }, () => ({ x: R4.range(-8, 8), y: CY5 + R4.range(-4, 6), vy: -R4.range(12, 30), life: R4.range(0.5, 0.9), d: R4.range(0.05, 0.25), w: R4.range(0, TAU) }));
   let t = 0;
@@ -10954,26 +11071,26 @@ function create22(o) {
     draw(p) {
       if (t < 0.07) p.circle(0, CY5, 5.5 * (1 - t / 0.07) + 1, WHITE);
       if (t < 0.16) {
-        const k = 1 - t / 0.16, L3 = 26 * ease.outCubic(Math.min(1, t / 0.03 + 0.4)) * k;
+        const k = 1 - t / 0.16, L4 = 26 * ease.outCubic(Math.min(1, t / 0.03 + 0.4)) * k;
         for (const [dx, dy, l] of [[1, 0, 1], [-1, 0, 1], [0, 1, 0.6], [0, -1, 0.6]])
-          p.line(0, CY5, dx * L3 * l, CY5 + dy * L3 * l, (u) => u < 0.3 ? WHITE : u < 0.65 ? C4[6] : C4[5], (u) => (u < 0.5 ? 1 : (1 - u) * 2) * (0.5 + k));
-        p.glow(0, CY5, 20 * k + 4, C4[5], 0.6 * k);
+          p.line(0, CY5, dx * L4 * l, CY5 + dy * L4 * l, (u) => u < 0.3 ? WHITE : u < 0.65 ? C5[6] : C5[5], (u) => (u < 0.5 ? 1 : (1 - u) * 2) * (0.5 + k));
+        p.glow(0, CY5, 20 * k + 4, C5[5], 0.6 * k);
       }
       const u1 = t / 0.32;
       if (u1 < 1) {
         const r = 3 + 23 * ease.outExpo(u1);
-        p.ring(0, CY5, r, 1, u1 < 0.3 ? WHITE : C4[6], 1.3 - u1 * 1.2);
-        p.glowRing(0, CY5, r, 4, C4[5], 0.4 * (1 - u1));
+        p.ring(0, CY5, r, 1, u1 < 0.3 ? WHITE : C5[6], 1.3 - u1 * 1.2);
+        p.glowRing(0, CY5, r, 4, C5[5], 0.4 * (1 - u1));
       }
       const u2 = (t - 0.04) / 0.5;
       if (u2 > 0 && u2 < 1) {
         const r = 2 + 16 * ease.outCubic(u2);
-        p.ring(0, CY5, r, Math.max(1, 2.6 * (1 - u2)), C4[5], 1 - u2);
+        p.ring(0, CY5, r, Math.max(1, 2.6 * (1 - u2)), C5[5], 1 - u2);
       }
       for (const s of stars2) {
         if (s.age > s.life) continue;
         const k = 1 - s.age / s.life, tw = 0.65 + 0.35 * Math.sin(s.age * 26 + s.ph);
-        s.tr.forEach(([x, y], i) => i > 0 && p.dot(x, y, i < 2 ? C4[5] : C4[4], (1 - i / 4) * k * 1.4));
+        s.tr.forEach(([x, y], i) => i > 0 && p.dot(x, y, i < 2 ? C5[5] : C5[4], (1 - i / 4) * k * 1.4));
         if (k < 0.3 && Math.sin(s.age * 40 + s.ph) < 0) continue;
         glint(p, s.x, s.y, Math.round(s.size * tw * Math.min(1, k * 2.5)), s.c, 0.45 * k);
       }
@@ -10981,8 +11098,8 @@ function create22(o) {
         const a = t - m.d;
         if (a < 0 || a > m.life) continue;
         const k = 1 - a / m.life, x = m.x + Math.sin(a * 6 + m.w) * 1.5, y = m.y + m.vy * a;
-        p.dot(x, y, k > 0.5 ? C4[6] : C4[5], k * 1.5);
-        p.glow(x + 0.5, y + 0.5, 3, C4[5], 0.3 * k);
+        p.dot(x, y, k > 0.5 ? C5[6] : C5[5], k * 1.5);
+        p.glow(x + 0.5, y + 0.5, 3, C5[5], 0.3 * k);
       }
       lights.draw(p);
     }
@@ -11010,7 +11127,6 @@ var FX = {
   shatterDeath: shatter_death_exports,
   spawnPortal: spawn_portal_exports,
   levelUp: level_up_exports,
-  comboCounter: combo_counter_exports,
   runeCircle: rune_circle_exports,
   manaBurst: mana_burst_exports,
   frozen: frozen_exports,
@@ -11030,6 +11146,9 @@ var STAGES = [
     name: "\u82D4\u75D5\u9057\u8FF9",
     sub: "\u6708\u4E0B\u7684\u65E7\u5723\u6240",
     chapter: "I",
+    actEn: "STAGE I",
+    nameEn: "MOSSY RUINS",
+    subEn: "THE OLD SANCTUM",
     map: mossy_ruins_exports,
     palette: "#8fd88a",
     waves: [
@@ -11051,6 +11170,9 @@ var STAGES = [
     name: "\u5E7D\u706B\u6CBC\u6CFD",
     sub: "\u4EA1\u8005\u7684\u706F",
     chapter: "II",
+    actEn: "STAGE II",
+    nameEn: "WISP MARSH",
+    subEn: "LANTERNS OF THE DEAD",
     map: wisp_marsh_exports,
     palette: "#8ed7bf",
     waves: [
@@ -11072,6 +11194,9 @@ var STAGES = [
     name: "\u7194\u5CA9\u6DF1\u7A9F",
     sub: "\u4F59\u70EC\u7684\u6E90\u5934",
     chapter: "III",
+    actEn: "STAGE III",
+    nameEn: "EMBER DEPTHS",
+    subEn: "THE SOURCE OF ASH",
     map: ember_depths_exports,
     palette: "#ff9a5c",
     waves: [
@@ -11223,6 +11348,7 @@ var ENEMY_TYPES = {
   boss: {
     mod: null,
     name: "\u51A5\u6CB3\u5B88\u536B",
+    nameEn: "THE WARDEN",
     hp: 360,
     speed: 23,
     dmg: 15,
@@ -11240,17 +11366,17 @@ var ENEMY_TYPES = {
   }
 };
 var LOOT = [
-  { p: 0.12, kind: "heart", mod: heart_pickup_exports, label: "\u751F\u547D +18", color: "#ff7a8a" },
-  { p: 0.13, kind: "potion", mod: potion_exports, label: "\u6CD5\u529B +24", color: "#ff86e6" },
-  { p: 0.5, kind: "xp", mod: xp_orb_exports, label: "\u7ECF\u9A8C +8", color: "#c4f060" }
+  { p: 0.12, kind: "heart", mod: heart_pickup_exports, label: "HP +18", color: "#ff7a8a" },
+  { p: 0.13, kind: "potion", mod: potion_exports, label: "MP +24", color: "#ff86e6" },
+  { p: 0.5, kind: "xp", mod: xp_orb_exports, label: "XP +8", color: "#c4f060" }
 ];
 var SKILL_META = [
-  { id: "j", key: "J", name: "\u661F\u5203\u65A9", glyph: "\u65A9", cost: 0, cd: 0.26, tint: "#ffe0a0", glow: "rgba(255, 190, 90, .55)", note: "\u4E09\u6BB5\u8FDE\u65A9 \xB7 \u65E0\u6D88\u8017" },
-  { id: "k", key: "K", name: "\u70C8\u7130\u672F", glyph: "\u706B", cost: 10, cd: 1.1, tint: "#ffb05a", glow: "rgba(255, 120, 40, .6)", note: "\u706B\u7403 \xB7 \u7206\u70B8\u707C\u70E7" },
-  { id: "l", key: "L", name: "\u971C\u73AF", glyph: "\u971C", cost: 18, cd: 5, tint: "#b8ecff", glow: "rgba(120, 210, 255, .6)", note: "\u8EAB\u5468\u51B0\u73AF \xB7 \u51BB\u7ED3" },
-  { id: "u", key: "U", name: "\u96F7\u7F5A", glyph: "\u96F7", cost: 22, cd: 6, tint: "#d8c8ff", glow: "rgba(170, 140, 255, .65)", note: "\u843D\u96F7 \xB7 \u7729\u6655" },
-  { id: "i", key: "I", name: "\u5723\u6108", glyph: "\u6108", cost: 26, cd: 11, tint: "#c8ffb0", glow: "rgba(150, 240, 120, .55)", note: "\u6CBB\u7597 \xB7 \u62A4\u76FE" },
-  { id: "o", key: "O", name: "\u9668\u661F", glyph: "\u9668", cost: 40, cd: 15, tint: "#ffcf6a", glow: "rgba(255, 160, 50, .8)", note: "\u4E09\u91CD\u9668\u77F3 \xB7 \u5927\u8303\u56F4" }
+  { id: "j", key: "J", name: "\u661F\u5203\u65A9", nameEn: "SLASH", icon: "slash", glyph: "\u65A9", cost: 0, cd: 0.26, tint: "#ffe0a0", glow: "rgba(255, 190, 90, .55)", note: "\u4E09\u6BB5\u8FDE\u65A9 \xB7 \u65E0\u6D88\u8017" },
+  { id: "k", key: "K", name: "\u70C8\u7130\u672F", nameEn: "FIRE", icon: "fire", glyph: "\u706B", cost: 10, cd: 1.1, tint: "#ffb05a", glow: "rgba(255, 120, 40, .6)", note: "\u706B\u7403 \xB7 \u7206\u70B8\u707C\u70E7" },
+  { id: "l", key: "L", name: "\u971C\u73AF", nameEn: "FROST", icon: "frost", glyph: "\u971C", cost: 18, cd: 5, tint: "#b8ecff", glow: "rgba(120, 210, 255, .6)", note: "\u8EAB\u5468\u51B0\u73AF \xB7 \u51BB\u7ED3" },
+  { id: "u", key: "U", name: "\u96F7\u7F5A", nameEn: "BOLT", icon: "bolt", glyph: "\u96F7", cost: 22, cd: 6, tint: "#d8c8ff", glow: "rgba(170, 140, 255, .65)", note: "\u843D\u96F7 \xB7 \u7729\u6655" },
+  { id: "i", key: "I", name: "\u5723\u6108", nameEn: "MEND", icon: "mend", glyph: "\u6108", cost: 26, cd: 11, tint: "#c8ffb0", glow: "rgba(150, 240, 120, .55)", note: "\u6CBB\u7597 \xB7 \u62A4\u76FE" },
+  { id: "o", key: "O", name: "\u9668\u661F", nameEn: "METEOR", icon: "meteor", glyph: "\u9668", cost: 40, cd: 15, tint: "#ffcf6a", glow: "rgba(255, 160, 50, .8)", note: "\u4E09\u91CD\u9668\u77F3 \xB7 \u5927\u8303\u56F4" }
 ];
 
 // src/hero.js
@@ -11347,7 +11473,7 @@ var Hero = class {
     const a = this.anim;
     return poseAt(a.track, a.loop ? a.t % a.dur : Math.min(a.t, a.dur));
   }
-  update(g, dt, keys2) {
+  update(g, dt, keys) {
     for (const k in this.cd) this.cd[k] = Math.max(0, this.cd[k] - dt);
     this.invuln = Math.max(0, this.invuln - dt);
     this.hitFlash = Math.max(0, this.hitFlash - dt);
@@ -11369,8 +11495,8 @@ var Hero = class {
     }
     let ix = 0, iy = 0;
     if (g.state === "playing") {
-      ix = (keys2.has("d") ? 1 : 0) - (keys2.has("a") ? 1 : 0);
-      iy = (keys2.has("s") ? 1 : 0) - (keys2.has("w") ? 1 : 0);
+      ix = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0);
+      iy = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0);
     }
     const len2 = Math.hypot(ix, iy) || 1;
     ix /= len2;
@@ -11503,21 +11629,6 @@ var Hero = class {
     for (const track of Object.values(TRACKS)) for (const [, pose4] of track) posed(pose4, HERO_LOOK);
   }
 };
-function drawHeroPortrait(canvas) {
-  const w = 30, h = 42;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  const img = ctx.createImageData(w, h);
-  const out = new Uint32Array(img.data.buffer);
-  const r = posed(IDLE, HERO_LOOK);
-  for (let i = 0; i < r.n; i++) {
-    const x = 16 + r.xs[i], y = h - 1 + r.ys[i];
-    if (x < 0 || y < 0 || x >= w || y >= h) continue;
-    out[y * w + x] = r.color[i];
-  }
-  ctx.putImageData(img, 0, 0);
-}
 
 // src/enemies.js
 var C2 = {
@@ -11581,36 +11692,36 @@ var Enemy = class {
   get boss() {
     return false;
   }
-  addStatus(g, key2, time) {
-    if (key2 === "freeze") {
+  addStatus(g, key, time) {
+    if (key === "freeze") {
       this.freeze = Math.max(this.freeze, time);
       this.state = "chase";
       this.timer = 0;
-    } else if (key2 === "stun") {
+    } else if (key === "stun") {
       this.stun = Math.max(this.stun, time);
       this.state = "chase";
       this.timer = 0;
-    } else if (key2 === "burn") {
+    } else if (key === "burn") {
       this.burn = Math.max(this.burn, time);
       this.burnDmg = Math.max(this.burnDmg, 3);
-    } else if (key2 === "slow") this.slow = Math.max(this.slow, time);
-    if (!this.auras[key2]) {
-      const mod = key2 === "freeze" ? g.fx.frozen : key2 === "stun" ? g.fx.stunned : key2 === "burn" ? g.fx.burning : null;
+    } else if (key === "slow") this.slow = Math.max(this.slow, time);
+    if (!this.auras[key]) {
+      const mod = key === "freeze" ? g.fx.frozen : key === "stun" ? g.fx.stunned : key === "burn" ? g.fx.burning : null;
       if (mod) {
         const inst = createFx(mod, { x: this.x, y: this.y, seed: this.seed + 11 });
         inst.stopT = 0;
-        this.auras[key2] = inst;
+        this.auras[key] = inst;
       }
     }
   }
   updateAuras(g, dt) {
-    for (const [key2, inst] of Object.entries(this.auras)) {
-      const live = key2 === "freeze" ? this.freeze > 0 : key2 === "stun" ? this.stun > 0 : key2 === "burn" ? this.burn > 0 : this.slow > 0;
+    for (const [key, inst] of Object.entries(this.auras)) {
+      const live = key === "freeze" ? this.freeze > 0 : key === "stun" ? this.stun > 0 : key === "burn" ? this.burn > 0 : this.slow > 0;
       inst.options.x = this.x;
       inst.options.y = this.y;
       if (!live) inst.stop();
       inst.update(dt);
-      if (inst.done()) delete this.auras[key2];
+      if (inst.done()) delete this.auras[key];
     }
   }
   update(g, dt) {
@@ -11841,6 +11952,7 @@ var Boss = class {
     this.typeId = "boss";
     this.type = t;
     this.name = "\u51A5\u6CB3\u5B88\u536B \xB7 \u963F\u523B\u620E";
+    this.nameEn = "THE WARDEN";
     this.x = x;
     this.y = y;
     this.maxHp = t.hp;
@@ -11880,28 +11992,28 @@ var Boss = class {
   startAnim(track, loop = false) {
     this.anim = { t: 0, track, loop, dur: track[track.length - 1][0] };
   }
-  addStatus(g, key2, time) {
-    if (key2 === "freeze") {
+  addStatus(g, key, time) {
+    if (key === "freeze") {
       this.freeze = Math.max(this.freeze, time * 0.45);
       this.slow = Math.max(this.slow, time);
-    } else if (key2 === "stun") this.stun = Math.max(this.stun, time * 0.3);
-    else if (key2 === "burn") {
+    } else if (key === "stun") this.stun = Math.max(this.stun, time * 0.3);
+    else if (key === "burn") {
       this.burn = Math.max(this.burn, time);
       this.burnDmg = Math.max(this.burnDmg, 5);
-    } else if (key2 === "slow") this.slow = Math.max(this.slow, time);
-    if (!this.auras[key2]) {
-      const mod = key2 === "freeze" ? g.fx.frozen : key2 === "stun" ? g.fx.stunned : key2 === "burn" ? g.fx.burning : null;
-      if (mod) this.auras[key2] = createFx(mod, { x: this.x, y: this.y, seed: 19 });
+    } else if (key === "slow") this.slow = Math.max(this.slow, time);
+    if (!this.auras[key]) {
+      const mod = key === "freeze" ? g.fx.frozen : key === "stun" ? g.fx.stunned : key === "burn" ? g.fx.burning : null;
+      if (mod) this.auras[key] = createFx(mod, { x: this.x, y: this.y, seed: 19 });
     }
   }
   updateAuras(g, dt) {
-    for (const [key2, inst] of Object.entries(this.auras)) {
-      const live = key2 === "freeze" ? this.freeze > 0 : key2 === "stun" ? this.stun > 0 : key2 === "burn" ? this.burn > 0 : this.slow > 0;
+    for (const [key, inst] of Object.entries(this.auras)) {
+      const live = key === "freeze" ? this.freeze > 0 : key === "stun" ? this.stun > 0 : key === "burn" ? this.burn > 0 : this.slow > 0;
       inst.options.x = this.x;
       inst.options.y = this.y;
       if (!live) inst.stop();
       inst.update(dt);
-      if (inst.done()) delete this.auras[key2];
+      if (inst.done()) delete this.auras[key];
     }
   }
   update(g, dt) {
@@ -11927,10 +12039,7 @@ var Boss = class {
     }
     if (this.state === "spawn") {
       this.timer -= dt;
-      if (this.timer <= 0) {
-        this.state = "chase";
-        g.ui.showBoss();
-      }
+      if (this.timer <= 0) this.state = "chase";
       return;
     }
     this.x += this.vx * dt;
@@ -12080,7 +12189,7 @@ var Boss = class {
   transition(g, phase) {
     this.phase = phase;
     this.phaseLock = 1.25;
-    g.banner(phase === 2 ? "PHASE II" : "PHASE III", phase === 2 ? "\u5B88\u536B\u8005\u5C55\u5F00\u51A5\u6CB3\u4E4B\u5370" : "\u4F59\u70EC\u6B63\u5728\u541E\u6CA1\u4ED6", "BOSS");
+    g.banner(phase === 2 ? "PHASE II" : "PHASE III", "THE WARDEN", phase === 2 ? "THE RIVER SEAL OPENS" : "ASH CONSUMES HIM");
     g.flashScreen(phase === 2 ? "#c9a8ff" : "#ff9a5c", 0.3);
     g.shake(6, 0.6);
     g.audio.play("phase");
@@ -12112,8 +12221,7 @@ var Boss = class {
     g.bossDefeated = true;
     g.bossRef = null;
     g.hold = 2.4;
-    g.ui.hideBoss();
-    g.banner("GUARDIAN FALLEN", "\u51A5\u6CB3\u5B88\u536B\u5316\u4F5C\u4E86\u7070\u70EC", "BOSS");
+    g.banner("GUARDIAN FALLEN", "THE WARDEN IS ASH", "");
     g.after(0.5, () => {
       for (const e of g.enemies) if (e !== this && !e.dead && !e.boss) e.hurt(g, 9999, { silent: true, crit: false });
     });
@@ -12381,445 +12489,903 @@ function castSkill(g, id) {
   return true;
 }
 
-// ../pixelfx/ui/pixel-ui.js
-var doc = () => globalThis.document;
-function el(tag = "div", className = "", html = "") {
-  const node = doc().createElement(tag);
-  if (className) node.className = className;
-  if (html !== "" && html != null) node.innerHTML = html;
-  return node;
-}
-function key(label, { small = false, ghost = false, className = "" } = {}) {
-  const cls = ["px-key"];
-  if (small) cls.push("px-key--sm");
-  if (ghost) cls.push("px-key--ghost");
-  if (className) cls.push(className);
-  const node = el("kbd", cls.join(" "));
-  node.textContent = label;
-  return node;
-}
-function keys(labels, opts = {}) {
-  const row = el("div", "px-keys");
-  for (const label of labels) row.append(key(label, opts));
-  return row;
-}
-function button({ label = "", sub: sub2 = "", variant = "", action = "", icon: icon2 = "", title = "", iconOnly = false, className = "", type = "button" } = {}) {
-  const cls = ["px-btn"];
-  if (variant) cls.push("px-btn--" + variant);
-  if (iconOnly) cls.push("px-btn--icon");
-  if (className) cls.push(className);
-  const node = el("button", cls.join(" "));
-  node.type = type;
-  if (action) node.dataset.action = action;
-  if (title) node.title = title;
-  if (icon2) {
-    const slot = el("span", "px-btn__icon", icon2);
-    node.append(slot);
-  }
-  if (label) {
-    const text = el("span", "", label);
-    node.append(text);
-  }
-  if (sub2) node.append(el("small", "px-btn__sub", sub2));
-  return node;
-}
-function setBar(node, value, text) {
-  if (!node) return;
-  const fill = node.querySelector(".px-bar__fill");
-  if (fill) fill.style.width = (Math.max(0, Math.min(1, value)) * 100).toFixed(1) + "%";
-  if (text != null) {
-    const label = node.querySelector(".px-bar__text");
-    if (label) label.textContent = text;
-  }
-}
-function skillSlot({ id = "", key: keyLabel = "", glyph: glyph2 = "", name = "", cost = "", accent = "", glow = "", note = "" } = {}) {
-  const node = el("div", "px-skill");
-  if (id) node.dataset.skill = id;
-  if (accent) node.style.setProperty("--px-accent", accent);
-  if (glow) node.style.setProperty("--px-glow", glow);
-  if (note) node.title = note;
-  const k = key(keyLabel, { small: true, className: "px-skill__key" });
-  const g = el("span", "px-skill__glyph", glyph2);
-  const n = el("span", "px-skill__name");
-  n.textContent = name;
-  const c = el("span", "px-skill__cost");
-  c.textContent = cost ? String(cost) : "";
-  const cd = el("span", "px-skill__cd");
-  const num = el("span", "px-skill__num");
-  node.append(k, g, n, c, cd, num);
-  node.setAttribute("role", "img");
-  node.setAttribute("aria-label", `${keyLabel} ${name}${cost ? "\uFF0C\u6D88\u8017 " + cost : ""}`);
-  return node;
-}
-function setSkill(slot, { left = 0, total = 1, mp = Infinity, cost = 0 } = {}) {
-  if (!slot) return null;
-  const cooling = left > 1e-3;
-  const poor = mp < cost;
-  const ready = !cooling && !poor;
-  slot.classList.toggle("is-cooling", cooling);
-  slot.classList.toggle("is-ready", ready);
-  slot.classList.toggle("is-nomana", poor);
-  slot.style.setProperty("--px-cd", cooling ? Math.min(100, left / total * 100).toFixed(1) + "%" : "0%");
-  const num = slot.querySelector(".px-skill__num");
-  if (num) num.textContent = cooling ? left >= 1 ? Math.ceil(left) : left.toFixed(1) : "";
-  return { cooling, poor, ready };
-}
-function pulseSkill(slot, ms = 280) {
-  if (!slot) return;
-  slot.classList.remove("is-pulse");
-  void slot.offsetWidth;
-  slot.classList.add("is-pulse");
-  clearTimeout(slot.__pxPulse);
-  slot.__pxPulse = setTimeout(() => slot.classList.remove("is-pulse"), ms);
-}
-function denySkill(slot, ms = 240) {
-  if (!slot) return;
-  slot.classList.remove("is-deny");
-  void slot.offsetWidth;
-  slot.classList.add("is-deny");
-  clearTimeout(slot.__pxDeny);
-  slot.__pxDeny = setTimeout(() => slot.classList.remove("is-deny"), ms);
-}
-function setPips(node, active) {
-  if (!node) return;
-  [...node.children].forEach((c, i) => c.classList.toggle("is-on", i === active));
-}
-function stat(value, label) {
-  const node = el("div", "px-stat");
-  node.append(el("b", "", String(value)), el("span", "", label));
-  return node;
-}
-function statGrid(items) {
-  const node = el("div", "px-stat-grid");
-  for (const item of items) node.append(stat(item.value, item.label));
-  return node;
-}
-function controls(rows) {
-  const node = el("div", "px-controls");
-  for (const row of rows) {
-    const group = el("div", "px-control-group");
-    group.append(el("div", "px-label", row.label));
-    if (typeof row.content === "string") group.append(el("div", "px-keys", row.content));
-    else group.append(row.content);
-    node.append(group);
-  }
-  return node;
-}
-function skillList(items) {
-  const node = el("div", "px-skill-list");
-  for (const item of items) {
-    const row = el("span");
-    row.append(key(item.key, { small: true }), el("span", "", item.name));
-    node.append(row);
-  }
-  return node;
-}
-function modal({ kicker = "", title = "", latin = "", sub: sub2 = "", body: body2 = null, footer = null, note = "", wide = false, titleScreen = false, className = "", headHtml = "" } = {}) {
-  const cls = ["px-modal__card", "px-panel", "px-panel--framed"];
-  if (wide) cls.push("px-modal__card--wide");
-  if (titleScreen) cls.push("px-modal__card--title");
-  if (className) cls.push(className);
-  const card = el("div", cls.join(" "));
-  const head4 = el("div", "px-modal__head");
-  if (kicker) head4.append(el("div", "px-kicker", kicker));
-  if (title) head4.append(el("h1", titleScreen ? "px-display px-modal__title" : "px-title px-modal__title px-modal__title--modal", title));
-  if (latin) head4.append(el("div", "px-latin px-modal__latin", latin));
-  if (sub2) head4.append(el("p", "px-sub px-modal__sub", sub2));
-  if (headHtml) head4.append(el("div", "px-modal__head-extra", headHtml));
-  card.append(head4);
-  if (body2 != null) {
-    const bodyNode = el("div", "px-modal__body");
-    if (typeof body2 === "string") bodyNode.innerHTML = body2;
-    else bodyNode.append(body2);
-    card.append(bodyNode);
-  }
-  if (footer != null) {
-    const foot = el("div", "px-modal__foot");
-    if (typeof footer === "string") foot.innerHTML = footer;
-    else if (Array.isArray(footer)) for (const n of footer) foot.append(n);
-    else foot.append(footer);
-    card.append(foot);
-  }
-  if (note) card.append(el("div", "px-modal__note", note));
-  return card;
-}
-var icons = {
-  sound: `<svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="1" y="6" width="3" height="4"/><rect x="4" y="4" width="2" height="8"/><rect x="6" y="2" width="2" height="12"/><rect x="9" y="4" width="1" height="8"/><rect x="11" y="2" width="1" height="12"/><rect x="13" y="5" width="1" height="6"/></svg>`,
-  muted: `<svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="1" y="6" width="3" height="4"/><rect x="4" y="4" width="2" height="8"/><rect x="6" y="2" width="2" height="12"/><rect x="9" y="4" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="11" y="6" width="1" height="4"/><rect x="10" y="10" width="1" height="1"/><rect x="9" y="11" width="1" height="1"/><rect x="12" y="4" width="1" height="1"/><rect x="13" y="5" width="1" height="1"/><rect x="12" y="10" width="1" height="1"/><rect x="13" y="9" width="1" height="1"/></svg>`,
-  enter: `<svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="2" y="2" width="12" height="1"/><rect x="2" y="2" width="1" height="4"/><rect x="13" y="2" width="1" height="4"/><rect x="4" y="6" width="8" height="1"/><rect x="8" y="5" width="1" height="6"/><rect x="5" y="9" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/><rect x="7" y="11" width="1" height="2"/><rect x="8" y="12" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/></svg>`
+// ../pixelfx/src/fx/ui/panel.js
+var meta41 = {
+  name: "HUD panel",
+  desc: "A reusable pixel HUD plate: dark rounded body, lit rim, shaded base, a thin gold inner frame and two corner brackets. Sized from options, it backs bars, hotbars and dialog cards.",
+  tags: ["ui", "panel", "frame", "hud", "plate", "loop"],
+  size: [340, 100],
+  origin: [170, 50],
+  duration: 2.4,
+  loop: true,
+  fps: 30,
+  bg: "dark",
+  options: { width: 320, height: 60, title: "", palette: UI_GOLD, ornament: true, shine: true, seed: 1 }
 };
+function draw20(p, t, o) {
+  const G3 = fit(o.palette ?? UI_GOLD, 8), w = clamp(Math.round(o.width ?? 320), 8, 338), h = clamp(Math.round(o.height ?? 60), 8, 98);
+  const x = -w / 2, y = -h / 2;
+  const sh = o.shine === false ? null : t / meta41.duration % 1 * (w + 40) - 20 - w / 2;
+  panel(p, x, y, w, h, UI_INK, { r: Math.min(5, Math.floor(h / 4)), shine: sh });
+  p.rect(x + 2, y + 2, w - 4, 1, G3[3]);
+  p.rect(x + 2, y + h - 3, w - 4, 1, UI_INK.low);
+  const L4 = Math.min(7, Math.floor(w / 4));
+  p.rect(x + 3, y + 3, L4, 1, G3[2]);
+  p.rect(x + 3, y + 3, 1, L4, G3[2]);
+  p.rect(x + w - 3 - L4, y + 3, L4, 1, G3[2]);
+  p.rect(x + w - 4, y + 3, 1, L4, G3[2]);
+  p.rect(x + 3, y + h - 4, L4, 1, G3[2]);
+  p.rect(x + 3, y + h - 3 - L4, 1, L4, G3[2]);
+  p.rect(x + w - 3 - L4, y + h - 4, L4, 1, G3[2]);
+  p.rect(x + w - 4, y + h - 3 - L4, 1, L4, G3[2]);
+  if (o.ornament) {
+    const cx = 0, cy = y + 3;
+    p.px(cx, cy - 1, G3[5]);
+    p.px(cx, cy + 1, G3[5]);
+    p.px(cx - 1, cy, G3[4]);
+    p.px(cx + 1, cy, G3[4]);
+    p.px(cx, cy, G3[7]);
+    p.px(cx - 2, cy, G3[2]);
+    p.px(cx + 2, cy, G3[2]);
+  }
+  if (o.title) {
+    p.text(o.title, x + 8, y + 6, G3[6], { outline: UI_INK.outline });
+  }
+  p.glow(0, y + 2, w * 0.45, G3[3], 0.035);
+}
+
+// ../pixelfx/src/fx/ui/status-bar.js
+var meta42 = {
+  name: "HUD status bar",
+  desc: "A segmented HUD bar: dark outline, hard ramp fill, lit rim, cell dividers, white-hot leading edge. Label and value sit inside; tone picks the hp, mp, xp, boss or gold ramp.",
+  tags: ["ui", "bar", "hud", "health", "mana", "xp", "boss", "loop"],
+  size: [320, 24],
+  origin: [160, 12],
+  duration: 2.4,
+  loop: true,
+  fps: 30,
+  bg: "dark",
+  options: {
+    label: "HP",
+    value: 0.72,
+    text: "72 / 100",
+    tone: "hp",
+    width: 130,
+    height: 9,
+    cells: 10,
+    seed: 3
+  }
+};
+var toneOf = (o) => o.palette ? fit(o.palette, 8) : fit(UI_TONES[o.tone] ?? UI_TONES.hp, 8);
+function draw21(p, t, o) {
+  const C5 = toneOf(o), w = clamp(Math.round(o.width), 12, 318), h = clamp(Math.round(o.height), 4, 18);
+  const x = -w / 2, y = -h / 2;
+  bar(p, x, y, w, h, o.value, C5, { cells: o.cells });
+  const fw = Math.round(w * clamp(o.value, 0, 1));
+  if (fw > 8) {
+    const u = t / meta42.duration % 1, gx = x + 2 + Math.round((fw - 4) * u);
+    p.rect(gx, y + 1, 1, h - 2, C5[7], 0.55);
+    p.glow(gx, y + h / 2, 5, C5[5], 0.08);
+  }
+  const ty = Math.round(y + (h - 5) / 2);
+  if (o.label) p.text(o.label, x + 2, ty, C5[6], { outline: UI_INK.outline });
+  if (o.text) p.text(o.text, x + w - 2, ty, C5[7], { align: "right", outline: UI_INK.outline });
+  if (!o.value && !o.label && !o.text) p.text("EMPTY", 0, ty, hex("#8a8098"), { align: "center" });
+}
+
+// ../pixelfx/src/fx/ui/skill-slot.js
+var meta43 = {
+  name: "HUD skill slot",
+  desc: "A pixel hotbar slot: HUD plate, gold keycap, 10x10 spell icon, name, dithered cooldown curtain and a no-mana state. One shared frame; only the icon palette changes.",
+  tags: ["ui", "skill", "hotbar", "cooldown", "hud", "loop"],
+  size: [52, 60],
+  origin: [26, 30],
+  duration: 2.4,
+  loop: true,
+  fps: 30,
+  bg: "dark",
+  options: {
+    key: "J",
+    name: "SLASH",
+    icon: "slash",
+    cooldown: 0,
+    cdText: "",
+    mana: true,
+    flash: false,
+    deny: false,
+    width: 40,
+    height: 46,
+    seed: 2
+  }
+};
+var ICONS = {
+  slash: [
+    ".........#",
+    "........##",
+    ".......##.",
+    "......##..",
+    ".....##...",
+    "....##....",
+    "...##.....",
+    "..##......",
+    ".##.......",
+    "#........."
+  ],
+  fire: [
+    "....#.....",
+    "...###....",
+    "..##o##...",
+    ".########.",
+    ".########.",
+    "..######..",
+    "...####...",
+    "....##....",
+    "..........",
+    ".........."
+  ],
+  frost: [
+    "....#.....",
+    "..#.#.#...",
+    "...###....",
+    ".#######..",
+    ".#######..",
+    "...###....",
+    "..#.#.#...",
+    "....#.....",
+    "..........",
+    ".........."
+  ],
+  bolt: [
+    "....##....",
+    "...##.....",
+    "..##......",
+    ".#####....",
+    "...##.....",
+    "..##......",
+    ".##.......",
+    "##........",
+    "..........",
+    ".........."
+  ],
+  mend: [
+    "....##....",
+    "....##....",
+    "....##....",
+    "##########",
+    "##########",
+    "....##....",
+    "....##....",
+    "....##....",
+    "..........",
+    ".........."
+  ],
+  meteor: [
+    "........#.",
+    ".......###",
+    "......####",
+    ".....####.",
+    "....####..",
+    "...###....",
+    "..##......",
+    ".#........",
+    "..........",
+    ".........."
+  ]
+};
+var PALS = {
+  slash: { "#": "#fff4be", g: "#ffd36a", o: "#ff9a4a" },
+  fire: { "#": "#fff3a6", o: "#ff7a3c", r: "#e0481c" },
+  frost: { "#": "#dcfbff", c: "#8fdcff", b: "#3a8bd8" },
+  bolt: { "#": "#ffffff", v: "#d8c8ff", p: "#9a6cff" },
+  mend: { "#": "#f0ffd0", g: "#a8e09a", d: "#6aa85a" },
+  meteor: { "#": "#fff3a6", o: "#ffb05a", r: "#e0481c" }
+};
+function draw22(p, t, o) {
+  const w = clamp(Math.round(o.width), 28, 50), h = clamp(Math.round(o.height), 34, 58);
+  const x = -w / 2, y = -h / 2;
+  const G3 = fit(UI_GOLD, 8), rows = ICONS[o.icon] ?? ICONS.slash, pal = PALS[o.icon] ?? PALS.slash;
+  const accent = Object.values(pal)[0] ?? G3[6];
+  const cd = clamp(o.cooldown ?? 0, 0, 1);
+  panel(p, x, y, w, h, UI_INK, { r: 3 });
+  p.rect(x + 2, y + 2, w - 4, 1, G3[3]);
+  p.rect(x + 2, y + h - 3, w - 4, 1, UI_INK.low);
+  const ks = Math.min(11, Math.floor(w / 3));
+  panel(p, x + 2, y + 2, ks, ks, { outline: G3[0], rim: G3[6], top: G3[3], body: G3[2], low: G3[1] }, { r: 2 });
+  p.text(o.key ?? "", x + 2 + ks / 2, y + 3, UI_INK.outline, { align: "center" });
+  const ix = Math.round(-5), iy = Math.round(-6);
+  p.sprite(rows, Object.fromEntries(Object.keys(pal).map((k) => [k, UI_INK.outline])), ix + 1, iy + 1);
+  p.sprite(rows, pal, ix, iy);
+  p.glow(0, -2, 9, hex(accent), 0.14);
+  const nameColor = o.mana === false ? hex("#8a6070") : cd > 1e-3 ? hex("#8d829a") : G3[6];
+  p.text(o.name ?? "", 0, y + h - 8, nameColor, { align: "center", outline: UI_INK.outline });
+  if (cd <= 1e-3 && o.mana !== false) {
+    const u = t / meta43.duration % 1;
+    if (u < 0.22) {
+      const sx = x + 2 + Math.round((w - 4) * (u / 0.22));
+      p.rect(sx, y + 2, 1, h - 4, hex("#fff4c8"), 0.6);
+    }
+  }
+  if (cd > 1e-3) {
+    const ch = Math.max(1, Math.round((h - 2) * cd));
+    p.rect(x + 1, y + 1, w - 2, ch, UI_INK.outline, 0.72);
+    p.rect(x + 1, y + 1 + ch, w - 2, 1, G3[3]);
+    if (o.cdText) p.text(String(o.cdText), 0, 2, G3[7], { font: "big", align: "center", outline: UI_INK.outline });
+  }
+  if (o.flash) {
+    p.rect(x + 1, y + 1, w - 2, 1, hex("#ffffff"));
+    p.rect(x + 1, y + h - 2, w - 2, 1, hex("#fff4c8"));
+    p.glow(0, 0, 18, G3[5], 0.18);
+  }
+  if (o.deny) {
+    p.rect(x + 1, y + 1, w - 2, 1, hex("#ff5a4a"));
+    p.rect(x + 1, y + h - 2, w - 2, 1, hex("#ff5a4a"));
+  }
+  if (o.mana === false) {
+    p.rect(x + 1, y + 1, w - 2, 1, hex("#ff5a4a"));
+    p.rect(x + 1, y + h - 2, w - 2, 1, hex("#ff5a4a"));
+    p.rect(x + 1, y + 1, 1, h - 2, hex("#ff5a4a"));
+    p.rect(x + w - 2, y + 1, 1, h - 2, hex("#ff5a4a"));
+    p.px(x + w - 4, y + 4, hex("#ff8a7a"));
+    p.px(x + w - 5, y + 4, hex("#ff8a7a"));
+  }
+}
+
+// ../pixelfx/src/fx/ui/dialog.js
+var meta44 = {
+  name: "HUD dialog",
+  desc: "A pixel dialog card: dark plate, gold frame, corner brackets, a big pixel-font title, divider, small lines and a blinking prompt. One card for title, pause, defeat, victory.",
+  tags: ["ui", "dialog", "modal", "menu", "title", "loop"],
+  size: [300, 190],
+  origin: [150, 95],
+  duration: 2.4,
+  loop: true,
+  fps: 30,
+  bg: "dark",
+  options: {
+    kicker: "PAUSED",
+    title: "PAUSED",
+    subtitle: "THE EMBERS REST",
+    lines: ["KILLS 12", "LEVEL 3", "TIME 2:41"],
+    prompt: "ESC RESUME",
+    width: 250,
+    height: 150,
+    tone: "gold",
+    seed: 4
+  }
+};
+function draw23(p, t, o) {
+  const w = clamp(Math.round(o.width ?? 250), 160, 298), h = clamp(Math.round(o.height ?? 150), 100, 188);
+  const x = -w / 2, y = -h / 2;
+  const G3 = fit(o.tone === "blood" ? UI_TONES.hp : UI_GOLD, 8);
+  const sh = t / meta44.duration % 1 * (w + 40) - w / 2 - 20;
+  panel(p, x, y, w, h, UI_INK, { r: 5, shine: sh });
+  p.rect(x + 3, y + 3, w - 6, 1, G3[3]);
+  p.rect(x + 3, y + h - 4, w - 6, 1, UI_INK.low);
+  const L4 = 8;
+  for (const [cx, cy, sx, sy] of [[x + 4, y + 4, 1, 1], [x + w - 5, y + 4, -1, 1], [x + 4, y + h - 5, 1, -1], [x + w - 5, y + h - 5, -1, -1]]) {
+    p.rect(cx, cy, L4 * sx, 1, G3[2]);
+    p.rect(cx, cy, 1, L4 * sy, G3[2]);
+  }
+  const oy = y + 2;
+  p.px(0, oy - 1, G3[5]);
+  p.px(0, oy + 1, G3[5]);
+  p.px(-1, oy, G3[4]);
+  p.px(1, oy, G3[4]);
+  p.px(0, oy, G3[7]);
+  p.px(-2, oy, G3[2]);
+  p.px(2, oy, G3[2]);
+  if (o.kicker) p.text(o.kicker, 0, y + 14, G3[5], { align: "center", outline: UI_INK.outline });
+  const word = spell(o.title ?? "", "big");
+  const s = word.w * 2 <= w - 28 ? 2 : 1;
+  const tw = word.w * s, titleY = y + 24;
+  const items = word.letters.filter((Lt) => Lt.g).map((Lt) => ({
+    g: Lt.g,
+    x: -tw / 2 + Lt.x * s,
+    y: titleY,
+    sx: s,
+    sy: s
+  }));
+  drawWord(p, items, {
+    fill: [G3[3], G3[4], G3[5], G3[6]],
+    edge: G3[7],
+    under: G3[2],
+    outline: UI_INK.outline,
+    shadow: UI_INK.low,
+    shine: t % 2.4 < 0.55 ? -w / 2 + t % 2.4 / 0.55 * (w + 20) : null,
+    shineY: titleY,
+    glint: G3[7]
+  });
+  p.glow(0, titleY + 7, tw * 0.55, G3[4], 0.1);
+  const dy = titleY + 22;
+  p.rect(x + 16, dy, w - 32, 1, G3[3]);
+  p.px(0, dy - 1, G3[6]);
+  p.px(-1, dy, G3[5]);
+  p.px(1, dy, G3[5]);
+  p.px(0, dy, G3[7]);
+  if (o.subtitle) p.text(o.subtitle, 0, dy + 7, G3[6], { align: "center", outline: UI_INK.outline });
+  const lines = Array.isArray(o.lines) ? o.lines : [];
+  lines.forEach((line, i) => p.text(String(line), 0, dy + 18 + i * 8, hex("#d8d4e6"), { align: "center", outline: UI_INK.outline }));
+  if (o.prompt) {
+    const a = 0.5 + 0.5 * Math.abs(Math.sin(t * 3.2));
+    p.text(o.prompt, 0, y + h - 16, G3[6], { align: "center", outline: UI_INK.outline, a, font: "big" });
+  }
+  p.glow(0, y + 1, w * 0.4, G3[3], 0.035);
+}
+
+// ../pixelfx/src/fx/ui/banner.js
+var banner_exports = {};
+__export(banner_exports, {
+  draw: () => draw24,
+  meta: () => meta45
+});
+var meta45 = {
+  name: "HUD banner",
+  desc: "A stage or wave banner: a dark plate with a gold rim, a small kicker, a big pixel-font title and a sub-line. It slides in with a shine, holds, then slides away and ends empty.",
+  tags: ["ui", "banner", "stage", "wave", "boss", "one-shot"],
+  size: [240, 70],
+  origin: [120, 35],
+  duration: 2.4,
+  loop: false,
+  fps: 30,
+  bg: "dark",
+  options: { kicker: "STAGE I", text: "MOSSY RUINS", sub: "THE OLD SANCTUM", seed: 5 }
+};
+function draw24(p, t, o) {
+  const ain = seg(t, 0, 0.16), aout = seg(t, 2.12, 2.3);
+  const a = Math.min(ain, 1 - aout);
+  if (a <= 0.01) return;
+  const G3 = fit(UI_GOLD, 8);
+  const x = Math.round((1 - ease.outCubic(ain)) * 26 - ease.inCubic(aout) * 26);
+  const y = 0;
+  const sh = seg(t, 0.3, 0.8) > 0 && seg(t, 0.3, 0.8) < 1 ? -90 + 180 * ease.inOutSine(seg(t, 0.3, 0.8)) + x : null;
+  panel(p, x - 104, y - 13, 208, 30, UI_INK, { r: 4, a, shine: sh });
+  p.rect(x - 101, y - 10, 202, 1, G3[3], a);
+  p.rect(x - 101, y + 14, 202, 1, UI_INK.low, a);
+  p.px(x - 100, y - 4, G3[4], a);
+  p.px(x + 100, y - 4, G3[4], a);
+  if (o.kicker) p.text(o.kicker, x, y - 22, G3[5], { align: "center", outline: UI_INK.outline, a });
+  const word = spell(o.text ?? "", "big");
+  const s = word.w * 2 <= 176 ? 2 : 1, tw = word.w * s;
+  const items = word.letters.filter((L4) => L4.g).map((L4) => ({
+    g: L4.g,
+    x: x - tw / 2 + L4.x * s,
+    y: y - 7,
+    sx: s,
+    sy: s,
+    a
+  }));
+  drawWord(p, items, {
+    fill: [G3[3], G3[4], G3[5], G3[6]],
+    edge: G3[7],
+    under: G3[2],
+    outline: UI_INK.outline,
+    shadow: UI_INK.low,
+    shine: sh === null ? null : sh,
+    shineY: y - 8,
+    glint: G3[7]
+  });
+  if (o.sub) p.text(o.sub, x, y + 18, hex("#c8c0d8"), { align: "center", outline: UI_INK.outline, a });
+  p.glow(x, y - 12, 70, G3[4], 0.08 * a);
+}
+
+// ../pixelfx/src/fx/ui/toast.js
+var toast_exports = {};
+__export(toast_exports, {
+  draw: () => draw25,
+  meta: () => meta46
+});
+var meta46 = {
+  name: "HUD toast",
+  desc: "A small pickup or status toast: a dark pixel plate, a gold rim, one mini-font line. It slides in, holds, slides out and ends empty.",
+  tags: ["ui", "toast", "pickup", "status", "one-shot"],
+  size: [180, 30],
+  origin: [90, 15],
+  duration: 1.7,
+  loop: false,
+  fps: 30,
+  bg: "dark",
+  options: { text: "HP +18", tone: "gold", seed: 6 }
+};
+function draw25(p, t, o) {
+  const ain = seg(t, 0, 0.12), aout = seg(t, 1.42, 1.62);
+  const a = Math.min(ain, 1 - aout);
+  if (a <= 0.01) return;
+  const G3 = UI_TONES[o.tone] ? UI_TONES[o.tone].map((c) => hex(c)) : UI_GOLD.map((c) => hex(c));
+  const x = Math.round((1 - ease.outCubic(ain)) * 20 + ease.inCubic(aout) * 20), y = 0;
+  panel(p, x - 70, y - 9, 140, 18, UI_INK, { r: 3, a });
+  p.rect(x - 67, y - 7, 134, 1, G3[4], a);
+  p.px(x - 64, y, G3[6], a);
+  p.px(x - 63, y, G3[5], a);
+  p.text(o.text ?? "", x + 2, y - 2, G3[7], { align: "center", outline: UI_INK.outline, a });
+  p.glow(x, y, 50, G3[4], 0.08 * a);
+}
+
+// ../pixelfx/src/fx/ui/quest-complete.js
+var quest_complete_exports = {};
+__export(quest_complete_exports, {
+  create: () => create22,
+  meta: () => meta47
+});
+var meta47 = {
+  name: "Quest complete",
+  desc: "A stitched ribbon unrolls from the middle, QUEST COMPLETE types on letter by letter, a gold seal stamps down and ticks, stars pop; then it all rolls away.",
+  tags: ["ui", "quest", "banner", "reward", "text", "one-shot"],
+  size: [204, 92],
+  origin: [102, 46],
+  duration: 2.6,
+  loop: false,
+  fps: 30,
+  bg: "dark",
+  options: {
+    palette: ["#2a1405", "#5c3008", "#9a5a0e", "#d48e18", "#f5b92c", "#ffde5e", "#fff4bc", "#ffffff"],
+    ribbon: ["#1e0608", "#45101a", "#7a1a26", "#ad2632", "#d8433f", "#f27a5e", "#ffb79a"],
+    text: "QUEST COMPLETE",
+    seed: 8
+  }
+};
+var L3 = 66;
+var BH2 = 8;
+var OPEN3 = 0.32;
+var TYPE = 0.2;
+var STEP = 0.036;
+var STAMP = 0.95;
+var SX = 64;
+var SY5 = 4;
+var POPSEAL = 2;
+var ROLL2 = 2.08;
+function ribbon(p, Rb, G3, l, tails, t) {
+  if (l < 1) return;
+  if (tails > 0.02)
+    for (const s of [-1, 1]) {
+      const drop = 6 * tails, x0 = s * (l - 8), x1 = s * (l + 16 * tails);
+      p.shade(Math.min(x0, x1) - 1, -BH2 + drop - 1, Math.max(x0, x1) + 1, BH2 + drop + 1, (x, y) => {
+        const u = (x - x0) / (x1 - x0), v = y - drop;
+        if (u < 0 || u > 1 || Math.abs(v) > BH2) return;
+        if (u > 1 - 0.3 * (BH2 - Math.abs(v)) / BH2) return;
+        const e = Math.min(BH2 - Math.abs(v), (1 - u) * (x1 - x0) * s);
+        if (e < 1 || u < 0.02) return Rb[0];
+        return v < -BH2 + 2 ? Rb[3] : v < 0 ? Rb[2] : Rb[1];
+      });
+      p.tri(s * (l - 8), BH2, s * (l - 1), BH2, s * (l - 8), BH2 + drop, Rb[0]);
+    }
+  p.shade(-l - 1, -BH2 - 1, l + 1, BH2 + 1, (x, y) => {
+    const ax = Math.abs(x), v = y;
+    if (ax > l || Math.abs(v) > BH2) return;
+    const e = Math.min(l - ax, BH2 - Math.abs(v));
+    if (e < 1) return Rb[0];
+    if (v < -BH2 + 2) return Rb[5];
+    if (v > BH2 - 2) return Rb[1];
+    if ((Math.abs(v + BH2 - 2.5) < 0.5 || Math.abs(v - BH2 + 3.5) < 0.5) && Math.floor(x + 0.5) % 3 !== 0 && ax < l - 3) return G3[3];
+    return v < -1 ? Rb[4] : Rb[3];
+  });
+  if (tails < 0.02)
+    for (const s of [-1, 1]) {
+      const x = s * l;
+      p.rect(Math.round(x) - 2, -BH2 - 2, 4, BH2 * 2 + 4, Rb[0]);
+      p.rect(Math.round(x) - 1, -BH2 - 1, 1, BH2 * 2 + 2, Rb[4]);
+      p.rect(Math.round(x), -BH2 - 1, 1, BH2 * 2 + 2, Rb[2]);
+      p.px(Math.round(x) - 1, -BH2 - 1, Rb[6]);
+    }
+}
+function seal(p, G3, x, y, r, sx, sy, white, k) {
+  const M2 = r * 1.25 + 2;
+  p.shade(x - M2 * sx, y - M2 * sy, x + M2 * sx, y + M2 * sy, (px, py) => {
+    const dx = (px - x) / sx, dy = (py - y) / sy, d = Math.hypot(dx, dy), an = Math.atan2(dy, dx), edge = r * (1 + 0.09 * Math.cos(an * 14));
+    if (d > edge) return;
+    if (white) return edge - d < 1 ? G3[5] : WHITE;
+    if (edge - d < 1) return G3[0];
+    const l = -(dx * 0.6 + dy * 0.8) / r;
+    if (edge - d < 3) return l > 0.3 ? G3[6] : l > -0.3 ? G3[5] : G3[3];
+    if (Math.abs(d - r * 0.66) < 0.5) return l > 0 ? G3[3] : G3[2];
+    return l > 0.45 ? G3[7] : l > 0.1 ? G3[6] : l > -0.35 ? G3[5] : G3[4];
+  });
+  if (white || k <= 0) return;
+  const pts = [[-5, 0], [-1.5, 3.5], [5.5, -4.5]].map(([a, b]) => [x + a * sx, y + b * sy]);
+  const len1 = Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]), len2 = Math.hypot(pts[2][0] - pts[1][0], pts[2][1] - pts[1][1]);
+  const done = k * (len1 + len2), segs = [[pts[0], pts[1], Math.min(1, done / len1)], [pts[1], pts[2], clamp((done - len1) / len2)]];
+  for (const [w, c] of [[4.2, G3[0]], [2.4, WHITE]])
+    for (const [a, b, u] of segs) if (u > 0) p.beam(a[0], a[1], a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, w, c);
+}
+function create22(o) {
+  const G3 = fit(o.palette, 8), Rb = fit(o.ribbon, 7), R4 = new Rng(o.seed);
+  const ps = new Particles({ rng: R4, sparks: [G3[7], G3[6], G3[5], G3[3]] }), lights = new Lights();
+  const word = spell(o.text, "mini"), TS = 2, TW2 = word.w * TS, TX = -TW2 / 2 - 4, TY2 = -5;
+  const glyphs = word.letters.filter((Lt) => Lt.g);
+  const sats = Array.from({ length: 7 }, (_, i) => ({ x: (i / 6 - 0.5) * 140 + R4.range(-6, 6), y: (i % 2 ? 1 : -1) * R4.range(15, 22), t0: STAMP + 0.12 + i * 0.12 + R4.range(0, 0.04), dur: R4.range(0.3, 0.45), L: R4.range(3, 6) }));
+  let t = 0, stamped = false, popped = false;
+  const end = meta47.duration - 0.05;
+  return {
+    update(dt) {
+      t += dt;
+      if (!stamped && t >= STAMP) {
+        stamped = true;
+        lights.add(SX, SY5, 40, G3[5], 0.7, 0.35);
+        lights.add(SX, SY5, 18, WHITE, 0.7, 0.1);
+        for (let i = 0; i < 12; i++) {
+          const an = i / 12 * TAU + R4.range(-0.2, 0.2), sp = R4.range(40, 80) * (Math.cos(an) > 0 ? 0.6 : 1);
+          ps.spawn(P.STAR, SX + Math.cos(an) * 11, SY5 + Math.sin(an) * 11, Math.cos(an) * sp, Math.sin(an) * sp * 0.7, R4.range(0.25, 0.45), R4.pick([G3[7], G3[6], G3[5]]), i % 3 ? 0.6 : R4.range(1.2, 1.8));
+        }
+      }
+      if (t > STAMP && t < POPSEAL && R4.chance(0.08)) ps.spawn(P.STAR, R4.range(-L3, L3), R4.range(-BH2, BH2), R4.range(-5, 5), -R4.range(8, 20), Math.min(R4.range(0.4, 0.8), end - t), R4.pick([G3[6], G3[5]]), 0.6);
+      if (!popped && t >= POPSEAL + 0.05) {
+        popped = true;
+        lights.add(SX, SY5, 30, G3[6], 0.6, 0.2);
+        for (let i = 0; i < 8; i++) {
+          const an = R4.range(0, TAU), sp = R4.range(40, 90);
+          ps.spawn(P.STAR, SX + Math.cos(an) * 6, SY5 + Math.sin(an) * 6, Math.cos(an) * sp, Math.sin(an) * sp, Math.min(R4.range(0.25, 0.4), end - t), R4.pick([G3[7], G3[6]]), i % 2 ? 0.6 : 1.5);
+        }
+      }
+      ps.update(dt);
+      lights.update(dt);
+    },
+    draw(p) {
+      const [jx, jy] = shake(t, 2, STAMP, 0.18, o.seed);
+      const l = L3 * (t < ROLL2 ? ease.outCubic(seg(t, 0, OPEN3)) : 1 - ease.inCubic(seg(t, ROLL2, ROLL2 + 0.26)));
+      const tails = seg(t, OPEN3 - 0.02, OPEN3 + 0.12) * (t < ROLL2 ? 1 : 0);
+      const sh = seg(t, 1.2, 1.5), shine = sh > 0 && sh < 1 ? -L3 - 10 + (2 * L3 + 20) * sh : null;
+      ribbon(p, Rb, G3, l, ease.outBack(tails, 2), t);
+      if (shine !== null)
+        for (let y = -BH2 + 1; y < BH2; y++) {
+          const x = shine + (y + BH2) * 0.6;
+          if (Math.abs(x) < l - 2) p.px(x, y, Rb[6]), p.px(x + 1, y, Rb[5]);
+        }
+      const items = [];
+      glyphs.forEach((Lt, i) => {
+        const u = t - (TYPE + i * STEP), x = TX + Lt.x * TS + jx;
+        if (u < 0 || Math.abs(x + Lt.w) > l - 3) return;
+        const s = u < 0.035 ? 2.6 : TS;
+        items.push({ g: Lt.g, x: x - (s - TS) * Lt.w / 2, y: TY2 + jy - (s - TS) * 5 / 2, sx: s, sy: s, flash: u < 0.07 ? 1 : 0 });
+      });
+      drawWord(p, items, { fill: [G3[4], G3[5], G3[6], G3[7]], edge: WHITE, under: G3[3], outline: Rb[0], shadow: Rb[1] });
+      const dk = seg(t, STAMP - 0.12, STAMP), pk = t - POPSEAL;
+      if (dk > 0 && pk < 0.08) {
+        const fall = 1 - ease.inQuad(dk), sq = Math.exp(-(t - STAMP) * 30) * (t >= STAMP ? 1 : 0);
+        let s = 1 + 0.8 * fall, sx = s * (1 + 0.2 * sq), sy = s * (1 - 0.2 * sq);
+        if (pk > 0) sx = sy = 1 + 0.3 * (pk / 0.08);
+        const white = t >= STAMP && t < STAMP + 0.05 || pk > 0;
+        if (dk < 1) p.ellipse(SX, SY5 + 12, 10 * (1 - 0.3 * fall), 2, Rb[0], 0.5 * dk);
+        seal(p, G3, SX + jx, SY5 - 14 * fall + jy, 11, sx, sy, white, seg(t, STAMP + 0.08, STAMP + 0.24));
+        p.glow(SX, SY5, 22, G3[5], 0.3 + (white ? 0.4 : 0));
+      }
+      const rk = (t - STAMP) / 0.3;
+      const rr = 12 + 13 * ease.outCubic(rk);
+      if (rk > 0 && rk < 1) p.ellipse(SX, SY5, rr * 1.15, rr, rk < 0.3 ? WHITE : G3[5], (d) => d > 1 - 1.4 / rr ? 1.2 - rk : 0);
+      for (const s of sats) {
+        const u = (t - s.t0) / s.dur;
+        if (u > 0 && u < 1) sparkle(p, s.x, s.y, s.L * Math.pow(Math.sin(u * Math.PI), 0.7), G3[6], G3[5], 0.5);
+      }
+      ps.draw(p);
+      p.glow(0, 0, 76, G3[4], 0.2 * seg(t, 0.2, 0.5) * (1 - seg(t, ROLL2, ROLL2 + 0.2)));
+      lights.draw(p);
+    }
+  };
+}
+
+// ../pixelfx/src/fx/ui/combo-counter.js
+var combo_counter_exports = {};
+__export(combo_counter_exports, {
+  create: () => create23,
+  meta: () => meta48
+});
+var meta48 = {
+  name: "Combo counter",
+  desc: "x5 COMBO rockets in on streaming speed lines, smearing, and slams to a stop: a white flash, a ring, sparks; it pulses while a timer bar drains, then whooshes out.",
+  tags: ["ui", "combo", "counter", "combat", "text", "one-shot"],
+  size: [208, 100],
+  origin: [104, 50],
+  duration: 1.45,
+  loop: false,
+  fps: 30,
+  bg: "dark",
+  options: { palette: ["#1a0516", "#3d0a33", "#701560", "#b0228f", "#f53cd1", "#ff86e6", "#ffd2f6", "#ffffff"], count: 5, label: "COMBO", seed: 6 }
+};
+var HIT4 = 0.1;
+var BEAT = 0.5;
+var OUT2 = 1.1;
+function speedLines(p, C5, t, k, dir) {
+  if (k <= 0.02) return;
+  const f = Math.floor(t * 30);
+  for (let i = 0; i < 18; i++) {
+    if (rand(f, i, 3) > k) continue;
+    const y = Math.round((rand(f, i, 1) - 0.5) * 60), L4 = 16 + rand(f, i, 2) * 50, x = (rand(f, i, 4) - 0.5) * 190;
+    const x0 = Math.max(-100, x - L4 / 2), x1 = Math.min(100, x + L4 / 2);
+    p.line(x0, y, x1, y, (u) => (dir > 0 ? u : 1 - u) > 0.75 ? WHITE : (dir > 0 ? u : 1 - u) > 0.35 ? C5[6] : C5[4], (u) => (dir > 0 ? u : 1 - u) < 0.25 ? 0.6 : 1);
+  }
+}
+function create23(o) {
+  const C5 = fit(o.palette, 8), R4 = new Rng(o.seed), SHADOW2 = scale(C5[0], 0.5);
+  const ps = new Particles({ rng: R4, sparks: [C5[7], C5[6], C5[5], C5[3]] }), lights = new Lights();
+  const big = spell("x" + Math.round(o.count)), lab = spell(o.label);
+  const BS = 4, LS = 2, W7 = big.w * BS + 4 + lab.w * LS, X0 = -W7 / 2, BASE = 12;
+  const spikes2 = Array.from({ length: 10 }, (_, i) => [i / 10 * TAU + R4.range(-0.15, 0.15), R4.range(14, 24)]);
+  let t = 0, hit = false, out = false;
+  const xAt = (t2) => {
+    t2 = Math.max(0, t2);
+    if (t2 < HIT4) return -32 * Math.pow(1 - t2 / HIT4, 2);
+    if (t2 < OUT2) return 7 * Math.exp(-(t2 - HIT4) * 18) * Math.sin((t2 - HIT4) * 34);
+    const u = seg(t2, OUT2, OUT2 + 0.2);
+    return u < 0.3 ? -4 * ease.outQuad(u / 0.3) : -4 + 24 * ease.inQuad((u - 0.3) / 0.7);
+  };
+  return {
+    update(dt) {
+      t += dt;
+      if (!hit && t >= HIT4) {
+        hit = true;
+        lights.add(0, 0, 70, C5[5], 0.7, 0.4);
+        lights.add(-20, 0, 34, WHITE, 0.8, 0.1);
+        for (let i = 0; i < 26; i++) {
+          const an = R4.range(-1.2, 1.2) + (R4.chance(0.3) ? Math.PI : 0), sp = R4.range(120, 300);
+          ps.spawn(P.SPARK, R4.range(-20, 20), R4.range(-8, 8), Math.cos(an) * sp, Math.sin(an) * sp * 0.6 - 20, R4.range(0.12, 0.3));
+        }
+      }
+      if (t > BEAT && t < OUT2 && R4.chance(0.1)) {
+        const x = X0 + R4.range(0, big.w * BS), y = BASE - R4.range(0, 30);
+        ps.spawn(P.STAR, x, y, R4.range(-10, 10), -R4.range(5, 20), R4.range(0.25, 0.45), R4.pick([C5[7], C5[6]]), R4.chance(0.3) ? 1.6 : 0.6);
+      }
+      if (!out && t >= OUT2 + 0.06) {
+        out = true;
+        for (let i = 0; i < 10; i++) ps.spawn(P.MOTE, R4.range(-50, 30), R4.range(-14, 10), R4.range(220, 320), R4.range(-10, 10), R4.range(0.06, 0.14), R4.pick([C5[7], C5[6]]), 1);
+      }
+      ps.update(dt);
+      lights.update(dt);
+    },
+    draw(p) {
+      const [sx, sy] = shake(t, 3, HIT4, 0.25, o.seed);
+      speedLines(p, C5, t, t < HIT4 ? 1 : t < OUT2 ? Math.max(0, 1 - (t - HIT4) / 0.35) * 0.9 : seg(t, OUT2 + 0.04, OUT2 + 0.12) * (1 - seg(t, OUT2 + 0.18, OUT2 + 0.3)), t >= OUT2 ? -1 : 1);
+      const hk = t - HIT4;
+      if (hk >= 0 && hk < 0.07) {
+        const cx = X0 + big.w * BS / 2, k = hk < 0.035 ? 1 : 1.3;
+        for (const [an, L4] of spikes2) {
+          const ca = Math.cos(an) * 1.4, sa = Math.sin(an);
+          if (k === 1) p.beam(cx, 0, cx + ca * L4, sa * L4, 3, (u) => u < 0.5 ? WHITE : C5[6]);
+          else p.line(cx + ca * L4 * 0.5, sa * L4 * 0.5, cx + ca * L4 * k, sa * L4 * k, C5[5]);
+        }
+      }
+      const rk = (t - HIT4) / 0.32;
+      if (rk > 0 && rk < 1) {
+        const r = 20 + 34 * ease.outCubic(rk);
+        p.ellipse(sx, sy, r * 1.5, r * 0.75, rk < 0.3 ? WHITE : C5[5], (d) => d > 1 - 1.5 / (r * 0.75) ? 1.25 - rk : 0);
+      }
+      ps.draw(p);
+      const x = xAt(t), moving = t < HIT4 || t > OUT2 + 0.06, stretch = moving ? t < HIT4 ? 1.22 : 1.12 : 1;
+      const pulse2 = Math.exp(-(((t - BEAT) / 0.05) ** 2)), flash = t >= HIT4 && t < HIT4 + 0.07 || pulse2 > 0.6 ? 1 : 0;
+      const a = t > OUT2 ? 1 - seg(t, OUT2 + 0.08, OUT2 + 0.2) : t < 0.035 ? 0.5 : 1;
+      const layout = (dx) => {
+        const bs = BS * (1 + 0.12 * pulse2), items = [];
+        const bx = X0 + dx - big.w * BS * (stretch - 1) / 2, by = BASE - 7 * bs;
+        big.letters.forEach((L4) => L4.g && items.push({ g: L4.g, x: bx + L4.x * BS * stretch, y: by, sx: BS * stretch, sy: bs, slant: 1, flash, a }));
+        const lx = X0 + dx + big.w * BS * stretch + 4;
+        lab.letters.forEach((L4) => L4.g && items.push({ g: L4.g, x: lx + L4.x * LS * stretch, y: BASE - 7 * LS, sx: LS * stretch, sy: LS, slant: 0.5, flash, a }));
+        return items;
+      };
+      if (moving && a > 0) {
+        for (const [lag, c] of [[0.03, C5[2]], [0.015, C5[3]]]) {
+          const items = layout(xAt(t - (t < HIT4 ? lag : -lag)) + sx);
+          drawWord(p, items.map((it) => ({ ...it, flash: 0 })), { fill: [c], edge: c, under: c, outline: 0, shadow: 0 });
+        }
+      }
+      if (a > 0) {
+        const sh = seg(t, 0.62, 0.86), items = layout(x + sx);
+        drawWord(p, items.map((it) => ({ ...it, y: it.y + sy })), { fill: [C5[4], C5[5], C5[6], C5[7]], edge: WHITE, under: C5[3], outline: C5[0], ow: 2, shadow: SHADOW2, shine: sh > 0 && sh < 1 ? X0 - 10 + (W7 + 24) * sh : null, shineY: BASE - 28, glint: C5[6] });
+        const bk = seg(t, HIT4 + 0.1, HIT4 + 0.2) * (t > OUT2 ? 0 : 1);
+        if (bk > 0) {
+          const bw = W7 * bk, left = 1 - seg(t, HIT4 + 0.2, OUT2), bx = X0 + x + sx, by = BASE + 5 + sy;
+          p.rect(bx - 1, by - 1, bw + 2, 4, C5[0]);
+          p.rect(bx, by, bw, 2, C5[1]);
+          if (left > 0) p.rect(bx, by, bw * left, 2, C5[5]), p.rect(bx, by, bw * left, 1, C5[6]), p.px(bx + bw * left - 1, by, WHITE);
+        }
+      }
+      p.glow(sx - 20, 0, 60, C5[4], 0.2 * a + (t >= HIT4 && t < HIT4 + 0.15 ? 0.5 * (1 - (t - HIT4) / 0.15) : 0) + 0.25 * pulse2);
+      const g = (t - 0.86) / 0.22;
+      if (g > 0 && g < 1) sparkle(p, X0 + W7 - 2, BASE - 14, 6 * Math.sin(g * Math.PI), C5[7], C5[5], 0.5);
+      lights.draw(p);
+    }
+  };
+}
 
 // src/ui.js
-var $ = (s) => document.querySelector(s);
+var SW = 320;
+var SH = 240;
+var C3 = {
+  ink: hex("#07060d"),
+  gold: hex("#ffd36a"),
+  gold2: hex("#fff2b8"),
+  text: hex("#efe6d4"),
+  muted: hex("#9a8fae"),
+  boss: hex("#d9a6ff"),
+  red: hex("#ff6a5a")
+};
 var fmtTime = (t) => {
   const m = Math.floor(t / 60), s = Math.floor(t % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
 };
+var withPlace = (p, x, y, fn) => {
+  p.place(x, y, false, 0);
+  fn();
+  p.place(0, 0, false, 0);
+};
+function plate2(p, t, x, y, w, h, opts = {}) {
+  withPlace(p, x, y, () => draw20(p, t, {
+    width: w,
+    height: h,
+    title: "",
+    ornament: false,
+    shine: false,
+    ...opts
+  }));
+}
+function meter(p, t, x, y, opts) {
+  withPlace(p, x, y, () => draw21(p, t, opts));
+}
+function slot(p, t, x, y, opts) {
+  withPlace(p, x, y, () => draw22(p, t, opts));
+}
+function card(p, t, x, y, opts) {
+  withPlace(p, x, y, () => draw23(p, t, opts));
+}
 var UI2 = class {
   constructor(game2) {
     this.g = game2;
-    this.slots = {};
-    this.last = 0;
-    this.bannerTimer = 0;
-    this.toastTimer = 0;
-    this.portraitDrawn = false;
-    this.stage = null;
+    this.t = 0;
+    this.fx = [];
+    this.pulse = {};
+    this.deny = {};
   }
-  init() {
-    const row = $("#skills");
-    row.innerHTML = "";
-    for (const s of SKILL_META) {
-      const slot = skillSlot({
-        id: s.id,
-        key: s.key,
-        glyph: s.glyph,
-        name: s.name,
-        cost: s.cost,
-        accent: s.tint,
-        glow: s.glow,
-        note: s.note
-      });
-      row.append(slot);
-      this.slots[s.id] = { el: slot };
-    }
-    $("#mute-icon").innerHTML = icons.sound;
-    $("#hint").textContent = "WASD \u79FB\u52A8 \xB7 J K L U I O \u65BD\u6CD5 \xB7 ESC \u6682\u505C \xB7 M \u9759\u97F3";
-    $("#overlay").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-action]");
-      if (btn) this.action(btn.dataset.action);
-    });
-    $("#mute").addEventListener("click", () => this.toggleMute());
-    this.title();
+  reset() {
+    this.t = 0;
+    this.fx = [];
+    this.pulse = {};
+    this.deny = {};
   }
-  action(name) {
-    const g = this.g;
-    g.audio.unlock();
-    g.audio.play("ui");
-    if (name === "start") g.startRun();
-    else if (name === "resume") g.togglePause();
-    else if (name === "restart") g.restart();
-    else if (name === "mute") this.toggleMute();
+  update(dt) {
+    this.t += dt;
+    for (const k in this.pulse) this.pulse[k] = Math.max(0, this.pulse[k] - dt);
+    for (const k in this.deny) this.deny[k] = Math.max(0, this.deny[k] - dt);
+    for (const inst of this.fx) inst.update(dt);
+    this.fx = this.fx.filter((inst) => !inst.done());
   }
-  toggleMute() {
-    const g = this.g;
-    g.audio.unlock();
-    g.audio.setMuted(!g.audio.muted);
-    const muted = g.audio.muted;
-    $("#mute-icon").innerHTML = muted ? icons.muted : icons.sound;
-    $("#mute").classList.toggle("is-quiet", muted);
-    $("#mute").setAttribute("aria-label", muted ? "\u53D6\u6D88\u9759\u97F3" : "\u9759\u97F3");
-    $("#mute").title = muted ? "\u53D6\u6D88\u9759\u97F3 (M)" : "\u9759\u97F3 (M)";
+  // screen-space pixelfx UI effects
+  play(mod, opts) {
+    this.fx.push(createFx(mod, opts));
   }
-  // ---------------------------------------------------------------- overlays
-  showOverlay(card) {
-    const overlay = $("#overlay");
-    overlay.innerHTML = "";
-    overlay.append(card);
-    overlay.classList.remove("is-hidden");
-    overlay.inert = false;
+  banner(kicker, text, sub2 = "") {
+    this.play(banner_exports, { x: 160, y: 86, kicker, text, sub: sub2 });
   }
-  hideOverlay() {
-    const overlay = $("#overlay");
-    overlay.classList.add("is-hidden");
-    overlay.inert = true;
+  toast(text, tone = "gold") {
+    this.play(toast_exports, { x: 160, y: 154, text, tone });
   }
-  title() {
-    const g = this.g;
-    g.state = "title";
-    $("#stage").classList.remove("playing");
-    this.hideBoss();
-    const body2 = document.createElement("div");
-    body2.className = "title-body";
-    body2.append(
-      controls([
-        { label: "\u79FB\u52A8", content: keys(["W", "A", "S", "D"]) },
-        { label: "\u6280\u80FD", content: skillList(SKILL_META.map((s) => ({ key: s.key, name: s.name }))) }
-      ])
-    );
-    const start = button({ label: "\u8FDB\u5165\u9057\u8FF9", sub: "ENTER", variant: "primary", action: "start" });
-    const card = modal({
-      kicker: "A PIXEL ACTION RPG",
-      title: "\u4F59\u70EC\u56DE\u54CD",
-      latin: "EMBER ECHO",
-      sub: "\u9057\u8FF9\u6DF1\u5904\uFF0C\u706B\u79CD\u672A\u7184\u3002",
-      body: body2,
-      footer: start,
-      note: "\u51FB\u8D25\u6240\u6709\u654C\u4EBA\u63A8\u8FDB\u4E09\u5E55 \xB7 \u62FE\u53D6\u6218\u5229\u54C1\u6062\u590D\u72B6\u6001 \xB7 \u6700\u540E\u6709\u5B88\u536B\u8005",
-      wide: true,
-      titleScreen: true,
-      headHtml: `<span class="px-ornament px-ornament--lg" aria-hidden="true"></span>`
-    });
-    this.showOverlay(card);
+  stageClear() {
+    this.play(quest_complete_exports, { x: 160, y: 96, text: "STAGE CLEAR", palette: UI_GOLD });
   }
-  pause() {
-    const stats = this.g.stats();
-    const card = modal({
-      kicker: "PAUSED",
-      title: "\u6682\u505C",
-      sub: "\u706B\u5149\u6682\u6B47",
-      body: statGrid([
-        { value: stats.kills, label: "\u51FB\u7834" },
-        { value: "Lv." + stats.level, label: "\u7B49\u7EA7" },
-        { value: fmtTime(stats.time), label: "\u7528\u65F6" }
-      ]),
-      footer: [
-        button({ label: "\u7EE7\u7EED", sub: "ESC", variant: "primary", action: "resume" }),
-        button({ label: "\u91CD\u65B0\u5F00\u59CB", sub: "R", variant: "ghost", action: "restart" })
-      ],
-      note: "WASD \u79FB\u52A8 \xB7 J K L U I O \u65BD\u6CD5 \xB7 M \u9759\u97F3"
-    });
-    this.showOverlay(card);
-  }
-  gameover(stats) {
-    $("#stage").classList.remove("playing");
-    const card = modal({
-      kicker: "DEFEAT",
-      title: "\u4F60\u5012\u4E0B\u4E86",
-      sub: `\u706B\u79CD\u5728\u9ED1\u6697\u4E2D\u7184\u706D \xB7 \u7B2C ${stats.stage} \u5E55`,
-      body: statGrid([
-        { value: stats.kills, label: "\u51FB\u7834" },
-        { value: "Lv." + stats.level, label: "\u7B49\u7EA7" },
-        { value: fmtTime(stats.time), label: "\u7528\u65F6" }
-      ]),
-      footer: button({ label: "\u518D\u6B21\u8FDB\u5165", sub: "ENTER", variant: "primary", action: "restart" }),
-      note: "ENTER \u91CD\u65B0\u5F00\u59CB",
-      className: "is-danger"
-    });
-    this.showOverlay(card);
-  }
-  victory(stats) {
-    $("#stage").classList.remove("playing");
-    const body2 = document.createElement("div");
-    const rule = document.createElement("div");
-    rule.className = "px-rule";
-    rule.style.marginBottom = "calc(var(--px-u) * 10)";
-    body2.append(
-      rule,
-      statGrid([
-        { value: stats.kills, label: "\u51FB\u7834" },
-        { value: "Lv." + stats.level, label: "\u7B49\u7EA7" },
-        { value: fmtTime(stats.time), label: "\u7528\u65F6" }
-      ])
-    );
-    const strip = document.createElement("div");
-    strip.className = "px-skill-strip";
-    strip.style.marginTop = "calc(var(--px-u) * 12)";
-    strip.innerHTML = "<span><b>J</b> \u65A9</span><span><b>K</b> \u706B</span><span><b>L</b> \u971C</span><span><b>U</b> \u96F7</span><span><b>I</b> \u6108</span><span><b>O</b> \u9668</span>";
-    body2.append(strip);
-    const card = modal({
-      kicker: "VICTORY",
-      title: "\u4F59\u70EC\u4ECD\u5728",
-      sub: "\u4E09\u5E55\u5DF2\u5C3D\uFF0C\u5B88\u536B\u8005\u5F52\u4E8E\u5C18\u571F\u3002",
-      body: body2,
-      footer: button({ label: "\u518D\u8D70\u4E00\u904D", sub: "ENTER", variant: "primary", action: "restart" }),
-      note: "\u611F\u8C22\u6E38\u73A9 \xB7 \u6309 ENTER \u91CD\u65B0\u5F00\u59CB"
-    });
-    this.showOverlay(card);
-  }
-  start() {
-    $("#stage").classList.add("playing");
-    this.hideOverlay();
-    clearTimeout(this.bannerTimer);
-    clearTimeout(this.toastTimer);
-    $("#banner").classList.remove("is-open");
-    $("#pickup-toast").classList.remove("is-open");
-    this.hideBoss();
-  }
-  // ---------------------------------------------------------------- stage / wave
-  setStage(stage) {
-    $("#stage-act").textContent = stage.act;
-    $("#stage-name").textContent = stage.name;
-    $("#stage-wave").textContent = stage.sub;
-    setPips($("#acts"), this.g.stageIndex);
-    this.stage = stage;
-  }
-  setWave(i, count) {
-    const wave = this.g.stage.waves[i] ?? [];
-    const boss = wave.some((s) => s.type === "boss");
-    $("#stage-wave").textContent = boss ? "\u5B88\u536B\u8005" : `\u7B2C ${i + 1} \u6CE2 \xB7 ${count} \u4E2A\u654C\u4EBA`;
-  }
-  // ---------------------------------------------------------------- transient feedback
-  banner(kicker, title, sub2, kind = "STAGE") {
-    const b = $("#banner");
-    $("#banner-kicker").textContent = kicker;
-    $("#banner-title").textContent = title;
-    $("#banner-sub").textContent = sub2;
-    b.classList.add("is-open");
-    clearTimeout(this.bannerTimer);
-    this.bannerTimer = setTimeout(() => b.classList.remove("is-open"), kind === "CLEAR" ? 2500 : kind === "LEVEL" ? 1600 : 1900);
-  }
-  toast(text) {
-    const t = $("#pickup-toast");
-    t.textContent = text;
-    t.classList.add("is-open");
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => t.classList.remove("is-open"), 1e3);
-  }
-  combo(n) {
-    const c = $("#combo");
-    if (n >= 2) {
-      $("#combo-n").textContent = n;
-      c.classList.add("is-on");
-    } else c.classList.remove("is-on");
+  comboMilestone(n) {
+    this.play(combo_counter_exports, { x: 214, y: 104, count: n, label: "COMBO", palette: UI_GOLD });
   }
   pulseSkill(id) {
-    pulseSkill(this.slots[id]?.el);
+    this.pulse[id] = 0.26;
   }
   deny(id) {
-    denySkill(this.slots[id]?.el);
+    this.deny[id] = 0.22;
   }
-  showBoss() {
-    const wrap2 = $("#boss-wrap");
-    wrap2.hidden = false;
-    const b = this.g.bossRef;
-    if (b) $("#boss-name").textContent = b.name;
-    $("#boss-phase").textContent = "\u76F8\u4F4D I";
-  }
-  hideBoss() {
-    $("#boss-wrap").hidden = true;
-  }
-  // ---------------------------------------------------------------- per-frame bars
-  update(g) {
-    const now = performance.now();
-    if (now - this.last < 45) return;
-    this.last = now;
-    const h = g.hero;
-    setBar($("#hp-bar"), Math.max(0, h.hp / h.maxHp), `${Math.ceil(h.hp)} / ${h.maxHp}`);
-    setBar($("#mp-bar"), Math.max(0, h.mp / h.maxMp), `${Math.floor(h.mp)} / ${h.maxMp}`);
-    setBar($("#xp-bar"), Math.min(1, h.xp / h.xpNext), null);
-    $("#hero-level").textContent = "Lv." + h.level;
-    $("#kills").textContent = g.kills;
-    if (!this.portraitDrawn) {
-      drawHeroPortrait($("#portrait"));
-      this.portraitDrawn = true;
+  draw(g, p, frame3) {
+    const t = this.t;
+    if (g.state === "title") {
+      this.drawMenu(g, p, 0.58);
+      return;
     }
-    for (const s of SKILL_META) {
-      setSkill(this.slots[s.id].el, {
-        left: h.cd[s.id] ?? 0,
-        total: s.cd,
-        mp: h.mp,
-        cost: s.cost
+    this.drawHud(g, p, t);
+    this.drawCommand(g, p, t);
+    for (const inst of this.fx) inst.draw(frame3);
+    p = painterFor(frame3);
+    if (g.state === "paused") this.drawMenu(g, p, 0.62);
+    else if (g.state === "gameover") this.drawMenu(g, p, 0.7);
+    else if (g.state === "victory") this.drawMenu(g, p, 0.7);
+  }
+  drawHud(g, p, t) {
+    const h = g.hero;
+    plate2(p, t, 62, 24, 116, 40);
+    p.text("DUELIST", 8, 8, C3.gold, { outline: C3.ink });
+    p.text("LV " + h.level, 116, 8, C3.gold2, { align: "right", outline: C3.ink });
+    meter(p, t, 64, 21, { label: "HP", value: h.hp / h.maxHp, text: `${Math.ceil(h.hp)}/${h.maxHp}`, tone: "hp", width: 108, height: 9, cells: 10 });
+    meter(p, t, 64, 32, { label: "MP", value: h.mp / h.maxMp, text: `${Math.floor(h.mp)}/${h.maxMp}`, tone: "mp", width: 108, height: 8, cells: 10 });
+    meter(p, t, 64, 41, { label: "", value: h.xp / h.xpNext, text: "", tone: "xp", width: 108, height: 3, cells: 10 });
+    plate2(p, t, 186, 24, 120, 40);
+    p.text(g.stage.actEn, 186, 8, C3.gold, { align: "center", outline: C3.ink });
+    p.text(g.stage.nameEn, 186, 15, C3.gold2, { align: "center", font: "big", outline: C3.ink });
+    const boss = g.bossRef && !g.bossRef.dead;
+    p.text(boss ? "BOSS" : `WAVE ${g.waveIndex + 1}/${g.stage.waves.length}`, 186, 27, C3.muted, { align: "center", outline: C3.ink });
+    for (let i = 0; i < 3; i++) {
+      const x = 178 + i * 8, y = 36, on = i === g.stageIndex;
+      p.px(x, y - 1, on ? C3.gold2 : C3.muted);
+      p.px(x, y + 1, on ? C3.gold2 : C3.muted);
+      p.px(x - 1, y, on ? C3.gold : C3.muted);
+      p.px(x + 1, y, on ? C3.gold : C3.muted);
+      p.px(x, y, on ? C3.gold2 : C3.muted);
+    }
+    plate2(p, t, 290, 24, 44, 40);
+    p.text("KILLS", 290, 9, C3.gold, { align: "center", outline: C3.ink });
+    p.text(String(g.kills), 290, 18, C3.gold2, { align: "center", font: "big", outline: C3.ink });
+    if (boss) {
+      p.text(g.bossRef.nameEn ?? "THE WARDEN", 160, 46, C3.boss, { align: "center", outline: C3.ink });
+      p.text(["PHASE I", "PHASE II", "PHASE III"][g.bossRef.phase - 1] ?? "", 312, 46, C3.boss, { align: "right", outline: C3.ink });
+      meter(p, t, 160, 57, { label: "", value: g.bossRef.hp / g.bossRef.maxHp, text: "", tone: "boss", width: 200, height: 9, cells: 20 });
+    }
+  }
+  drawCommand(g, p, t) {
+    plate2(p, t, 160, 210, 320, 60, { ornament: true });
+    p.rect(0, 181, 320, 1, C3.gold, 0.5);
+    const h = g.hero;
+    SKILL_META.forEach((s, i) => {
+      const left = h.cd[s.id] ?? 0, cd = left / s.cd;
+      slot(p, t, 52 + i * 44, 204, {
+        key: s.key,
+        name: s.nameEn,
+        icon: s.icon,
+        cooldown: cd,
+        cdText: left > 1e-3 ? left >= 1 ? String(Math.ceil(left)) : left.toFixed(1) : "",
+        mana: h.mp >= s.cost,
+        width: 40,
+        height: 46,
+        flash: (this.pulse[s.id] ?? 0) > 0,
+        deny: (this.deny[s.id] ?? 0) > 0
+      });
+    });
+    if (g.combo.count >= 2 && g.combo.timer > 0) {
+      p.text("x" + g.combo.count, 16, 192, C3.gold2, { align: "center", font: "big", outline: C3.ink });
+      p.text("COMBO", 16, 204, C3.muted, { align: "center", outline: C3.ink });
+    }
+    p.text(`WASD MOVE   ESC PAUSE   M SOUND ${g.audio.muted ? "OFF" : "ON"}`, 160, 233, C3.muted, { align: "center", outline: C3.ink });
+  }
+  drawMenu(g, p, dim) {
+    p.rect(0, 0, SW, SH, C3.ink, dim);
+    const s = g.stats();
+    if (g.state === "title") {
+      card(p, this.t, 160, 120, {
+        kicker: "A PIXEL ACTION RPG",
+        title: "EMBER ECHO",
+        subtitle: "THE EMBERS NEVER DIE",
+        lines: [
+          "WASD MOVE",
+          "J SLASH   K FIRE   L FROST",
+          "U BOLT    I MEND   O METEOR",
+          "ESC PAUSE   M SOUND"
+        ],
+        prompt: "PRESS ENTER",
+        width: 272,
+        height: 140,
+        tone: "gold"
+      });
+    } else if (g.state === "paused") {
+      card(p, this.t, 160, 120, {
+        kicker: "PAUSED",
+        title: "PAUSED",
+        subtitle: "THE EMBERS REST",
+        lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
+        prompt: "ESC RESUME   R RESTART",
+        width: 240,
+        height: 130
+      });
+    } else if (g.state === "gameover") {
+      card(p, this.t, 160, 120, {
+        kicker: "DEFEAT",
+        title: "YOU FELL",
+        subtitle: "THE EMBER WENT OUT",
+        lines: [`STAGE ${s.stage}`, `KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
+        prompt: "ENTER TRY AGAIN",
+        width: 240,
+        height: 140,
+        tone: "blood"
+      });
+    } else if (g.state === "victory") {
+      card(p, this.t, 160, 120, {
+        kicker: "VICTORY",
+        title: "EMBER STILL BURNS",
+        subtitle: "THE WARDEN IS ASH",
+        lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
+        prompt: "ENTER AGAIN",
+        width: 260,
+        height: 130
       });
     }
-    if (this.stage && g.state !== "title") {
-      const alive = g.enemies.filter((e) => !e.dead).length + g.spawnQueue.length;
-      const boss = g.bossRef && !g.bossRef.dead;
-      if (boss && !g.bossRef.state.includes("spawn")) {
-        $("#stage-wave").textContent = "\u5B88\u536B\u8005 \xB7 \u7B2C " + g.bossRef.phase + " \u76F8\u4F4D";
-      } else if (g.phase === "fight" && !boss) {
-        $("#stage-wave").textContent = `\u7B2C ${g.waveIndex + 1} \u6CE2 \xB7 ${alive} \u4E2A\u654C\u4EBA`;
-      }
-    }
-    if (g.bossRef && !g.bossRef.dead) {
-      const b = g.bossRef;
-      $("#boss-wrap").hidden = false;
-      $("#boss-name").textContent = b.name;
-      setBar($("#boss-bar"), Math.max(0, b.hp / b.maxHp), "");
-      $("#boss-phase").textContent = ["\u76F8\u4F4D I", "\u76F8\u4F4D II", "\u76F8\u4F4D III"][b.phase - 1] ?? "\u76F8\u4F4D I";
-    } else if (g.bossDefeated) {
-      this.hideBoss();
-    }
-    this.combo(g.combo.count >= 2 && g.combo.timer > 0 ? g.combo.count : 0);
   }
 };
 
@@ -13026,9 +13592,10 @@ var AudioEngine = class {
 };
 
 // src/game.js
-var W7 = 320;
-var H4 = 180;
-var C3 = {
+var SW2 = 320;
+var SH2 = 240;
+var BH3 = 180;
+var C4 = {
   ink: hex("#07060d"),
   white: 4294967295,
   bg: hex("#05060c"),
@@ -13038,11 +13605,12 @@ var C3 = {
   green: hex("#a8ff9a")
 };
 var Game = class {
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d", { alpha: false });
-    this.frame = createFrame(W7, H4);
-    this.img = this.ctx.createImageData(W7, H4);
+  constructor(canvas2) {
+    this.canvas = canvas2;
+    this.ctx = canvas2.getContext("2d", { alpha: false });
+    this.frame = createFrame(SW2, SH2);
+    this.uiFrame = createFrame(SW2, SH2);
+    this.img = this.ctx.createImageData(SW2, SH2);
     this.audio = new AudioEngine();
     this.fx = FX;
     this.ui = new UI2(this);
@@ -13064,7 +13632,7 @@ var Game = class {
     this.kills = 0;
     this.combo = { count: 0, timer: 0 };
     this.shakeState = { amp: 0, t: 0, dur: 0 };
-    this.flashState = { color: C3.white, a: 0, max: 0.3 };
+    this.flashState = { color: C4.white, a: 0, max: 0.3 };
     this.fade = 0;
     this.stageIndex = 0;
     this.waveIndex = 0;
@@ -13078,7 +13646,6 @@ var Game = class {
     this.stage = STAGES[0];
     this.mapFx = null;
     this.spawnQueue = [];
-    this.ui.init();
     this.loadStage(2, true);
   }
   // ------------------------------------------------------------------ setup
@@ -13086,6 +13653,7 @@ var Game = class {
     this.stageIndex = index;
     this.stage = STAGES[index];
     this.mapFx = createFx(this.stage.map, { x: 0, y: 0, seed: 3 + index });
+    this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
     this.enemies = [];
     this.effects = [];
@@ -13107,9 +13675,8 @@ var Game = class {
     this.phase = title ? "title" : "intro";
     this.state = title ? "title" : "playing";
     this.fade = title ? 0 : 1;
-    this.ui.setStage(this.stage);
     if (!title) {
-      this.banner(this.stage.act, this.stage.name, this.stage.sub, "STAGE");
+      this.banner(this.stage.actEn, this.stage.nameEn, this.stage.subEn, "STAGE");
       this.audio.play("ui");
     }
   }
@@ -13119,8 +13686,6 @@ var Game = class {
     this.kills = 0;
     this.runTime = 0;
     this.loadStage(0, false);
-    this.ui.hideOverlay();
-    this.ui.start();
   }
   restart() {
     this.startRun();
@@ -13129,10 +13694,8 @@ var Game = class {
     if (this.state === "playing") {
       this.state = "paused";
       this.shakeState = { amp: 0, t: 0, dur: 0 };
-      this.ui.pause();
     } else if (this.state === "paused") {
       this.state = "playing";
-      this.ui.hideOverlay();
     }
   }
   // ------------------------------------------------------------------ tick
@@ -13191,7 +13754,6 @@ var Game = class {
       this.deathT += dt;
       if (this.deathT > 2.2 && this.state === "playing") {
         this.state = "gameover";
-        this.ui.gameover(this.stats());
       }
     }
   }
@@ -13217,7 +13779,6 @@ var Game = class {
         if (this.stageIndex + 1 < STAGES.length) {
           this.fade = 1;
           this.loadStage(this.stageIndex + 1, false);
-          this.ui.hideBoss();
         } else this.victory();
       }
     }
@@ -13231,10 +13792,9 @@ var Game = class {
     wave.forEach((spec, n) => this.spawnQueue.push({ ...spec, delay: n * 0.28 }));
     if (i > 0) {
       const boss = wave.some((s) => s.type === "boss");
-      if (boss) this.banner("THE WARDEN", "\u51A5\u6CB3\u5B88\u536B \xB7 \u963F\u523B\u620E", "BOSS");
-      else this.banner("WAVE " + (i + 1), `\u7B2C ${i + 1} \u6CE2`, "WAVE");
+      if (boss) this.banner("BOSS", "THE WARDEN", "ACHERON");
+      else this.banner("WAVE " + (i + 1), this.stage.nameEn, "MORE SHADOWS GATHER");
     }
-    this.ui.setWave(i, wave.length);
   }
   updateSpawns(dt) {
     if (!this.spawnQueue.length) return;
@@ -13254,19 +13814,16 @@ var Game = class {
   stageClear() {
     this.phase = "clear";
     this.phaseT = 0;
-    const boss = this.bossDefeated;
-    this.banner(boss ? "GUARDIAN FALLEN" : "STAGE CLEAR", boss ? "\u5B88\u536B\u8005\u5316\u4F5C\u4E86\u7070\u70EC" : `${this.stage.name} \u6682\u65F6\u6C89\u5BC2`, "CLEAR");
+    this.ui.stageClear();
     this.audio.play("level");
     this.hero.heal(this, Math.round(this.hero.maxHp * 0.22), { big: true });
     this.hero.mp = Math.min(this.hero.maxMp, this.hero.mp + 24);
     this.projectiles = [];
     this.spawnQueue = [];
-    this.ui.hideBoss();
   }
   victory() {
     if (this.state === "victory") return;
     this.state = "victory";
-    this.ui.victory(this.stats());
     this.audio.play("level");
   }
   stats() {
@@ -13336,7 +13893,7 @@ var Game = class {
         p.fx.stop();
         p.dead = true;
       }
-      if (p.x < 4 || p.x > W7 - 4 || p.y < 0 || p.y > H4 || p.life <= 0) {
+      if (p.x < 4 || p.x > SW2 - 4 || p.y < 0 || p.y > BH3 || p.life <= 0) {
         p.fx.stop();
         p.dead = true;
       }
@@ -13450,6 +14007,10 @@ var Game = class {
   banner(kicker, title, sub2, kind) {
     this.ui.banner(kicker, title, sub2, kind);
   }
+  toggleMute() {
+    this.audio.unlock();
+    this.audio.setMuted(!this.audio.muted);
+  }
   /** Test/debug: run a skill by id without the keyboard. */
   cast(id) {
     return castSkill(this, id);
@@ -13457,16 +14018,7 @@ var Game = class {
   comboAdd() {
     this.combo.count++;
     this.combo.timer = 2.4;
-    this.ui.combo(this.combo.count, this.combo.timer);
-    if (this.combo.count > 0 && this.combo.count % 10 === 0) {
-      this.addFx(this.fx.comboCounter, {
-        x: this.hero.x,
-        y: this.hero.y - 58,
-        count: this.combo.count,
-        label: "COMBO",
-        light: 0.85
-      });
-    }
+    if (this.combo.count > 0 && this.combo.count % 10 === 0) this.ui.comboMilestone(this.combo.count);
   }
   dropLoot(x, y, typeId) {
     if (typeId === "boss") return;
@@ -13573,21 +14125,28 @@ var Game = class {
         font: n.crit ? "big" : "mini",
         scale: n.crit ? 1 : 1,
         align: "center",
-        outline: C3.ink,
+        outline: C4.ink,
         a: Math.min(1, a * 1.6)
       });
     }
     f.ox = 0;
     f.oy = 0;
+    const uf = this.uiFrame;
+    uf.ox = 0;
+    uf.oy = 0;
+    clearFrame(uf);
+    let up = painterFor(uf);
+    this.ui.draw(this, up, uf);
+    mergeUI(f, uf);
     p = painterFor(f);
     if (this.flashState.a > 0) {
-      p.rect(0, 0, W7, H4, this.flashState.color, Math.min(1, this.flashState.a / Math.max(1e-3, this.flashState.max)));
+      p.rect(0, 0, SW2, SH2, this.flashState.color, Math.min(1, this.flashState.a / Math.max(1e-3, this.flashState.max)));
     }
     if (this.fade > 1e-3) {
-      p.rect(0, 0, W7, H4, hex("#050409"), this.fade);
+      p.rect(0, 0, SW2, SH2, hex("#050409"), this.fade);
       this.fade = Math.max(0, this.fade - 0.035);
     }
-    composite(f, this.img.data, C3.bg);
+    composite(f, this.img.data, C4.bg);
     this.ctx.putImageData(this.img, 0, 0);
   }
   drawTelegraph(p, t) {
@@ -13603,12 +14162,39 @@ var Game = class {
       p.dot(t.x + ax * q, t.y + ay * q * 0.3, t.color, 0.8);
       p.dot(t.x + ax * (q - 2), t.y + ay * (q - 2) * 0.3, t.color, 0.5);
     }
-    p.dot(t.x, t.y, C3.warnLit, left < 0.3 ? 0.9 : 0.5);
+    p.dot(t.x, t.y, C4.warnLit, left < 0.3 ? 0.9 : 0.5);
   }
 };
+function mergeUI(f, u) {
+  const n = f.w * f.h, C5 = f.color, L4 = f.light, UC = u.color, UL = u.light;
+  for (let i = 0; i < n; i++) {
+    const c = UC[i], a = c >>> 24;
+    if (a === 255) {
+      C5[i] = c;
+      L4[i] = UL[i];
+    } else if (a) {
+      const d = C5[i], k = a / 255;
+      const ch = (s) => (c >>> s & 255) * k + (d >>> s & 255) * (1 - k) | 0;
+      C5[i] = 255 << 24 | ch(16) << 16 | ch(8) << 8 | ch(0);
+      const dl = L4[i], ul = UL[i];
+      if (ul) {
+        const lr = Math.min(255, (dl & 255) + (ul & 255));
+        const lg = Math.min(255, (dl >>> 8 & 255) + (ul >>> 8 & 255));
+        const lb = Math.min(255, (dl >>> 16 & 255) + (ul >>> 16 & 255));
+        L4[i] = 255 << 24 | lb << 16 | lg << 8 | lr;
+      }
+    } else if (UL[i]) {
+      const dl = L4[i], ul = UL[i];
+      const lr = Math.min(255, (dl & 255) + (ul & 255));
+      const lg = Math.min(255, (dl >>> 8 & 255) + (ul >>> 8 & 255));
+      const lb = Math.min(255, (dl >>> 16 & 255) + (ul >>> 16 & 255));
+      L4[i] = 255 << 24 | lb << 16 | lg << 8 | lr;
+    }
+  }
+}
 function boot() {
-  const canvas = document.querySelector("#game");
-  const game2 = new Game(canvas);
+  const canvas2 = document.querySelector("#game");
+  const game2 = new Game(canvas2);
   window.__EMBER__ = game2;
   Hero.prepare();
   return game2;
@@ -13616,77 +14202,68 @@ function boot() {
 
 // src/main.js
 var game = boot();
+var canvas = document.querySelector("#game");
 var MOVE = /* @__PURE__ */ new Set(["w", "a", "s", "d"]);
 var SKILL = { j: "j", k: "k", l: "l", u: "u", i: "i", o: "o" };
-function unlockAndStart() {
+function unlock() {
   game.audio.unlock();
 }
 window.addEventListener("keydown", (e) => {
-  const key2 = e.key.toLowerCase();
-  if (e.target instanceof HTMLInputElement) return;
-  if (MOVE.has(key2)) {
-    game.keys.add(key2);
+  const key = e.key.toLowerCase();
+  if (MOVE.has(key)) {
+    game.keys.add(key);
     e.preventDefault();
     return;
   }
-  if (key2 === "escape") {
+  if (key === "escape") {
     e.preventDefault();
+    unlock();
     if (game.state === "playing" || game.state === "paused") {
       game.togglePause();
       game.audio.play("ui");
     }
     return;
   }
-  if (key2 === "enter") {
+  if (key === "enter") {
     e.preventDefault();
-    unlockAndStart();
+    unlock();
     if (game.state === "title" || game.state === "gameover" || game.state === "victory") game.startRun();
     else if (game.state === "paused") game.togglePause();
     return;
   }
-  if (key2 === "r" && (game.state === "paused" || game.state === "gameover" || game.state === "victory")) {
+  if (key === "r" && (game.state === "paused" || game.state === "gameover" || game.state === "victory")) {
     e.preventDefault();
-    unlockAndStart();
-    game.restart();
+    unlock();
+    game.startRun();
     return;
   }
-  if (key2 === "m") {
+  if (key === "m") {
     e.preventDefault();
-    game.ui.toggleMute();
+    unlock();
+    game.toggleMute();
+    game.audio.play("ui");
     return;
   }
-  if (SKILL[key2] && !e.repeat) {
+  if (SKILL[key] && !e.repeat) {
     e.preventDefault();
+    unlock();
     if (game.state === "title") return;
-    unlockAndStart();
-    castSkill(game, SKILL[key2]);
+    castSkill(game, SKILL[key]);
   }
 });
 window.addEventListener("keyup", (e) => {
-  const key2 = e.key.toLowerCase();
-  if (MOVE.has(key2)) game.keys.delete(key2);
+  const key = e.key.toLowerCase();
+  if (MOVE.has(key)) game.keys.delete(key);
 });
 window.addEventListener("blur", () => game.keys.clear());
+canvas.addEventListener("click", () => {
+  unlock();
+  if (game.state === "title" || game.state === "gameover" || game.state === "victory") game.startRun();
+  else if (game.state === "paused") game.togglePause();
+});
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && game.state === "playing") game.togglePause();
 });
-for (const btn of document.querySelectorAll(".tbtn")) {
-  const key2 = btn.dataset.key;
-  const press = (e) => {
-    e.preventDefault();
-    unlockAndStart();
-    if (MOVE.has(key2)) game.keys.add(key2);
-    else if (game.state === "playing") castSkill(game, key2);
-  };
-  const release = (e) => {
-    e.preventDefault();
-    game.keys.delete(key2);
-  };
-  btn.addEventListener("pointerdown", press);
-  btn.addEventListener("pointerup", release);
-  btn.addEventListener("pointercancel", release);
-  btn.addEventListener("pointerleave", release);
-}
 game.cast = (id) => castSkill(game, id);
 game.begin = () => game.startRun();
 window.__EMBER__ = game;
@@ -13694,9 +14271,9 @@ var last = performance.now();
 function frame2(now) {
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1e3));
   last = now;
+  game.ui.update(dt);
   game.tick(dt);
   game.render();
-  game.ui.update(game);
   requestAnimationFrame(frame2);
 }
 requestAnimationFrame(frame2);

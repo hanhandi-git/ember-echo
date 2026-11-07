@@ -1,22 +1,19 @@
-// Boot, input, and the one requestAnimationFrame loop.
+// Boot, keyboard/pointer input, and the one requestAnimationFrame loop. There is no DOM HUD:
+// the whole interface is pixel art drawn into the 320 x 240 canvas.
 
-import "../../pixelfx/ui/pixel-ui.css";
-import "../styles.css";
 import { boot } from "./game.js";
 import { castSkill } from "./skills.js";
 
 const game = boot();
+const canvas = document.querySelector("#game");
 
 const MOVE = new Set(["w", "a", "s", "d"]);
 const SKILL = { j: "j", k: "k", l: "l", u: "u", i: "i", o: "o" };
 
-function unlockAndStart() {
-  game.audio.unlock();
-}
+function unlock() { game.audio.unlock(); }
 
 window.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
-  if (e.target instanceof HTMLInputElement) return;
   if (MOVE.has(key)) {
     game.keys.add(key);
     e.preventDefault();
@@ -24,6 +21,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (key === "escape") {
     e.preventDefault();
+    unlock();
     if (game.state === "playing" || game.state === "paused") {
       game.togglePause();
       game.audio.play("ui");
@@ -32,26 +30,28 @@ window.addEventListener("keydown", (e) => {
   }
   if (key === "enter") {
     e.preventDefault();
-    unlockAndStart();
+    unlock();
     if (game.state === "title" || game.state === "gameover" || game.state === "victory") game.startRun();
     else if (game.state === "paused") game.togglePause();
     return;
   }
   if (key === "r" && (game.state === "paused" || game.state === "gameover" || game.state === "victory")) {
     e.preventDefault();
-    unlockAndStart();
-    game.restart();
+    unlock();
+    game.startRun();
     return;
   }
   if (key === "m") {
     e.preventDefault();
-    game.ui.toggleMute();
+    unlock();
+    game.toggleMute();
+    game.audio.play("ui");
     return;
   }
   if (SKILL[key] && !e.repeat) {
     e.preventDefault();
+    unlock();
     if (game.state === "title") return;
-    unlockAndStart();
     castSkill(game, SKILL[key]);
   }
 });
@@ -60,30 +60,18 @@ window.addEventListener("keyup", (e) => {
   const key = e.key.toLowerCase();
   if (MOVE.has(key)) game.keys.delete(key);
 });
-
 window.addEventListener("blur", () => game.keys.clear());
+
+// clicking anywhere on the canvas does the same thing as ENTER / ESC, so the demo is usable with a mouse
+canvas.addEventListener("click", () => {
+  unlock();
+  if (game.state === "title" || game.state === "gameover" || game.state === "victory") game.startRun();
+  else if (game.state === "paused") game.togglePause();
+});
+
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && game.state === "playing") game.togglePause();
 });
-
-// touch pads (visible only on coarse pointers)
-for (const btn of document.querySelectorAll(".tbtn")) {
-  const key = btn.dataset.key;
-  const press = (e) => {
-    e.preventDefault();
-    unlockAndStart();
-    if (MOVE.has(key)) game.keys.add(key);
-    else if (game.state === "playing") castSkill(game, key);
-  };
-  const release = (e) => {
-    e.preventDefault();
-    game.keys.delete(key);
-  };
-  btn.addEventListener("pointerdown", press);
-  btn.addEventListener("pointerup", release);
-  btn.addEventListener("pointercancel", release);
-  btn.addEventListener("pointerleave", release);
-}
 
 // a debug handle for smoke tests and curious players
 game.cast = (id) => castSkill(game, id);
@@ -94,13 +82,10 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
   last = now;
+  game.ui.update(dt);
   game.tick(dt);
   game.render();
-  game.ui.update(game);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-
-// first paint before any gesture: the title screen is composed in the constructor, so just make sure
-// the canvas is not an empty buffer if the browser throttles rAF for a moment.
 game.render();

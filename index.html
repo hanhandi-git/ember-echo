@@ -4,100 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>余烬回响 · Ember Echo</title>
-<meta name="description" content="余烬回响 — 一个用 pixelfx 素材驱动的像素动作 RPG Demo。WASD 移动，J K L U I O 施法。">
+<meta name="description" content="余烬回响 — 一个用 pixelfx 素材与像素 UI 效果驱动的动作 RPG Demo。WASD 移动，J K L U I O 施法。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%2307060d'/%3E%3Crect x='5' y='3' width='6' height='10' fill='%23ff7a3c'/%3E%3Crect x='7' y='5' width='4' height='7' fill='%23ffd36a'/%3E%3Crect x='8' y='7' width='2' height='4' fill='%23fff6d8'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="game.css">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="app">
-  <main id="stage" aria-label="余烬回响 游戏画面">
-    <div id="view" class="px-ui px-theme-ember">
-      <canvas id="game" width="320" height="180" aria-label="战斗区域"></canvas>
-
-      <div id="hud" class="hud">
-        <div class="hud-top">
-          <section class="hero-card px-panel px-panel--framed">
-            <div class="portrait px-portrait"><canvas id="portrait" width="30" height="42"></canvas></div>
-            <div class="hero-meta">
-              <div class="hero-line">
-                <strong id="hero-name" class="px-title-sm">余烬剑士</strong>
-                <em id="hero-level" class="px-badge">Lv.1</em>
-              </div>
-              <div class="px-bars">
-                <div id="hp-bar" class="px-bar px-bar--hp px-bar--seg">
-                  <i id="hp-fill" class="px-bar__fill"></i><span id="hp-text" class="px-bar__text">100 / 100</span>
-                </div>
-                <div id="mp-bar" class="px-bar px-bar--mp px-bar--seg">
-                  <i id="mp-fill" class="px-bar__fill"></i><span id="mp-text" class="px-bar__text">60 / 60</span>
-                </div>
-                <div id="xp-bar" class="px-bar px-bar--xp px-bar--thin"><i id="xp-fill" class="px-bar__fill"></i></div>
-              </div>
-            </div>
-          </section>
-
-          <section class="stage-card px-plate">
-            <div class="px-kicker" id="stage-act">第一幕</div>
-            <div class="px-title-sm" id="stage-name">苔痕遗迹</div>
-            <div class="px-label" id="stage-wave">月下的旧圣所</div>
-            <div class="px-pips" id="acts" aria-hidden="true"><i class="is-on"></i><i></i><i></i></div>
-          </section>
-
-          <section class="top-tools">
-            <button id="mute" class="px-btn px-btn--icon" type="button" title="静音 (M)" aria-label="静音">
-              <span id="mute-icon" class="px-btn__icon"></span>
-            </button>
-            <div class="kills">
-              <b id="kills" class="px-num">0</b>
-              <span class="px-label">击破</span>
-            </div>
-          </section>
-        </div>
-
-        <div id="boss-wrap" class="boss-wrap" hidden>
-          <div class="boss-line">
-            <span id="boss-name" class="px-label">冥河守卫</span>
-            <em id="boss-phase" class="px-badge px-badge--boss">相位 I</em>
-          </div>
-          <div id="boss-bar" class="px-bar px-bar--boss px-bar--seg"><i id="boss-fill" class="px-bar__fill"></i></div>
-        </div>
-
-        <div id="pickup-toast" class="px-toast pickup-toast"></div>
-      </div>
-
-      <div class="fx-scan" aria-hidden="true"></div>
-
-      <div id="banner" class="px-banner banner" aria-live="polite">
-        <div class="px-banner__kicker" id="banner-kicker"></div>
-        <div class="px-banner__title" id="banner-title"></div>
-        <div class="px-banner__sub" id="banner-sub"></div>
-      </div>
-
-      <div id="touch" class="touch" aria-hidden="true">
-        <div class="dpad">
-          <button data-key="a" class="tbtn px-key px-key--sm">A</button>
-          <button data-key="w" class="tbtn px-key px-key--sm">W</button>
-          <button data-key="s" class="tbtn px-key px-key--sm">S</button>
-          <button data-key="d" class="tbtn px-key px-key--sm">D</button>
-        </div>
-        <div class="tcast">
-          <button data-key="j" class="tbtn px-key px-key--sm">J</button><button data-key="k" class="tbtn px-key px-key--sm">K</button><button data-key="l" class="tbtn px-key px-key--sm">L</button>
-          <button data-key="u" class="tbtn px-key px-key--sm">U</button><button data-key="i" class="tbtn px-key px-key--sm">I</button><button data-key="o" class="tbtn px-key px-key--sm">O</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="command" class="command px-dock px-ui px-theme-ember">
-      <div id="combo" class="px-combo combo"><b id="combo-n">0</b><span>连击</span></div>
-      <div class="skills" id="skills" aria-label="技能栏"></div>
-      <div class="command-side">
-        <div class="px-label hint" id="hint">WASD 移动 · J K L U I O 施法 · ESC 暂停 · M 静音</div>
-        <div class="px-sigil">余烬不熄</div>
-      </div>
-    </div>
-
-    <div id="overlay" class="px-modal overlay px-ui px-theme-ember is-hidden" aria-live="polite"></div>
-  </main>
-</div>
+<main id="stage">
+  <canvas id="game" width="320" height="240" aria-label="余烬回响 · Ember Echo"></canvas>
+</main>
 <script type="module" src="game.js"></script>
 </body>
 </html>

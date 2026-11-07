@@ -1,4 +1,4 @@
-// Bundle the demo into game.js + game.css so it runs from any static server (no ../ imports at runtime).
+// Bundle the demo into one self-contained game.js (no ../ imports at runtime).
 //   node build.mjs           one-shot build
 //   node build.mjs --watch   rebuild on source change
 import { execFileSync } from "node:child_process";
@@ -29,4 +29,4 @@ const args = [
 
 console.log("bundling with", ESBUILD);
 execFileSync(ESBUILD, args, { stdio: "inherit", cwd: HERE });
-console.log("game.js + game.css ready — run `node server.mjs` and open http://127.0.0.1:8123/");
+console.log("game.js ready — run `node server.mjs` and open http://127.0.0.1:8123/");

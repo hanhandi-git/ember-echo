@@ -1,235 +1,28 @@
-/* Game-specific layout only. Every panel, bar, button, key, skill slot, modal and label comes from
-   ../pixelfx/ui/pixel-ui.css; this file places those components on the 16:9 stage and gives the
-   whole interface one scale token, --px-u. */
-
-:root { color-scheme: dark; }
+/* The page is only a frame for the 320 x 240 pixel canvas. Every piece of UI, including the title,
+   pause/defeat/victory cards, is drawn inside the canvas by the pixel UI effects. */
 * { box-sizing: border-box; }
-
 html, body {
   margin: 0;
   height: 100%;
   background: #030308;
   overflow: hidden;
-  -webkit-user-select: none;
-  user-select: none;
 }
 body {
   display: grid;
   place-items: center;
   background: radial-gradient(ellipse 80% 70% at 50% 45%, #181222 0%, #07060d 58%, #020204 100%);
 }
-
-#app { display: grid; place-items: center; width: 100%; height: 100%; }
-
-#stage {
-  --px-u: 0.1cqw;
-  position: relative;
-  width: min(100vw, calc(100svh * 1.3468));
-  aspect-ratio: 100 / 74.25;
-  container-type: size;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #05060c;
+#stage { width: 100%; height: 100%; display: grid; place-items: center; }
+#game {
+  display: block;
+  width: min(100vw, calc(100svh * 4 / 3));
+  aspect-ratio: 4 / 3;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
   box-shadow:
     0 0 0 1px rgba(232, 192, 106, 0.16),
     0 0 60px rgba(0, 0, 0, 0.9),
     0 0 140px rgba(255, 122, 60, 0.06);
-  isolation: isolate;
-}
-
-#stage .px-ui { --px-u: 0.1cqw; }
-
-#view {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: #05060c;
-}
-
-#game {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-/* a restrained CRT wash, not a second UI layer */
-.fx-scan {
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  pointer-events: none;
-  border-bottom: 1px solid rgba(232, 192, 106, 0.16);
-  background:
-    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0, rgba(0, 0, 0, 0.2) 1px, transparent 1px, transparent 3px),
-    radial-gradient(ellipse at center, transparent 52%, rgba(2, 1, 6, 0.62) 100%);
-  opacity: 0.5;
-  mix-blend-mode: multiply;
-}
-
-/* ---------------------------------------------------------------- HUD */
-.hud {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-#stage.playing .hud { opacity: 1; }
-
-.hud-top {
-  position: absolute;
-  top: calc(var(--px-u) * 14);
-  left: calc(var(--px-u) * 16);
-  right: calc(var(--px-u) * 16);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: calc(var(--px-u) * 14);
-}
-
-.hero-card {
-  width: calc(var(--px-u) * 340);
-  display: flex;
-  align-items: center;
-  gap: calc(var(--px-u) * 9);
-  padding: calc(var(--px-u) * 7) calc(var(--px-u) * 10);
-}
-.portrait {
-  flex: none;
-  width: calc(var(--px-u) * 44);
-  height: calc(var(--px-u) * 60);
-}
-.hero-meta { flex: 1; min-width: 0; }
-.hero-line {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: calc(var(--px-u) * 8);
-  margin-bottom: calc(var(--px-u) * 5);
-}
-.hero-line strong { letter-spacing: 0.12em; }
-.hero-line em { font-style: normal; }
-.px-bars { gap: calc(var(--px-u) * 4); }
-
-.stage-card { width: calc(var(--px-u) * 270); flex: none; }
-.stage-card .px-kicker { line-height: 1.2; }
-.stage-card .px-title-sm { margin-top: calc(var(--px-u) * 2); letter-spacing: 0.24em; text-indent: 0.24em; }
-.stage-card .px-label { margin-top: calc(var(--px-u) * 3); }
-.stage-card .px-pips { margin-top: calc(var(--px-u) * 6); }
-
-.top-tools {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--px-u) * 10);
-  padding-top: calc(var(--px-u) * 2);
-}
-.kills { display: flex; flex-direction: column; align-items: flex-end; gap: calc(var(--px-u) * 1); }
-.kills .px-num { font-size: calc(var(--px-u) * 18); }
-.kills .px-label { font-size: calc(var(--px-u) * 7); }
-
-.boss-wrap {
-  position: absolute;
-  top: calc(var(--px-u) * 102);
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(var(--px-u) * 520);
-}
-.boss-line {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: calc(var(--px-u) * 10);
-  padding: 0 calc(var(--px-u) * 3) calc(var(--px-u) * 4);
-}
-.boss-line .px-label { color: var(--px-boss-2); letter-spacing: 0.22em; }
-
-.pickup-toast {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--px-u) * 20);
-  transform: translate(-50%, calc(var(--px-u) * 4));
-}
-.pickup-toast.is-open { transform: translate(-50%, 0); }
-
-/* ---------------------------------------------------------------- command bar */
-#mute { pointer-events: auto; }
-
-.command {
-  height: 18cqw;
-  padding: calc(var(--px-u) * 8) calc(var(--px-u) * 18);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-#stage.playing .command { opacity: 1; }
-.skills {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--px-u) * 9);
-  min-width: 0;
-}
-.combo { width: calc(var(--px-u) * 110); flex: none; }
-.command-side {
-  width: calc(var(--px-u) * 170);
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: calc(var(--px-u) * 7);
-  text-align: right;
-}
-.hint { font-size: calc(var(--px-u) * 8); line-height: 1.6; letter-spacing: 0.1em; color: var(--px-muted); }
-
-/* ---------------------------------------------------------------- floating text */
-.banner {
-  top: 27%;
-  z-index: 7;
-}
-.overlay {
-  z-index: 8;
-}
-
-/* ---------------------------------------------------------------- touch */
-.touch { display: none; }
-@media (pointer: coarse) {
-  .touch {
-    display: flex;
-    position: absolute;
-    inset: auto calc(var(--px-u) * 12) calc(var(--px-u) * 12);
-    justify-content: space-between;
-    z-index: 6;
-    pointer-events: none;
-  }
-  .dpad { position: relative; width: calc(var(--px-u) * 140); height: calc(var(--px-u) * 140); }
-  .dpad .tbtn { position: absolute; width: calc(var(--px-u) * 42); height: calc(var(--px-u) * 42); }
-  .dpad .tbtn[data-key="w"] { left: calc(var(--px-u) * 46); top: 0; }
-  .dpad .tbtn[data-key="a"] { left: 0; top: calc(var(--px-u) * 46); }
-  .dpad .tbtn[data-key="s"] { left: calc(var(--px-u) * 46); top: calc(var(--px-u) * 92); }
-  .dpad .tbtn[data-key="d"] { left: calc(var(--px-u) * 92); top: calc(var(--px-u) * 46); }
-  .tcast { display: grid; grid-template-columns: repeat(3, calc(var(--px-u) * 62)); gap: calc(var(--px-u) * 7); align-content: end; }
-  .tcast .tbtn { position: static; width: calc(var(--px-u) * 62); height: calc(var(--px-u) * 62); }
-  .tbtn { pointer-events: auto; }
-  .hint, .px-sigil { display: none; }
-  .command-side { width: auto; }
-}
-
-@media (max-width: 600px) {
-  #stage .px-ui { --px-u: 0.12cqw; }
-  .hero-card { width: calc(var(--px-u) * 300); }
-  .stage-card { width: calc(var(--px-u) * 230); }
-}
-
-@media (max-width: 700px) {
-  .px-controls { grid-template-columns: 1fr; width: 100%; }
-  .px-skill-list { grid-template-columns: repeat(2, minmax(0, max-content)); }
-  .command-side { display: none; }
-  .combo { width: calc(var(--px-u) * 70); }
 }

@@ -345,6 +345,7 @@ export class Boss {
     this.typeId = "boss";
     this.type = t;
     this.name = "冥河守卫 · 阿刻戎";
+    this.nameEn = "THE WARDEN";
     this.x = x;
     this.y = y;
     this.maxHp = t.hp;
@@ -435,10 +436,7 @@ export class Boss {
 
     if (this.state === "spawn") {
       this.timer -= dt;
-      if (this.timer <= 0) {
-        this.state = "chase";
-        g.ui.showBoss();
-      }
+      if (this.timer <= 0) this.state = "chase";
       return;
     }
 
@@ -602,7 +600,7 @@ export class Boss {
   transition(g, phase) {
     this.phase = phase;
     this.phaseLock = 1.25;
-    g.banner(phase === 2 ? "PHASE II" : "PHASE III", phase === 2 ? "守卫者展开冥河之印" : "余烬正在吞没他", "BOSS");
+    g.banner(phase === 2 ? "PHASE II" : "PHASE III", "THE WARDEN", phase === 2 ? "THE RIVER SEAL OPENS" : "ASH CONSUMES HIM");
     g.flashScreen(phase === 2 ? "#c9a8ff" : "#ff9a5c", 0.3);
     g.shake(6, 0.6);
     g.audio.play("phase");
@@ -635,8 +633,7 @@ export class Boss {
     g.bossDefeated = true;
     g.bossRef = null;
     g.hold = 2.4;
-    g.ui.hideBoss();
-    g.banner("GUARDIAN FALLEN", "冥河守卫化作了灰烬", "BOSS");
+    g.banner("GUARDIAN FALLEN", "THE WARDEN IS ASH", "");
     // the warden's summons unmake themselves when he falls
     g.after(0.5, () => {
       for (const e of g.enemies) if (e !== this && !e.dead && !e.boss) e.hurt(g, 9999, { silent: true, crit: false });

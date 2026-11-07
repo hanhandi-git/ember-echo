@@ -10,7 +10,7 @@ import { UI } from "./ui.js";
 import { AudioEngine } from "./audio.js";
 import { spawnEnemy } from "./enemies.js";
 
-const W = 320, H = 180;
+const SW = 320, SH = 240, BH = 180;
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, bg: hex("#05060c"),
   warn: hex("#ff8a5a"), warnLit: hex("#ffd36a"), gold: hex("#ffd36a"), green: hex("#a8ff9a"),
@@ -20,8 +20,9 @@ export class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { alpha: false });
-    this.frame = createFrame(W, H);
-    this.img = this.ctx.createImageData(W, H);
+    this.frame = createFrame(SW, SH);
+    this.uiFrame = createFrame(SW, SH);
+    this.img = this.ctx.createImageData(SW, SH);
     this.audio = new AudioEngine();
     this.fx = FX;
     this.ui = new UI(this);
@@ -57,7 +58,6 @@ export class Game {
     this.stage = STAGES[0];
     this.mapFx = null;
     this.spawnQueue = [];
-    this.ui.init();
     // the title idles on the volcanic act: lava light is a better first impression than a night sky
     this.loadStage(2, true);
   }
@@ -67,6 +67,7 @@ export class Game {
     this.stageIndex = index;
     this.stage = STAGES[index];
     this.mapFx = createFx(this.stage.map, { x: 0, y: 0, seed: 3 + index });
+    this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
     this.enemies = [];
     this.effects = [];
@@ -88,9 +89,8 @@ export class Game {
     this.phase = title ? "title" : "intro";
     this.state = title ? "title" : "playing";
     this.fade = title ? 0 : 1;
-    this.ui.setStage(this.stage);
     if (!title) {
-      this.banner(this.stage.act, this.stage.name, this.stage.sub, "STAGE");
+      this.banner(this.stage.actEn, this.stage.nameEn, this.stage.subEn, "STAGE");
       this.audio.play("ui");
     }
   }
@@ -101,8 +101,6 @@ export class Game {
     this.kills = 0;
     this.runTime = 0;
     this.loadStage(0, false);
-    this.ui.hideOverlay();
-    this.ui.start();
   }
 
   restart() {
@@ -113,10 +111,8 @@ export class Game {
     if (this.state === "playing") {
       this.state = "paused";
       this.shakeState = { amp: 0, t: 0, dur: 0 };
-      this.ui.pause();
     } else if (this.state === "paused") {
       this.state = "playing";
-      this.ui.hideOverlay();
     }
   }
 
@@ -185,7 +181,6 @@ export class Game {
       this.deathT += dt;
       if (this.deathT > 2.2 && this.state === "playing") {
         this.state = "gameover";
-        this.ui.gameover(this.stats());
       }
     }
   }
@@ -212,7 +207,6 @@ export class Game {
         if (this.stageIndex + 1 < STAGES.length) {
           this.fade = 1;
           this.loadStage(this.stageIndex + 1, false);
-          this.ui.hideBoss();
         } else this.victory();
       }
     }
@@ -227,10 +221,9 @@ export class Game {
     wave.forEach((spec, n) => this.spawnQueue.push({ ...spec, delay: n * 0.28 }));
     if (i > 0) {
       const boss = wave.some((s) => s.type === "boss");
-      if (boss) this.banner("THE WARDEN", "冥河守卫 · 阿刻戎", "BOSS");
-      else this.banner("WAVE " + (i + 1), `第 ${i + 1} 波`, "WAVE");
+      if (boss) this.banner("BOSS", "THE WARDEN", "ACHERON");
+      else this.banner("WAVE " + (i + 1), this.stage.nameEn, "MORE SHADOWS GATHER");
     }
-    this.ui.setWave(i, wave.length);
   }
 
   updateSpawns(dt) {
@@ -253,20 +246,17 @@ export class Game {
   stageClear() {
     this.phase = "clear";
     this.phaseT = 0;
-    const boss = this.bossDefeated;
-    this.banner(boss ? "GUARDIAN FALLEN" : "STAGE CLEAR", boss ? "守卫者化作了灰烬" : `${this.stage.name} 暂时沉寂`, "CLEAR");
+    this.ui.stageClear();
     this.audio.play("level");
     this.hero.heal(this, Math.round(this.hero.maxHp * 0.22), { big: true });
     this.hero.mp = Math.min(this.hero.maxMp, this.hero.mp + 24);
     this.projectiles = [];
     this.spawnQueue = [];
-    this.ui.hideBoss();
   }
 
   victory() {
     if (this.state === "victory") return;
     this.state = "victory";
-    this.ui.victory(this.stats());
     this.audio.play("level");
   }
 
@@ -333,7 +323,7 @@ export class Game {
         p.fx.stop();
         p.dead = true;
       }
-      if (p.x < 4 || p.x > W - 4 || p.y < 0 || p.y > H || p.life <= 0) { p.fx.stop(); p.dead = true; }
+      if (p.x < 4 || p.x > SW - 4 || p.y < 0 || p.y > BH || p.life <= 0) { p.fx.stop(); p.dead = true; }
     }
     this.projectiles = this.projectiles.filter((p) => !p.dead);
   }
@@ -435,19 +425,18 @@ export class Game {
 
   banner(kicker, title, sub, kind) { this.ui.banner(kicker, title, sub, kind); }
 
+  toggleMute() {
+    this.audio.unlock();
+    this.audio.setMuted(!this.audio.muted);
+  }
+
   /** Test/debug: run a skill by id without the keyboard. */
   cast(id) { return castSkill(this, id); }
 
   comboAdd() {
     this.combo.count++;
     this.combo.timer = 2.4;
-    this.ui.combo(this.combo.count, this.combo.timer);
-    // reuse the library's own UI effect at combo milestones, above the duelist
-    if (this.combo.count > 0 && this.combo.count % 10 === 0) {
-      this.addFx(this.fx.comboCounter, {
-        x: this.hero.x, y: this.hero.y - 58, count: this.combo.count, label: "COMBO", light: 0.85,
-      });
-    }
+    if (this.combo.count > 0 && this.combo.count % 10 === 0) this.ui.comboMilestone(this.combo.count);
   }
 
   dropLoot(x, y, typeId) {
@@ -552,15 +541,24 @@ export class Game {
       });
     }
 
-    // screen-space overlays
+    // The UI is screen-space, so drop the world shake and draw it into its own clean frame. It is
+    // merged back afterwards: opaque UI pixels replace the world color and its light, while UI glow
+    // adds to the world and the battle keeps its firelight everywhere the HUD does not cover.
     f.ox = 0;
     f.oy = 0;
+    const uf = this.uiFrame;
+    uf.ox = 0;
+    uf.oy = 0;
+    clearFrame(uf);
+    let up = painterFor(uf);
+    this.ui.draw(this, up, uf);
+    mergeUI(f, uf);
     p = painterFor(f);
     if (this.flashState.a > 0) {
-      p.rect(0, 0, W, H, this.flashState.color, Math.min(1, this.flashState.a / Math.max(0.001, this.flashState.max)));
+      p.rect(0, 0, SW, SH, this.flashState.color, Math.min(1, this.flashState.a / Math.max(0.001, this.flashState.max)));
     }
     if (this.fade > 0.001) {
-      p.rect(0, 0, W, H, hex("#050409"), this.fade);
+      p.rect(0, 0, SW, SH, hex("#050409"), this.fade);
       this.fade = Math.max(0, this.fade - 0.035);
     }
     // a thin vignette line at the very bottom keeps the HUD from floating in void
@@ -583,6 +581,34 @@ export class Game {
       p.dot(t.x + ax * (q - 2), t.y + ay * (q - 2) * 0.3, t.color, 0.5);
     }
     p.dot(t.x, t.y, C.warnLit, left < 0.3 ? 0.9 : 0.5);
+  }
+}
+
+function mergeUI(f, u) {
+  const n = f.w * f.h, C = f.color, L = f.light, UC = u.color, UL = u.light;
+  for (let i = 0; i < n; i++) {
+    const c = UC[i], a = c >>> 24;
+    if (a === 255) {
+      C[i] = c;
+      L[i] = UL[i];
+    } else if (a) {
+      const d = C[i], k = a / 255;
+      const ch = (s) => ((((c >>> s) & 255) * k + ((d >>> s) & 255) * (1 - k)) | 0);
+      C[i] = (255 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0);
+      const dl = L[i], ul = UL[i];
+      if (ul) {
+        const lr = Math.min(255, (dl & 255) + (ul & 255));
+        const lg = Math.min(255, ((dl >>> 8) & 255) + ((ul >>> 8) & 255));
+        const lb = Math.min(255, ((dl >>> 16) & 255) + ((ul >>> 16) & 255));
+        L[i] = (255 << 24) | (lb << 16) | (lg << 8) | lr;
+      }
+    } else if (UL[i]) {
+      const dl = L[i], ul = UL[i];
+      const lr = Math.min(255, (dl & 255) + (ul & 255));
+      const lg = Math.min(255, ((dl >>> 8) & 255) + ((ul >>> 8) & 255));
+      const lb = Math.min(255, ((dl >>> 16) & 255) + ((ul >>> 16) & 255));
+      L[i] = (255 << 24) | (lb << 16) | (lg << 8) | lr;
+    }
   }
 }
 
