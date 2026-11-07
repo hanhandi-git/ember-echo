@@ -33,6 +33,7 @@ import * as poof from "../../pixelfx/src/fx/spawn/poof.js";
 import * as shatterDeath from "../../pixelfx/src/fx/spawn/shatter-death.js";
 import * as spawnPortal from "../../pixelfx/src/fx/spawn/spawn-portal.js";
 import * as levelUp from "../../pixelfx/src/fx/ui/level-up.js";
+import * as comboCounter from "../../pixelfx/src/fx/ui/combo-counter.js";
 import * as runeCircle from "../../pixelfx/src/fx/arcane/rune-circle.js";
 import * as manaBurst from "../../pixelfx/src/fx/arcane/mana-burst.js";
 import * as frozen from "../../pixelfx/src/fx/status/frozen.js";
@@ -47,7 +48,7 @@ import * as collectBurst from "../../pixelfx/src/fx/pickups/collect-burst.js";
 export const FX = {
   swordSlash, doubleSlash, heavyCleave, scytheReap, fireball, meteor, frostNova,
   lightningStrike, thunderclap, healAoe, blessing, divineShield,
-  hitSpark, critHit, smallExplosion, poof, shatterDeath, spawnPortal, levelUp,
+  hitSpark, critHit, smallExplosion, poof, shatterDeath, spawnPortal, levelUp, comboCounter,
   runeCircle, manaBurst, frozen, burning, stunned, plasmaShot,
   heartPickup, potionPickup, xpOrb, collectBurst,
 };

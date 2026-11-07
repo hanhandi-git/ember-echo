@@ -442,6 +442,12 @@ export class Game {
     this.combo.count++;
     this.combo.timer = 2.4;
     this.ui.combo(this.combo.count, this.combo.timer);
+    // reuse the library's own UI effect at combo milestones, above the duelist
+    if (this.combo.count > 0 && this.combo.count % 10 === 0) {
+      this.addFx(this.fx.comboCounter, {
+        x: this.hero.x, y: this.hero.y - 58, count: this.combo.count, label: "COMBO", light: 0.85,
+      });
+    }
   }
 
   dropLoot(x, y, typeId) {

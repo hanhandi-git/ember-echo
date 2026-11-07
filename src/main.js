@@ -1,5 +1,7 @@
 // Boot, input, and the one requestAnimationFrame loop.
 
+import "../../pixelfx/ui/pixel-ui.css";
+import "../styles.css";
 import { boot } from "./game.js";
 import { castSkill } from "./skills.js";
 

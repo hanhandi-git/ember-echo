@@ -2498,12 +2498,12 @@ function drawBody(S) {
   useFrame("head");
   ellipsoid(F_("head").t, F_("head").R, [3, 3.3, 2.8], PART.head, 0);
   ellipsoid(add(F_("head").t, mv(F_("head").R, [0.85, -0.45, 0])), F_("head").R, [2.4, 2.7, 2.35], PART.face, 0);
-  const arm = (far, A2, sh, up, el, fo, ha, nameU, nameF) => {
+  const arm = (far, A2, sh, up, el2, fo, ha, nameU, nameF) => {
     curDim = far ? 1 : 0;
     useFrame(nameU);
     sphere(sh, 2.5, up, 0);
     sweep(sh, A2.joint, 2.1, 1.6, up, 0);
-    sphere(A2.joint, 1.45, el, 1);
+    sphere(A2.joint, 1.45, el2, 1);
     useFrame(nameF);
     sweep(A2.joint, A2.end, 1.6, 1.2, fo, 0, 0.15);
     sphere(A2.end, 1.9, ha, 0);
@@ -2565,12 +2565,12 @@ function drawCharacter(S, look2) {
   bone2("neck", [0, 0, 0], [0, 1.6, 0], 1.15, 1.05, 3);
   ball("head", [0, 0, 0], [2.7, 3, 2.6], 3);
   ball("head", [0.65, -0.5, 0], [2.2, 2.4, 2.2], 3);
-  const arm = (A2, sh, up, el, fo, ha, U, F) => {
+  const arm = (A2, sh, up, el2, fo, ha, U, F) => {
     const cloth = heavy || robed;
     useFrame(U);
     sphere(sh, heavy ? 2.6 : 2, up, cloth ? 4 : 3);
     sweep(sh, A2.joint, heavy ? 2.2 : 1.65, 1.25, up, cloth ? 4 : 3);
-    sphere(A2.joint, 1.2, el, cloth ? 4 : 3);
+    sphere(A2.joint, 1.2, el2, cloth ? 4 : 3);
     useFrame(F);
     sweep(A2.joint, A2.end, 1.45, 1.05, fo, heavy ? 4 : 3);
     sphere(A2.end, 1.5, ha, 3);
@@ -2830,7 +2830,7 @@ function resolveLook(character) {
   const c = characterOf(character);
   if (!LOOKS.has(c.id)) {
     const names = { 3: "skin", 4: "cloth", 5: "hair", 6: "gold", 7: "leather", 8: "glow", 9: "bone", 10: "lining" };
-    LOOKS.set(c.id, { ...c, materials: c.style ? Object.fromEntries(Object.entries(names).map(([m, key]) => [m, c[key].map((v) => hex(v) >>> 0)])) : null });
+    LOOKS.set(c.id, { ...c, materials: c.style ? Object.fromEntries(Object.entries(names).map(([m, key2]) => [m, c[key2].map((v) => hex(v) >>> 0)])) : null });
   }
   return LOOKS.get(c.id);
 }
@@ -2849,11 +2849,11 @@ function posed(pose4, character = "dummy") {
     const rest = render({}, look2);
     SOURCE_BOXES.set(look2.id, { x: rest.x0, y: rest.y0, w: rest.x1 - rest.x0 + 1, h: rest.y1 - rest.y0 + 1 });
   }
-  const key = look2.id + ":" + keyOf(pose4);
-  let r = CACHE.get(key);
+  const key2 = look2.id + ":" + keyOf(pose4);
+  let r = CACHE.get(key2);
   if (!r) {
     if (CACHE.size > 6e3) CACHE.clear();
-    CACHE.set(key, r = render(pose4, look2, SOURCE_BOXES.get(look2.id)));
+    CACHE.set(key2, r = render(pose4, look2, SOURCE_BOXES.get(look2.id)));
   }
   return r;
 }
@@ -2964,8 +2964,8 @@ function stockActor(k = 1, character = "dummy") {
   k = k === 2 ? 2 : 1;
   const look2 = characterOf(character);
   if (look2.style) {
-    const key = look2.id + ":" + k;
-    if (!CHARACTER_ACTORS.has(key)) {
+    const key2 = look2.id + ":" + k;
+    if (!CHARACTER_ACTORS.has(key2)) {
       const r = posed({}, look2.id), scale3 = k === 2 ? 1 : 2;
       const x2 = Math.floor(r.x0 / scale3), y2 = Math.floor(r.y0 / scale3);
       const w = Math.floor(r.x1 / scale3) - x2 + 1, h = Math.floor(r.y1 / scale3) - y2 + 1;
@@ -2975,7 +2975,7 @@ function stockActor(k = 1, character = "dummy") {
         data[index] = 1;
         pixels[index] = r.color[i];
       }
-      CHARACTER_ACTORS.set(key, {
+      CHARACTER_ACTORS.set(key2, {
         character: look2.id,
         mask: { w, h, data },
         pixels,
@@ -2989,7 +2989,7 @@ function stockActor(k = 1, character = "dummy") {
         custom: true
       });
     }
-    return CHARACTER_ACTORS.get(key);
+    return CHARACTER_ACTORS.get(key2);
   }
   const m = MASKS[k], x = -Math.floor(m.w / 2), y = -m.h;
   return { mask: m, pixels: PIXELS[k], x, y, w: m.w, h: m.h, k, head: [0, y], chest: [0, k === 2 ? -26 : y + 11], ...k === 2 ? { eyes: [[13, 3], [15, 3]] } : {} };
@@ -3012,21 +3012,21 @@ function painterFor(frame3) {
 }
 var FADE = 0.3;
 var isRamp = (v) => Array.isArray(v) && v.length > 0 && v.every((c) => typeof c === "number" || /^#[0-9a-f]{3,8}$/i.test(c));
-function resolveOptions(meta41, o = {}) {
-  const opts = { ...meta41.options ?? {}, ...o };
-  for (const [k, def] of Object.entries(meta41.options ?? {}))
+function resolveOptions(meta42, o = {}) {
+  const opts = { ...meta42.options ?? {}, ...o };
+  for (const [k, def] of Object.entries(meta42.options ?? {}))
     if (isRamp(def) && isRamp(o[k]) && o[k].length !== def.length) opts[k] = fit(o[k], def.length).map(toHex);
-  if (meta41.actor && !opts.actor) opts.actor = stockActor(meta41.actor === 2 ? 2 : 1, opts.character);
+  if (meta42.actor && !opts.actor) opts.actor = stockActor(meta42.actor === 2 ? 2 : 1, opts.character);
   return opts;
 }
 function createFx(mod, o = {}) {
-  const meta41 = mod.meta ?? {};
-  const opts = resolveOptions(meta41, o);
+  const meta42 = mod.meta ?? {};
+  const opts = resolveOptions(meta42, o);
   const impl = mod.create ? mod.create(opts) : mod;
-  const D17 = meta41.duration ?? 1;
+  const D17 = meta42.duration ?? 1;
   let t = 0, stopAt = Infinity;
   return {
-    meta: meta41,
+    meta: meta42,
     options: opts,
     get t() {
       return t;
@@ -3042,7 +3042,7 @@ function createFx(mod, o = {}) {
       p.place(opts.x ?? 0, opts.y ?? 0, !!opts.flip, opts.angle ?? 0);
       p.fade = stopAt === Infinity ? 1 : clamp(1 - (t - stopAt) / FADE);
       p.lightK = opts.light ?? 1;
-      const tt = meta41.loop ? t % D17 : Math.min(t, D17);
+      const tt = meta42.loop ? t % D17 : Math.min(t, D17);
       if (layer !== "front" && impl.drawBack) {
         p.layer = "back";
         impl.drawBack(p, tt, opts);
@@ -3057,7 +3057,7 @@ function createFx(mod, o = {}) {
       if (stopAt === Infinity) stopAt = t;
     },
     done() {
-      return t - stopAt >= FADE || !meta41.loop && t >= D17;
+      return t - stopAt >= FADE || !meta42.loop && t >= D17;
     }
   };
 }
@@ -7805,8 +7805,8 @@ var ray = (q, t) => {
 };
 var LANDS = /* @__PURE__ */ new Map();
 function landings(o, S) {
-  const key = `${o.seed}:${S.x}:${S.y}`;
-  if (LANDS.has(key)) return LANDS.get(key);
+  const key2 = `${o.seed}:${S.x}:${S.y}`;
+  if (LANDS.has(key2)) return LANDS.get(key2);
   const out = [];
   for (let i = 0; i < 20; i++) {
     const R4 = rng(o.seed, i), q = R4.range(-0.9, 0.9), v = R4.range(22, 34), sway = R4.range(1, 3), ph = R4.range(0, TAU), size = R4.range(0.8, 2.4);
@@ -7820,7 +7820,7 @@ function landings(o, S) {
     }
     out.push({ q, v, sway, ph, size, land });
   }
-  LANDS.set(key, out);
+  LANDS.set(key2, out);
   return out;
 }
 function drawBack8(p, t, o) {
@@ -7928,8 +7928,8 @@ function lattice(p, t, o, back) {
   const C4 = fit(o.palette, 8), r = o.radius, T4 = meta23.duration, phi = t / T4 * (Math.PI / N2), sw = sheen(t, T4), seen = /* @__PURE__ */ new Map();
   const dot2 = (x, y, z) => {
     if (z < 0 !== back) return;
-    const key = Math.floor(x) * 1e3 + Math.floor(y), f = Math.abs(z) / r, q = (x - (y - CY2)) / (r * 1.414), hot = Math.abs(q - sw) < 0.12 ? 1 : 0, v = seen.get(key);
-    if (!v || f < v[2]) seen.set(key, [x, y, f, hot || (v ? v[3] : 0)]);
+    const key2 = Math.floor(x) * 1e3 + Math.floor(y), f = Math.abs(z) / r, q = (x - (y - CY2)) / (r * 1.414), hot = Math.abs(q - sw) < 0.12 ? 1 : 0, v = seen.get(key2);
+    if (!v || f < v[2]) seen.set(key2, [x, y, f, hot || (v ? v[3] : 0)]);
   };
   for (let k = 0; k < 2 * N2; k++) {
     const lon = phi + k * Math.PI / N2;
@@ -8741,7 +8741,7 @@ function create17(o) {
     },
     draw(p) {
       if (!burst2) {
-        const lv = level2(t), shake2 = t > CRACK2 && t < BURST ? (Math.floor(t * 50) % 2 ? 1 : -1) * (t > BURST - 0.15 ? 1 : 0.5) : 0;
+        const lv = level2(t), shake3 = t > CRACK2 && t < BURST ? (Math.floor(t * 50) % 2 ? 1 : -1) * (t > BURST - 0.15 ? 1 : 0.5) : 0;
         const glint2 = t > LOCK ? (t - LOCK) * 0.9 % 1.6 : -1;
         for (let y = 0; y < H5; y++) {
           if (y < Math.floor(lv)) continue;
@@ -8752,23 +8752,23 @@ function create17(o) {
             const g = Math.abs((x + (H5 - y) * 0.6) / (W8 + H5 * 0.6) - glint2), on = glint2 >= 0 && glint2 <= 1;
             if (on && g < 0.035) c = WHITE;
             else if (on && g < 0.07 && c !== C4[3]) c = C4[6];
-            p.px(X0 + x + shake2, Y0 + y, c);
-            if (!solid2[i] && c === col[i]) p.blend(X0 + x + shake2, Y0 + y, glass[i], 0.3);
+            p.px(X0 + x + shake3, Y0 + y, c);
+            if (!solid2[i] && c === col[i]) p.blend(X0 + x + shake3, Y0 + y, glass[i], 0.3);
           }
         }
         for (let y = Math.max(0, Math.floor(lv) - 1); y <= H5; y++)
-          for (let x = -1; x <= W8; x++) if (!at8(x, y) && (at8(x - 1, y) || at8(x + 1, y) || at8(x, y + 1) && y + 1 >= lv || at8(x, y - 1)) && y < H5) p.px(X0 + x + shake2, Y0 + y, C4[0]);
+          for (let x = -1; x <= W8; x++) if (!at8(x, y) && (at8(x - 1, y) || at8(x + 1, y) || at8(x, y + 1) && y + 1 >= lv || at8(x, y - 1)) && y < H5) p.px(X0 + x + shake3, Y0 + y, C4[0]);
         for (const s of spikes2) {
           const g = ease.outBack(clamp((t - s.at) / 0.12), 2.4);
-          if (g > 0) crystal(p, s.x + shake2, s.base, s.h * g, s.w, s.lean * g, C4, { white: t < s.at + 0.04 });
+          if (g > 0) crystal(p, s.x + shake3, s.base, s.h * g, s.w, s.lean * g, C4, { white: t < s.at + 0.04 });
         }
         if (cracked) {
           const k = clamp((t - CRACK2) / 0.25);
           for (const pts of cracks3)
             for (let i = 0, n = Math.floor(pts.length * k); i < n; i++) {
               const [x, y] = pts[i], fresh = i > n - 3 && t - CRACK2 < 0.3;
-              p.px(X0 + x + shake2, Y0 + y, fresh ? WHITE : C4[7]);
-              if (!fresh) p.px(X0 + x + shake2, Y0 + y + 1, C4[1]);
+              p.px(X0 + x + shake3, Y0 + y, fresh ? WHITE : C4[7]);
+              if (!fresh) p.px(X0 + x + shake3, Y0 + y + 1, C4[1]);
             }
         }
         p.glow(0, -18, 30, C4[4], 0.18 * smooth(0, LOCK, t));
@@ -9175,6 +9175,11 @@ function haloActor(p, A2, c, k, t = 0) {
   if (!A2 || k <= 0.02) return;
   p.outline(A2.mask, A2.x, A2.y, c, (mx, my) => k * (0.75 + 0.45 * noise(my * 0.45 - t * 7, mx * 3)));
 }
+function shake(t, amp, t0 = 0, len2 = 0.3, seed = 1, hz = 32) {
+  if (t < t0 || t > t0 + len2) return [0, 0];
+  const k = 1 - (t - t0) / len2;
+  return [Math.round(noise(t * hz, seed) * amp * k * 1.7), Math.round(noise(t * hz, seed + 7) * amp * k * 1.3)];
+}
 
 // ../pixelfx/src/fx/ui/level-up.js
 var meta30 = {
@@ -9482,12 +9487,134 @@ function create19(o) {
   };
 }
 
+// ../pixelfx/src/fx/ui/combo-counter.js
+var combo_counter_exports = {};
+__export(combo_counter_exports, {
+  create: () => create20,
+  meta: () => meta31
+});
+var meta31 = {
+  name: "Combo counter",
+  desc: "x5 COMBO rockets in on streaming speed lines, smearing, and slams to a stop: a white flash, a ring, sparks; it pulses while a timer bar drains, then whooshes out.",
+  tags: ["ui", "combo", "counter", "combat", "text", "one-shot"],
+  size: [208, 100],
+  origin: [104, 50],
+  duration: 1.45,
+  loop: false,
+  fps: 30,
+  bg: "dark",
+  options: { palette: ["#1a0516", "#3d0a33", "#701560", "#b0228f", "#f53cd1", "#ff86e6", "#ffd2f6", "#ffffff"], count: 5, label: "COMBO", seed: 6 }
+};
+var HIT4 = 0.1;
+var BEAT = 0.5;
+var OUT2 = 1.1;
+function speedLines(p, C4, t, k, dir) {
+  if (k <= 0.02) return;
+  const f = Math.floor(t * 30);
+  for (let i = 0; i < 18; i++) {
+    if (rand(f, i, 3) > k) continue;
+    const y = Math.round((rand(f, i, 1) - 0.5) * 60), L3 = 16 + rand(f, i, 2) * 50, x = (rand(f, i, 4) - 0.5) * 190;
+    const x0 = Math.max(-100, x - L3 / 2), x1 = Math.min(100, x + L3 / 2);
+    p.line(x0, y, x1, y, (u) => (dir > 0 ? u : 1 - u) > 0.75 ? WHITE : (dir > 0 ? u : 1 - u) > 0.35 ? C4[6] : C4[4], (u) => (dir > 0 ? u : 1 - u) < 0.25 ? 0.6 : 1);
+  }
+}
+function create20(o) {
+  const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), SHADOW2 = scale(C4[0], 0.5);
+  const ps = new Particles({ rng: R4, sparks: [C4[7], C4[6], C4[5], C4[3]] }), lights = new Lights();
+  const big = spell("x" + Math.round(o.count)), lab = spell(o.label);
+  const BS = 4, LS = 2, W8 = big.w * BS + 4 + lab.w * LS, X0 = -W8 / 2, BASE = 12;
+  const spikes2 = Array.from({ length: 10 }, (_, i) => [i / 10 * TAU + R4.range(-0.15, 0.15), R4.range(14, 24)]);
+  let t = 0, hit = false, out = false;
+  const xAt = (t2) => {
+    t2 = Math.max(0, t2);
+    if (t2 < HIT4) return -32 * Math.pow(1 - t2 / HIT4, 2);
+    if (t2 < OUT2) return 7 * Math.exp(-(t2 - HIT4) * 18) * Math.sin((t2 - HIT4) * 34);
+    const u = seg(t2, OUT2, OUT2 + 0.2);
+    return u < 0.3 ? -4 * ease.outQuad(u / 0.3) : -4 + 24 * ease.inQuad((u - 0.3) / 0.7);
+  };
+  return {
+    update(dt) {
+      t += dt;
+      if (!hit && t >= HIT4) {
+        hit = true;
+        lights.add(0, 0, 70, C4[5], 0.7, 0.4);
+        lights.add(-20, 0, 34, WHITE, 0.8, 0.1);
+        for (let i = 0; i < 26; i++) {
+          const an = R4.range(-1.2, 1.2) + (R4.chance(0.3) ? Math.PI : 0), sp = R4.range(120, 300);
+          ps.spawn(P.SPARK, R4.range(-20, 20), R4.range(-8, 8), Math.cos(an) * sp, Math.sin(an) * sp * 0.6 - 20, R4.range(0.12, 0.3));
+        }
+      }
+      if (t > BEAT && t < OUT2 && R4.chance(0.1)) {
+        const x = X0 + R4.range(0, big.w * BS), y = BASE - R4.range(0, 30);
+        ps.spawn(P.STAR, x, y, R4.range(-10, 10), -R4.range(5, 20), R4.range(0.25, 0.45), R4.pick([C4[7], C4[6]]), R4.chance(0.3) ? 1.6 : 0.6);
+      }
+      if (!out && t >= OUT2 + 0.06) {
+        out = true;
+        for (let i = 0; i < 10; i++) ps.spawn(P.MOTE, R4.range(-50, 30), R4.range(-14, 10), R4.range(220, 320), R4.range(-10, 10), R4.range(0.06, 0.14), R4.pick([C4[7], C4[6]]), 1);
+      }
+      ps.update(dt);
+      lights.update(dt);
+    },
+    draw(p) {
+      const [sx, sy] = shake(t, 3, HIT4, 0.25, o.seed);
+      speedLines(p, C4, t, t < HIT4 ? 1 : t < OUT2 ? Math.max(0, 1 - (t - HIT4) / 0.35) * 0.9 : seg(t, OUT2 + 0.04, OUT2 + 0.12) * (1 - seg(t, OUT2 + 0.18, OUT2 + 0.3)), t >= OUT2 ? -1 : 1);
+      const hk = t - HIT4;
+      if (hk >= 0 && hk < 0.07) {
+        const cx = X0 + big.w * BS / 2, k = hk < 0.035 ? 1 : 1.3;
+        for (const [an, L3] of spikes2) {
+          const ca = Math.cos(an) * 1.4, sa = Math.sin(an);
+          if (k === 1) p.beam(cx, 0, cx + ca * L3, sa * L3, 3, (u) => u < 0.5 ? WHITE : C4[6]);
+          else p.line(cx + ca * L3 * 0.5, sa * L3 * 0.5, cx + ca * L3 * k, sa * L3 * k, C4[5]);
+        }
+      }
+      const rk = (t - HIT4) / 0.32;
+      if (rk > 0 && rk < 1) {
+        const r = 20 + 34 * ease.outCubic(rk);
+        p.ellipse(sx, sy, r * 1.5, r * 0.75, rk < 0.3 ? WHITE : C4[5], (d) => d > 1 - 1.5 / (r * 0.75) ? 1.25 - rk : 0);
+      }
+      ps.draw(p);
+      const x = xAt(t), moving = t < HIT4 || t > OUT2 + 0.06, stretch = moving ? t < HIT4 ? 1.22 : 1.12 : 1;
+      const pulse2 = Math.exp(-(((t - BEAT) / 0.05) ** 2)), flash = t >= HIT4 && t < HIT4 + 0.07 || pulse2 > 0.6 ? 1 : 0;
+      const a = t > OUT2 ? 1 - seg(t, OUT2 + 0.08, OUT2 + 0.2) : t < 0.035 ? 0.5 : 1;
+      const layout = (dx) => {
+        const bs = BS * (1 + 0.12 * pulse2), items = [];
+        const bx = X0 + dx - big.w * BS * (stretch - 1) / 2, by = BASE - 7 * bs;
+        big.letters.forEach((L3) => L3.g && items.push({ g: L3.g, x: bx + L3.x * BS * stretch, y: by, sx: BS * stretch, sy: bs, slant: 1, flash, a }));
+        const lx = X0 + dx + big.w * BS * stretch + 4;
+        lab.letters.forEach((L3) => L3.g && items.push({ g: L3.g, x: lx + L3.x * LS * stretch, y: BASE - 7 * LS, sx: LS * stretch, sy: LS, slant: 0.5, flash, a }));
+        return items;
+      };
+      if (moving && a > 0) {
+        for (const [lag, c] of [[0.03, C4[2]], [0.015, C4[3]]]) {
+          const items = layout(xAt(t - (t < HIT4 ? lag : -lag)) + sx);
+          drawWord(p, items.map((it) => ({ ...it, flash: 0 })), { fill: [c], edge: c, under: c, outline: 0, shadow: 0 });
+        }
+      }
+      if (a > 0) {
+        const sh = seg(t, 0.62, 0.86), items = layout(x + sx);
+        drawWord(p, items.map((it) => ({ ...it, y: it.y + sy })), { fill: [C4[4], C4[5], C4[6], C4[7]], edge: WHITE, under: C4[3], outline: C4[0], ow: 2, shadow: SHADOW2, shine: sh > 0 && sh < 1 ? X0 - 10 + (W8 + 24) * sh : null, shineY: BASE - 28, glint: C4[6] });
+        const bk = seg(t, HIT4 + 0.1, HIT4 + 0.2) * (t > OUT2 ? 0 : 1);
+        if (bk > 0) {
+          const bw = W8 * bk, left = 1 - seg(t, HIT4 + 0.2, OUT2), bx = X0 + x + sx, by = BASE + 5 + sy;
+          p.rect(bx - 1, by - 1, bw + 2, 4, C4[0]);
+          p.rect(bx, by, bw, 2, C4[1]);
+          if (left > 0) p.rect(bx, by, bw * left, 2, C4[5]), p.rect(bx, by, bw * left, 1, C4[6]), p.px(bx + bw * left - 1, by, WHITE);
+        }
+      }
+      p.glow(sx - 20, 0, 60, C4[4], 0.2 * a + (t >= HIT4 && t < HIT4 + 0.15 ? 0.5 * (1 - (t - HIT4) / 0.15) : 0) + 0.25 * pulse2);
+      const g = (t - 0.86) / 0.22;
+      if (g > 0 && g < 1) sparkle(p, X0 + W8 - 2, BASE - 14, 6 * Math.sin(g * Math.PI), C4[7], C4[5], 0.5);
+      lights.draw(p);
+    }
+  };
+}
+
 // ../pixelfx/src/fx/arcane/rune-circle.js
 var rune_circle_exports = {};
 __export(rune_circle_exports, {
   draw: () => draw12,
   drawBack: () => drawBack10,
-  meta: () => meta31
+  meta: () => meta32
 });
 
 // ../pixelfx/src/fx/arcane/_lib.js
@@ -9552,7 +9679,7 @@ var RI = 23;
 var RC = 7;
 var SY4 = 0.3;
 var NR = 12;
-var meta31 = {
+var meta32 = {
   name: "Rune circle",
   desc: "A rune circle turns on the floor in perspective: a carousel of runes lit by chasing light, a turning square, ticks, motes rising off it.",
   tags: ["arcane", "rune", "circle", "magic", "aura", "ground", "loop"],
@@ -9636,13 +9763,13 @@ function draw12(p, t, o) {
 // ../pixelfx/src/fx/arcane/mana-burst.js
 var mana_burst_exports = {};
 __export(mana_burst_exports, {
-  create: () => create20,
-  meta: () => meta32
+  create: () => create21,
+  meta: () => meta33
 });
 var CY4 = -28;
 var GATHER = 0.22;
 var N3 = 9;
-var meta32 = {
+var meta33 = {
   name: "Mana burst",
   desc: "Energy rushes into a point and blows out in a white flash and rings, flinging glowing runes that flare and pop into sparks one after another.",
   tags: ["arcane", "burst", "mana", "rune", "nova", "magic", "ground", "one-shot"],
@@ -9654,7 +9781,7 @@ var meta32 = {
   bg: "ground",
   options: { palette: PAL.arcane, seed: 9 }
 };
-function create20(o) {
+function create21(o) {
   const C4 = fit(o.palette, 8), R4 = new Rng(o.seed);
   const ps = new Particles({ rng: R4, ground: () => 0, sparks: [WHITE, C4[6], C4[5], C4[4]] }), lights = new Lights();
   const runes = Array.from({ length: N3 }, (_, i) => {
@@ -9765,7 +9892,7 @@ __export(frozen_exports, {
   actorAlpha: () => actorAlpha2,
   draw: () => draw13,
   drawBack: () => drawBack11,
-  meta: () => meta33
+  meta: () => meta34
 });
 
 // ../pixelfx/src/fx/status/_lib.js
@@ -9939,7 +10066,7 @@ function eyes(a) {
 }
 
 // ../pixelfx/src/fx/status/frozen.js
-var meta33 = {
+var meta34 = {
   name: "Frozen",
   desc: "Chilled to the bone: frost ferns creep over the body, icicles hang from chin and hands and drip, breath steams, snow settles, a shiver every second, frost spreads underfoot.",
   tags: ["status", "ice", "freeze", "frozen", "cold", "chill", "debuff", "loop"],
@@ -9957,11 +10084,11 @@ var act11 = {
   onBody: true,
   poses: [[0, { ...STIFF, crouch: 2 }], [0.22, STIFF], [1, STIFF], [1, { ...STIFF, crouch: 2 }, "snap"], [1.22, STIFF], [2, { ...STIFF, crouch: 2 }]]
 };
-var D14 = meta33.duration;
+var D14 = meta34.duration;
 var SHIVER = 1;
 var since = (t) => (t % SHIVER + SHIVER) % SHIVER;
 var actorAlpha2 = () => 0;
-var shake = (t) => since(t) < 0.22 ? Math.floor(t * 50) % 2 ? 1 : -1 : 0;
+var shake2 = (t) => since(t) < 0.22 ? Math.floor(t * 50) % 2 ? 1 : -1 : 0;
 var PLANS = /* @__PURE__ */ new WeakMap();
 function plan(a, seed) {
   let m = PLANS.get(a.mask);
@@ -9996,7 +10123,7 @@ function plan(a, seed) {
     return n;
   };
   const hangs = S.body.filter(([x, y]) => !S.on(x, y + 1) && S.on(x, y - 1) && y < H5 * 0.72 && y > 4).map(([x, y]) => [x, y, clear(x, y)]).filter(([, , c]) => c >= 4);
-  const best = (f, key) => hangs.filter(f).sort(key)[0];
+  const best = (f, key2) => hangs.filter(f).sort(key2)[0];
   const icicles = [
     best(([, y]) => y < H5 * 0.36, (p, q) => p[0] - q[0]),
     best(([, y]) => y < H5 * 0.36, (p, q) => q[0] - p[0]),
@@ -10030,7 +10157,7 @@ function drawBack11(p, t, o) {
   frost2(p, C4, t, reach);
 }
 function draw13(p, t, o) {
-  const C4 = fit(o.palette, 8), a = o.actor, S = shape(a), H5 = S.h, P3 = plan(a, o.seed), dx = shake(t), ph = since(t);
+  const C4 = fit(o.palette, 8), a = o.actor, S = shape(a), H5 = S.h, P3 = plan(a, o.seed), dx = shake2(t), ph = since(t);
   const X = (mx) => a.x + mx + dx, Y = (my) => a.y + my;
   for (const [mx, my] of S.body) {
     const c = colorAt(a, mx, my), ice = C4[clamp(1 + Math.round(luma(c) * 5.6), 1, 7)];
@@ -10087,9 +10214,9 @@ __export(burning_exports, {
   actorAlpha: () => actorAlpha3,
   draw: () => draw14,
   drawBack: () => drawBack12,
-  meta: () => meta34
+  meta: () => meta35
 });
-var meta34 = {
+var meta35 = {
   name: "Burning",
   desc: "Burning over time: small flames lick from four hot spots, trailing sparks and thin smoke; every 0.6 s they flare, the body flashes white then orange, scorch marks spread.",
   tags: ["status", "fire", "burn", "dot", "debuff", "loop"],
@@ -10113,7 +10240,7 @@ var act12 = {
   onBody: true,
   poses: [[0, A_], [0.15, B_, "snap"], [0.3, A_, "snap"], [0.45, B_, "snap"], [0.6, A_, "snap"], [0.75, B_, "snap"], [0.9, A_, "snap"], [1.05, B_, "snap"], [1.2, A_, "snap"]]
 };
-var D15 = meta34.duration;
+var D15 = meta35.duration;
 var TICK = 0.6;
 var WIND3 = -14;
 var since2 = (t) => (t % TICK + TICK) % TICK;
@@ -10207,9 +10334,9 @@ __export(stunned_exports, {
   act: () => act13,
   draw: () => draw15,
   drawBack: () => drawBack13,
-  meta: () => meta35
+  meta: () => meta36
 });
-var meta35 = {
+var meta36 = {
   name: "Stunned",
   desc: "Seeing stars: three spinning stars and two little birds circle the head on a tilted ring, ducking behind it and sweeping round in front, trailing glitter.",
   tags: ["status", "stun", "dizzy", "daze", "stars", "birds", "debuff", "loop"],
@@ -10238,7 +10365,7 @@ var act13 = {
     [2, { ...DAZE, x: -1, lean: -3, hx: -1 }]
   ]
 };
-var D16 = meta35.duration;
+var D16 = meta36.duration;
 var TURNS = 2;
 var N4 = 5;
 var STAR7 = ["...#...", "..###..", "#######", ".#####.", "..###..", ".##.##.", ".#...#."];
@@ -10307,7 +10434,7 @@ function draw15(p, t, o) {
 var plasma_shot_exports = {};
 __export(plasma_shot_exports, {
   draw: () => draw16,
-  meta: () => meta36
+  meta: () => meta37
 });
 
 // ../pixelfx/src/fx/projectiles/_lib.js
@@ -10330,7 +10457,7 @@ function spark2(p, x, y, vx, vy, k, S, glow = 0.45, stretch = 0.022, max = 9) {
 }
 
 // ../pixelfx/src/fx/projectiles/plasma-shot.js
-var meta36 = {
+var meta37 = {
   name: "Plasma shot",
   desc: "A glowing plasma blob: hot knots churning in its core, a corona crackling over its skin, its tail necking into droplets that tear off, cool and wink out behind.",
   tags: ["projectile", "plasma", "energy", "sci-fi", "directional", "loop"],
@@ -10348,8 +10475,8 @@ var meta36 = {
   }
 };
 function draw16(p, t, o) {
-  const C4 = fit(o.palette, 8), R4 = o.size, V = o.speed, S = o.seed, D17 = meta36.duration, w = TAU * t / D17;
-  const fr = Math.floor(t * 30 + 1e-6), left = -meta36.origin[0] + 2;
+  const C4 = fit(o.palette, 8), R4 = o.size, V = o.speed, S = o.seed, D17 = meta37.duration, w = TAU * t / D17;
+  const fr = Math.floor(t * 30 + 1e-6), left = -meta37.origin[0] + 2;
   const T02 = -R4 * 3.2, tail = (x) => Math.sin(x * 0.2 + w * 2) * (0.3 + (T02 - x) / 44 * 1.8);
   for (let x = T02; x > T02 - 44; x -= 1) {
     const u = (T02 - x) / 44, y = tail(x);
@@ -10426,7 +10553,7 @@ var heart_pickup_exports = {};
 __export(heart_pickup_exports, {
   draw: () => draw17,
   drawBack: () => drawBack14,
-  meta: () => meta37
+  meta: () => meta38
 });
 
 // ../pixelfx/src/fx/pickups/_lib.js
@@ -10551,7 +10678,7 @@ function pool2(p, x, y, rx, ry, c, k) {
 }
 
 // ../pixelfx/src/fx/pickups/heart-pickup.js
-var meta37 = {
+var meta38 = {
   name: "Heart pickup",
   desc: "A plump glossy heart hovering over its shadow beats lub-dub: a big squash and stretch, a smaller echo, light and a thin ring pulsing out, tiny hearts drifting off.",
   tags: ["pickup", "heart", "health", "life", "loop"],
@@ -10577,9 +10704,9 @@ var beat2 = (ph, at8, s) => {
 };
 var pulse = (ph) => beat2(ph, LUB, 1) + beat2(ph, DUB, 0.55) + beat2(ph + 1, LUB, 1);
 function drawBack14(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta37.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU);
+  const C4 = fit(o.palette, 8), ph = t / meta38.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU);
   blobShadow(p, 0, 8 + 1.5 * pulse(ph), 0.8);
-  cycle(t, meta37.duration, 4, o.seed, 0.95, (age, life, r, i) => {
+  cycle(t, meta38.duration, 4, o.seed, 0.95, (age, life, r, i) => {
     const side = i % 2 ? 1 : -1, k = age / life;
     const x = side * (r.range(2, 5) + age * r.range(9, 15)) + Math.sin(age * 7 + r.range(0, TAU)) * 1.5, yy = y - 5 - age * r.range(14, 19);
     const a = Math.min(1, age / 0.12) * (1 - k * k);
@@ -10588,7 +10715,7 @@ function drawBack14(p, t, o) {
   });
 }
 function draw17(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta37.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU), b = pulse(ph);
+  const C4 = fit(o.palette, 8), ph = t / meta38.duration, y = -HOVER - 1.2 * Math.sin(ph * TAU), b = pulse(ph);
   const sx = 1 + 0.16 * b, sy = 1 - 0.13 * b, cy = Math.round(y);
   p.glow(0, cy, 22 + 6 * Math.max(0, b), C4[4], 0.26 + 0.3 * Math.max(0, b));
   L.begin(-20, cy - 20);
@@ -10612,9 +10739,9 @@ var potion_exports = {};
 __export(potion_exports, {
   draw: () => draw18,
   drawBack: () => drawBack15,
-  meta: () => meta38
+  meta: () => meta39
 });
-var meta38 = {
+var meta39 = {
   name: "Potion",
   desc: "A round glass flask of glowing brew rocks in the air: the brew sloshes behind the rock, bubbles rise and pop, light glows through the glass, wisps curl off the cork.",
   tags: ["pickup", "potion", "flask", "brew", "magic", "loop"],
@@ -10671,9 +10798,9 @@ function flask(p, C4, t, ph, cy, tilt, seed) {
     p.px(lx, cy + ly, a > 3.7 && a < 4.1 ? WHITE : mix(WHITE, C4[6], 0.5));
   }
   p.px(Math.round(2 * Math.cos(tilt) + 3 * Math.sin(tilt)), Math.round(cy - 3), WHITE);
-  cycle(t, meta38.duration, 10, seed, (g) => g.range(0.7, 1.3), (age, life, r) => {
+  cycle(t, meta39.duration, 10, seed, (g) => g.range(0.7, 1.3), (age, life, r) => {
     const x0 = r.range(-4, 4), r0 = r.range(0.6, 1.7), vy = r.range(7, 13);
-    const x = x0 + Math.sin(age * r.range(5, 9) + r.range(0, TAU)) * 0.7, y = cy + 5.5 - vy * age, ph2 = (t + age) / meta38.duration;
+    const x = x0 + Math.sin(age * r.range(5, 9) + r.range(0, TAU)) * 0.7, y = cy + 5.5 - vy * age, ph2 = (t + age) / meta39.duration;
     const top = cy + surface(x, ph2);
     if (y > top + 0.8) {
       const rr = r0 * (0.7 + 0.5 * (age / life));
@@ -10693,10 +10820,10 @@ function flask(p, C4, t, ph, cy, tilt, seed) {
   });
 }
 function drawBack15(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta38.duration, { y } = pose3(ph);
+  const C4 = fit(o.palette, 8), ph = t / meta39.duration, { y } = pose3(ph);
   blobShadow(p, 0, 7.5, 0.8 - (-y - HOVER2 + 1.4) * 0.06);
   pool2(p, 0, 0.5, 18, 3, C4[5], 0.3);
-  cycle(t, meta38.duration, 7, o.seed + 1, (g) => g.range(1.2, 1.8), (age, life, r) => {
+  cycle(t, meta39.duration, 7, o.seed + 1, (g) => g.range(1.2, 1.8), (age, life, r) => {
     const side = r.sign(), f = r.range(3, 4.5), ph0 = r.range(0, TAU), vy = r.range(11, 16), x0 = r.range(-1, 1);
     const at8 = (a) => [x0 + Math.sin(a * f + ph0) * (0.8 + a * 3.2) * side, y + CORK_TOP - 1 - a * vy];
     for (let i = 0; i < 9; i++) {
@@ -10709,7 +10836,7 @@ function drawBack15(p, t, o) {
   });
 }
 function draw18(p, t, o) {
-  const C4 = fit(o.palette, 8), ph = t / meta38.duration, { y, tilt } = pose3(ph);
+  const C4 = fit(o.palette, 8), ph = t / meta39.duration, { y, tilt } = pose3(ph);
   p.glow(0, y + 1.5, 26, C4[4], 0.22);
   flask(p, C4, t, ph, y, tilt, o.seed);
   p.glow(0, y + 2, 10, C4[5], 0.38 + 0.08 * Math.sin(ph * TAU * 2));
@@ -10722,9 +10849,9 @@ var xp_orb_exports = {};
 __export(xp_orb_exports, {
   draw: () => draw19,
   drawBack: () => drawBack16,
-  meta: () => meta39
+  meta: () => meta40
 });
-var meta39 = {
+var meta40 = {
   name: "XP orb",
   desc: "A small glowing orb races a figure-eight, a comet tail tapering behind it along its path, flecks shed from the tail winking out, its light following it over the floor.",
   tags: ["pickup", "xp", "orb", "experience", "energy", "loop"],
@@ -10742,14 +10869,14 @@ var HOVER3 = 20;
 var TAIL = 0.48;
 var INK6 = hex("#0a1406");
 var at7 = (t) => {
-  const a = t / meta39.duration * TAU;
+  const a = t / meta40.duration * TAU;
   return [A * Math.sin(a), -HOVER3 + B2 * Math.sin(a) * Math.cos(a) - 1.2 * Math.cos(a * 2)];
 };
 function drawBack16(p, t, o) {
   const C4 = fit(o.palette, 8), [x, y] = at7(t);
   blobShadow(p, x, 3.5, 0.55);
   pool2(p, x, 0.5, 14, 3, C4[5], 0.3);
-  cycle(t, meta39.duration, 16, o.seed, (g) => g.range(0.35, 0.7), (age, life, r) => {
+  cycle(t, meta40.duration, 16, o.seed, (g) => g.range(0.35, 0.7), (age, life, r) => {
     const [fx, fy] = at7(t - age), k = 1 - age / life, tw = Math.sin(age * r.range(20, 30) + r.range(0, TAU));
     const x2 = fx + r.range(-2, 2) + age * r.range(-6, 6), y2 = fy + r.range(-2, 2) + age * r.range(4, 10);
     if (tw * k > -0.2) p.px(x2, y2, tw > 0.6 && k > 0.5 ? WHITE : k > 0.5 ? C4[6] : C4[5]);
@@ -10757,7 +10884,7 @@ function drawBack16(p, t, o) {
   });
 }
 function draw19(p, t, o) {
-  const C4 = fit(o.palette, 8), [x, y] = at7(t), beat3 = 0.5 + 0.5 * Math.sin(t / meta39.duration * TAU * 3);
+  const C4 = fit(o.palette, 8), [x, y] = at7(t), beat3 = 0.5 + 0.5 * Math.sin(t / meta40.duration * TAU * 3);
   const n = 60;
   for (let i = n; i >= 1; i--) {
     const u = i / n, [tx, ty] = at7(t - u * TAIL), r = 3.1 * Math.pow(1 - u, 1.1);
@@ -10775,17 +10902,17 @@ function draw19(p, t, o) {
   p.circle(X, Y, 3.6, (d, a) => d > 0.72 ? Math.cos(a + 2.4) > 0.3 ? C4[5] : C4[3] : d > 0.4 ? Math.cos(a + 2.4) > -0.2 ? C4[6] : C4[5] : WHITE);
   p.px(X - 2, Y - 2, WHITE), p.px(X - 1, Y - 2, C4[7]);
   p.glow(x, y, 16 + 3 * beat3, C4[5], 0.36 + 0.14 * beat3);
-  const g = t / meta39.duration * 3 % 1;
+  const g = t / meta40.duration * 3 % 1;
   if (g < 0.12) glint(p, X - 2, Y - 2, 2.4 * Math.sin(g / 0.12 * Math.PI), WHITE, 0.4);
 }
 
 // ../pixelfx/src/fx/pickups/collect-burst.js
 var collect_burst_exports = {};
 __export(collect_burst_exports, {
-  create: () => create21,
-  meta: () => meta40
+  create: () => create22,
+  meta: () => meta41
 });
-var meta40 = {
+var meta41 = {
   name: "Collect burst",
   desc: "The moment of pickup: a white flash and a cross of light, a thin ring snapping out ahead of a softer one, twinkles thrown wide on curving paths that brake, hang and wink out.",
   tags: ["pickup", "collect", "burst", "sparkle", "reward", "one-shot"],
@@ -10798,7 +10925,7 @@ var meta40 = {
   options: { palette: ["#1a0516", "#3d0a33", "#701560", "#b0228f", "#f53cd1", "#ff86e6", "#ffd2f6", "#ffffff"], seed: 3 }
 };
 var CY5 = -30;
-function create21(o) {
+function create22(o) {
   const C4 = fit(o.palette, 8), R4 = new Rng(o.seed), lights = new Lights();
   lights.add(0, CY5, 36, C4[5], 0.85, 0.32);
   lights.add(0, CY5, 14, WHITE, 0.75, 0.08);
@@ -10883,6 +11010,7 @@ var FX = {
   shatterDeath: shatter_death_exports,
   spawnPortal: spawn_portal_exports,
   levelUp: level_up_exports,
+  comboCounter: combo_counter_exports,
   runeCircle: rune_circle_exports,
   manaBurst: mana_burst_exports,
   frozen: frozen_exports,
@@ -11219,7 +11347,7 @@ var Hero = class {
     const a = this.anim;
     return poseAt(a.track, a.loop ? a.t % a.dur : Math.min(a.t, a.dur));
   }
-  update(g, dt, keys) {
+  update(g, dt, keys2) {
     for (const k in this.cd) this.cd[k] = Math.max(0, this.cd[k] - dt);
     this.invuln = Math.max(0, this.invuln - dt);
     this.hitFlash = Math.max(0, this.hitFlash - dt);
@@ -11241,8 +11369,8 @@ var Hero = class {
     }
     let ix = 0, iy = 0;
     if (g.state === "playing") {
-      ix = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0);
-      iy = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0);
+      ix = (keys2.has("d") ? 1 : 0) - (keys2.has("a") ? 1 : 0);
+      iy = (keys2.has("s") ? 1 : 0) - (keys2.has("w") ? 1 : 0);
     }
     const len2 = Math.hypot(ix, iy) || 1;
     ix /= len2;
@@ -11453,36 +11581,36 @@ var Enemy = class {
   get boss() {
     return false;
   }
-  addStatus(g, key, time) {
-    if (key === "freeze") {
+  addStatus(g, key2, time) {
+    if (key2 === "freeze") {
       this.freeze = Math.max(this.freeze, time);
       this.state = "chase";
       this.timer = 0;
-    } else if (key === "stun") {
+    } else if (key2 === "stun") {
       this.stun = Math.max(this.stun, time);
       this.state = "chase";
       this.timer = 0;
-    } else if (key === "burn") {
+    } else if (key2 === "burn") {
       this.burn = Math.max(this.burn, time);
       this.burnDmg = Math.max(this.burnDmg, 3);
-    } else if (key === "slow") this.slow = Math.max(this.slow, time);
-    if (!this.auras[key]) {
-      const mod = key === "freeze" ? g.fx.frozen : key === "stun" ? g.fx.stunned : key === "burn" ? g.fx.burning : null;
+    } else if (key2 === "slow") this.slow = Math.max(this.slow, time);
+    if (!this.auras[key2]) {
+      const mod = key2 === "freeze" ? g.fx.frozen : key2 === "stun" ? g.fx.stunned : key2 === "burn" ? g.fx.burning : null;
       if (mod) {
         const inst = createFx(mod, { x: this.x, y: this.y, seed: this.seed + 11 });
         inst.stopT = 0;
-        this.auras[key] = inst;
+        this.auras[key2] = inst;
       }
     }
   }
   updateAuras(g, dt) {
-    for (const [key, inst] of Object.entries(this.auras)) {
-      const live = key === "freeze" ? this.freeze > 0 : key === "stun" ? this.stun > 0 : key === "burn" ? this.burn > 0 : this.slow > 0;
+    for (const [key2, inst] of Object.entries(this.auras)) {
+      const live = key2 === "freeze" ? this.freeze > 0 : key2 === "stun" ? this.stun > 0 : key2 === "burn" ? this.burn > 0 : this.slow > 0;
       inst.options.x = this.x;
       inst.options.y = this.y;
       if (!live) inst.stop();
       inst.update(dt);
-      if (inst.done()) delete this.auras[key];
+      if (inst.done()) delete this.auras[key2];
     }
   }
   update(g, dt) {
@@ -11752,28 +11880,28 @@ var Boss = class {
   startAnim(track, loop = false) {
     this.anim = { t: 0, track, loop, dur: track[track.length - 1][0] };
   }
-  addStatus(g, key, time) {
-    if (key === "freeze") {
+  addStatus(g, key2, time) {
+    if (key2 === "freeze") {
       this.freeze = Math.max(this.freeze, time * 0.45);
       this.slow = Math.max(this.slow, time);
-    } else if (key === "stun") this.stun = Math.max(this.stun, time * 0.3);
-    else if (key === "burn") {
+    } else if (key2 === "stun") this.stun = Math.max(this.stun, time * 0.3);
+    else if (key2 === "burn") {
       this.burn = Math.max(this.burn, time);
       this.burnDmg = Math.max(this.burnDmg, 5);
-    } else if (key === "slow") this.slow = Math.max(this.slow, time);
-    if (!this.auras[key]) {
-      const mod = key === "freeze" ? g.fx.frozen : key === "stun" ? g.fx.stunned : key === "burn" ? g.fx.burning : null;
-      if (mod) this.auras[key] = createFx(mod, { x: this.x, y: this.y, seed: 19 });
+    } else if (key2 === "slow") this.slow = Math.max(this.slow, time);
+    if (!this.auras[key2]) {
+      const mod = key2 === "freeze" ? g.fx.frozen : key2 === "stun" ? g.fx.stunned : key2 === "burn" ? g.fx.burning : null;
+      if (mod) this.auras[key2] = createFx(mod, { x: this.x, y: this.y, seed: 19 });
     }
   }
   updateAuras(g, dt) {
-    for (const [key, inst] of Object.entries(this.auras)) {
-      const live = key === "freeze" ? this.freeze > 0 : key === "stun" ? this.stun > 0 : key === "burn" ? this.burn > 0 : this.slow > 0;
+    for (const [key2, inst] of Object.entries(this.auras)) {
+      const live = key2 === "freeze" ? this.freeze > 0 : key2 === "stun" ? this.stun > 0 : key2 === "burn" ? this.burn > 0 : this.slow > 0;
       inst.options.x = this.x;
       inst.options.y = this.y;
       if (!live) inst.stop();
       inst.update(dt);
-      if (inst.done()) delete this.auras[key];
+      if (inst.done()) delete this.auras[key2];
     }
   }
   update(g, dt) {
@@ -12253,9 +12381,176 @@ function castSkill(g, id) {
   return true;
 }
 
+// ../pixelfx/ui/pixel-ui.js
+var doc = () => globalThis.document;
+function el(tag = "div", className = "", html = "") {
+  const node = doc().createElement(tag);
+  if (className) node.className = className;
+  if (html !== "" && html != null) node.innerHTML = html;
+  return node;
+}
+function key(label, { small = false, ghost = false, className = "" } = {}) {
+  const cls = ["px-key"];
+  if (small) cls.push("px-key--sm");
+  if (ghost) cls.push("px-key--ghost");
+  if (className) cls.push(className);
+  const node = el("kbd", cls.join(" "));
+  node.textContent = label;
+  return node;
+}
+function keys(labels, opts = {}) {
+  const row = el("div", "px-keys");
+  for (const label of labels) row.append(key(label, opts));
+  return row;
+}
+function button({ label = "", sub: sub2 = "", variant = "", action = "", icon: icon2 = "", title = "", iconOnly = false, className = "", type = "button" } = {}) {
+  const cls = ["px-btn"];
+  if (variant) cls.push("px-btn--" + variant);
+  if (iconOnly) cls.push("px-btn--icon");
+  if (className) cls.push(className);
+  const node = el("button", cls.join(" "));
+  node.type = type;
+  if (action) node.dataset.action = action;
+  if (title) node.title = title;
+  if (icon2) {
+    const slot = el("span", "px-btn__icon", icon2);
+    node.append(slot);
+  }
+  if (label) {
+    const text = el("span", "", label);
+    node.append(text);
+  }
+  if (sub2) node.append(el("small", "px-btn__sub", sub2));
+  return node;
+}
+function setBar(node, value, text) {
+  if (!node) return;
+  const fill = node.querySelector(".px-bar__fill");
+  if (fill) fill.style.width = (Math.max(0, Math.min(1, value)) * 100).toFixed(1) + "%";
+  if (text != null) {
+    const label = node.querySelector(".px-bar__text");
+    if (label) label.textContent = text;
+  }
+}
+function skillSlot({ id = "", key: keyLabel = "", glyph: glyph2 = "", name = "", cost = "", accent = "", glow = "", note = "" } = {}) {
+  const node = el("div", "px-skill");
+  if (id) node.dataset.skill = id;
+  if (accent) node.style.setProperty("--px-accent", accent);
+  if (glow) node.style.setProperty("--px-glow", glow);
+  if (note) node.title = note;
+  const k = key(keyLabel, { small: true, className: "px-skill__key" });
+  const g = el("span", "px-skill__glyph", glyph2);
+  const n = el("span", "px-skill__name");
+  n.textContent = name;
+  const c = el("span", "px-skill__cost");
+  c.textContent = cost ? String(cost) : "";
+  const cd = el("span", "px-skill__cd");
+  const num = el("span", "px-skill__num");
+  node.append(k, g, n, c, cd, num);
+  node.setAttribute("role", "img");
+  node.setAttribute("aria-label", `${keyLabel} ${name}${cost ? "\uFF0C\u6D88\u8017 " + cost : ""}`);
+  return node;
+}
+function setSkill(slot, { left = 0, total = 1, mp = Infinity, cost = 0 } = {}) {
+  if (!slot) return null;
+  const cooling = left > 1e-3;
+  const poor = mp < cost;
+  const ready = !cooling && !poor;
+  slot.classList.toggle("is-cooling", cooling);
+  slot.classList.toggle("is-ready", ready);
+  slot.classList.toggle("is-nomana", poor);
+  slot.style.setProperty("--px-cd", cooling ? Math.min(100, left / total * 100).toFixed(1) + "%" : "0%");
+  const num = slot.querySelector(".px-skill__num");
+  if (num) num.textContent = cooling ? left >= 1 ? Math.ceil(left) : left.toFixed(1) : "";
+  return { cooling, poor, ready };
+}
+function pulseSkill(slot, ms = 280) {
+  if (!slot) return;
+  slot.classList.remove("is-pulse");
+  void slot.offsetWidth;
+  slot.classList.add("is-pulse");
+  clearTimeout(slot.__pxPulse);
+  slot.__pxPulse = setTimeout(() => slot.classList.remove("is-pulse"), ms);
+}
+function denySkill(slot, ms = 240) {
+  if (!slot) return;
+  slot.classList.remove("is-deny");
+  void slot.offsetWidth;
+  slot.classList.add("is-deny");
+  clearTimeout(slot.__pxDeny);
+  slot.__pxDeny = setTimeout(() => slot.classList.remove("is-deny"), ms);
+}
+function setPips(node, active) {
+  if (!node) return;
+  [...node.children].forEach((c, i) => c.classList.toggle("is-on", i === active));
+}
+function stat(value, label) {
+  const node = el("div", "px-stat");
+  node.append(el("b", "", String(value)), el("span", "", label));
+  return node;
+}
+function statGrid(items) {
+  const node = el("div", "px-stat-grid");
+  for (const item of items) node.append(stat(item.value, item.label));
+  return node;
+}
+function controls(rows) {
+  const node = el("div", "px-controls");
+  for (const row of rows) {
+    const group = el("div", "px-control-group");
+    group.append(el("div", "px-label", row.label));
+    if (typeof row.content === "string") group.append(el("div", "px-keys", row.content));
+    else group.append(row.content);
+    node.append(group);
+  }
+  return node;
+}
+function skillList(items) {
+  const node = el("div", "px-skill-list");
+  for (const item of items) {
+    const row = el("span");
+    row.append(key(item.key, { small: true }), el("span", "", item.name));
+    node.append(row);
+  }
+  return node;
+}
+function modal({ kicker = "", title = "", latin = "", sub: sub2 = "", body: body2 = null, footer = null, note = "", wide = false, titleScreen = false, className = "", headHtml = "" } = {}) {
+  const cls = ["px-modal__card", "px-panel", "px-panel--framed"];
+  if (wide) cls.push("px-modal__card--wide");
+  if (titleScreen) cls.push("px-modal__card--title");
+  if (className) cls.push(className);
+  const card = el("div", cls.join(" "));
+  const head4 = el("div", "px-modal__head");
+  if (kicker) head4.append(el("div", "px-kicker", kicker));
+  if (title) head4.append(el("h1", titleScreen ? "px-display px-modal__title" : "px-title px-modal__title px-modal__title--modal", title));
+  if (latin) head4.append(el("div", "px-latin px-modal__latin", latin));
+  if (sub2) head4.append(el("p", "px-sub px-modal__sub", sub2));
+  if (headHtml) head4.append(el("div", "px-modal__head-extra", headHtml));
+  card.append(head4);
+  if (body2 != null) {
+    const bodyNode = el("div", "px-modal__body");
+    if (typeof body2 === "string") bodyNode.innerHTML = body2;
+    else bodyNode.append(body2);
+    card.append(bodyNode);
+  }
+  if (footer != null) {
+    const foot = el("div", "px-modal__foot");
+    if (typeof footer === "string") foot.innerHTML = footer;
+    else if (Array.isArray(footer)) for (const n of footer) foot.append(n);
+    else foot.append(footer);
+    card.append(foot);
+  }
+  if (note) card.append(el("div", "px-modal__note", note));
+  return card;
+}
+var icons = {
+  sound: `<svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="1" y="6" width="3" height="4"/><rect x="4" y="4" width="2" height="8"/><rect x="6" y="2" width="2" height="12"/><rect x="9" y="4" width="1" height="8"/><rect x="11" y="2" width="1" height="12"/><rect x="13" y="5" width="1" height="6"/></svg>`,
+  muted: `<svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="1" y="6" width="3" height="4"/><rect x="4" y="4" width="2" height="8"/><rect x="6" y="2" width="2" height="12"/><rect x="9" y="4" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="11" y="6" width="1" height="4"/><rect x="10" y="10" width="1" height="1"/><rect x="9" y="11" width="1" height="1"/><rect x="12" y="4" width="1" height="1"/><rect x="13" y="5" width="1" height="1"/><rect x="12" y="10" width="1" height="1"/><rect x="13" y="9" width="1" height="1"/></svg>`,
+  enter: `<svg class="px-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="2" y="2" width="12" height="1"/><rect x="2" y="2" width="1" height="4"/><rect x="13" y="2" width="1" height="4"/><rect x="4" y="6" width="8" height="1"/><rect x="8" y="5" width="1" height="6"/><rect x="5" y="9" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/><rect x="7" y="11" width="1" height="2"/><rect x="8" y="12" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/></svg>`
+};
+
 // src/ui.js
 var $ = (s) => document.querySelector(s);
-var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 var fmtTime = (t) => {
   const m = Math.floor(t / 60), s = Math.floor(t % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
@@ -12268,27 +12563,30 @@ var UI2 = class {
     this.bannerTimer = 0;
     this.toastTimer = 0;
     this.portraitDrawn = false;
+    this.stage = null;
   }
   init() {
-    const skills = $("#skills");
-    skills.innerHTML = SKILL_META.map((s) => `
-      <div class="skill ready" data-skill="${s.id}" style="--tint:${s.tint};--glow:${s.glow}">
-        <span class="key">${s.key}</span>
-        <span class="glyph">${s.glyph}</span>
-        <span class="name">${esc(s.name)}</span>
-        <span class="cost">${s.cost || ""}</span>
-        <span class="cd"></span>
-        <span class="cdnum"></span>
-      </div>`).join("");
-    for (const el of skills.querySelectorAll(".skill")) {
-      const id = el.dataset.skill;
-      this.slots[id] = { el, cd: el.querySelector(".cd"), num: el.querySelector(".cdnum") };
+    const row = $("#skills");
+    row.innerHTML = "";
+    for (const s of SKILL_META) {
+      const slot = skillSlot({
+        id: s.id,
+        key: s.key,
+        glyph: s.glyph,
+        name: s.name,
+        cost: s.cost,
+        accent: s.tint,
+        glow: s.glow,
+        note: s.note
+      });
+      row.append(slot);
+      this.slots[s.id] = { el: slot };
     }
+    $("#mute-icon").innerHTML = icons.sound;
     $("#hint").textContent = "WASD \u79FB\u52A8 \xB7 J K L U I O \u65BD\u6CD5 \xB7 ESC \u6682\u505C \xB7 M \u9759\u97F3";
-    $("#stage").addEventListener("click", (e) => {
+    $("#overlay").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-action]");
-      if (!btn) return;
-      this.action(btn.dataset.action);
+      if (btn) this.action(btn.dataset.action);
     });
     $("#mute").addEventListener("click", () => this.toggleMute());
     this.title();
@@ -12304,95 +12602,127 @@ var UI2 = class {
   }
   toggleMute() {
     const g = this.g;
+    g.audio.unlock();
     g.audio.setMuted(!g.audio.muted);
-    $("#mute").classList.toggle("muted", g.audio.muted);
-    $("#mute").textContent = g.audio.muted ? "\xD7" : "\u266A";
-    $("#mute").title = g.audio.muted ? "\u53D6\u6D88\u9759\u97F3 (M)" : "\u9759\u97F3 (M)";
+    const muted = g.audio.muted;
+    $("#mute-icon").innerHTML = muted ? icons.muted : icons.sound;
+    $("#mute").classList.toggle("is-quiet", muted);
+    $("#mute").setAttribute("aria-label", muted ? "\u53D6\u6D88\u9759\u97F3" : "\u9759\u97F3");
+    $("#mute").title = muted ? "\u53D6\u6D88\u9759\u97F3 (M)" : "\u9759\u97F3 (M)";
   }
   // ---------------------------------------------------------------- overlays
-  showOverlay(html) {
-    const card = $("#overlay-card");
-    card.innerHTML = html;
-    $("#overlay").classList.remove("hidden");
+  showOverlay(card) {
+    const overlay = $("#overlay");
+    overlay.innerHTML = "";
+    overlay.append(card);
+    overlay.classList.remove("is-hidden");
+    overlay.inert = false;
   }
   hideOverlay() {
-    $("#overlay").classList.add("hidden");
+    const overlay = $("#overlay");
+    overlay.classList.add("is-hidden");
+    overlay.inert = true;
   }
   title() {
     const g = this.g;
     g.state = "title";
     $("#stage").classList.remove("playing");
-    this.showOverlay(`
-      <div class="title-screen">
-        <div class="rune">\u2726</div>
-        <h1>\u4F59\u70EC\u56DE\u54CD</h1>
-        <div class="latin">EMBER ECHO</div>
-        <p class="tagline">\u9057\u8FF9\u6DF1\u5904\uFF0C\u706B\u79CD\u672A\u7184\u3002</p>
-        <div class="controls">
-          <div class="ctrl-group">
-            <div class="ctrl-head">\u79FB\u52A8</div>
-            <div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
-          </div>
-          <div class="ctrl-group">
-            <div class="ctrl-head">\u6280\u80FD</div>
-            <div class="skill-list">
-              ${SKILL_META.map((s) => `<span><kbd>${s.key}</kbd>${esc(s.name)}</span>`).join("")}
-            </div>
-          </div>
-        </div>
-        <button class="cta" type="button" data-action="start">\u8FDB\u5165\u9057\u8FF9 <small>ENTER</small></button>
-        <div class="footnote">\u51FB\u8D25\u6240\u6709\u654C\u4EBA\u63A8\u8FDB\u4E09\u5E55 \xB7 \u62FE\u53D6\u6218\u5229\u54C1\u6062\u590D\u72B6\u6001 \xB7 \u6700\u540E\u6709\u5B88\u536B\u8005</div>
-      </div>`);
+    this.hideBoss();
+    const body2 = document.createElement("div");
+    body2.className = "title-body";
+    body2.append(
+      controls([
+        { label: "\u79FB\u52A8", content: keys(["W", "A", "S", "D"]) },
+        { label: "\u6280\u80FD", content: skillList(SKILL_META.map((s) => ({ key: s.key, name: s.name }))) }
+      ])
+    );
+    const start = button({ label: "\u8FDB\u5165\u9057\u8FF9", sub: "ENTER", variant: "primary", action: "start" });
+    const card = modal({
+      kicker: "A PIXEL ACTION RPG",
+      title: "\u4F59\u70EC\u56DE\u54CD",
+      latin: "EMBER ECHO",
+      sub: "\u9057\u8FF9\u6DF1\u5904\uFF0C\u706B\u79CD\u672A\u7184\u3002",
+      body: body2,
+      footer: start,
+      note: "\u51FB\u8D25\u6240\u6709\u654C\u4EBA\u63A8\u8FDB\u4E09\u5E55 \xB7 \u62FE\u53D6\u6218\u5229\u54C1\u6062\u590D\u72B6\u6001 \xB7 \u6700\u540E\u6709\u5B88\u536B\u8005",
+      wide: true,
+      titleScreen: true,
+      headHtml: `<span class="px-ornament px-ornament--lg" aria-hidden="true"></span>`
+    });
+    this.showOverlay(card);
   }
   pause() {
-    this.showOverlay(`
-      <div class="rune" style="animation-play-state:paused">\u2726</div>
-      <h2>\u6682\u505C</h2>
-      <div class="sub">\u706B\u5149\u6682\u6B47</div>
-      <div class="overlay-actions">
-        <button class="ghost-btn" type="button" data-action="resume">\u7EE7\u7EED \xB7 ESC</button>
-        <button class="ghost-btn" type="button" data-action="restart">\u91CD\u65B0\u5F00\u59CB \xB7 R</button>
-      </div>
-      <div class="footnote" style="margin-top:1.4cqw">WASD \u79FB\u52A8 \xB7 J K L U I O \u65BD\u6CD5 \xB7 M \u9759\u97F3</div>`);
-  }
-  statGrid(stats) {
-    return `<div class="stat-grid">
-      <div><b>${stats.kills}</b><span>\u51FB\u7834</span></div>
-      <div><b>Lv.${stats.level}</b><span>\u7B49\u7EA7</span></div>
-      <div><b>${fmtTime(stats.time)}</b><span>\u7528\u65F6</span></div>
-    </div>`;
+    const stats = this.g.stats();
+    const card = modal({
+      kicker: "PAUSED",
+      title: "\u6682\u505C",
+      sub: "\u706B\u5149\u6682\u6B47",
+      body: statGrid([
+        { value: stats.kills, label: "\u51FB\u7834" },
+        { value: "Lv." + stats.level, label: "\u7B49\u7EA7" },
+        { value: fmtTime(stats.time), label: "\u7528\u65F6" }
+      ]),
+      footer: [
+        button({ label: "\u7EE7\u7EED", sub: "ESC", variant: "primary", action: "resume" }),
+        button({ label: "\u91CD\u65B0\u5F00\u59CB", sub: "R", variant: "ghost", action: "restart" })
+      ],
+      note: "WASD \u79FB\u52A8 \xB7 J K L U I O \u65BD\u6CD5 \xB7 M \u9759\u97F3"
+    });
+    this.showOverlay(card);
   }
   gameover(stats) {
     $("#stage").classList.remove("playing");
-    this.showOverlay(`
-      <div class="rune" style="animation:none;color:#8c6a72">\u2727</div>
-      <h2 style="color:#ffc8b8">\u4F60\u5012\u4E0B\u4E86</h2>
-      <div class="sub">\u706B\u79CD\u5728\u9ED1\u6697\u4E2D\u7184\u706D \xB7 \u7B2C ${stats.stage} \u5E55</div>
-      ${this.statGrid(stats)}
-      <div class="overlay-actions">
-        <button class="cta" type="button" data-action="restart">\u518D\u6B21\u8FDB\u5165 <small>ENTER</small></button>
-      </div>`);
+    const card = modal({
+      kicker: "DEFEAT",
+      title: "\u4F60\u5012\u4E0B\u4E86",
+      sub: `\u706B\u79CD\u5728\u9ED1\u6697\u4E2D\u7184\u706D \xB7 \u7B2C ${stats.stage} \u5E55`,
+      body: statGrid([
+        { value: stats.kills, label: "\u51FB\u7834" },
+        { value: "Lv." + stats.level, label: "\u7B49\u7EA7" },
+        { value: fmtTime(stats.time), label: "\u7528\u65F6" }
+      ]),
+      footer: button({ label: "\u518D\u6B21\u8FDB\u5165", sub: "ENTER", variant: "primary", action: "restart" }),
+      note: "ENTER \u91CD\u65B0\u5F00\u59CB",
+      className: "is-danger"
+    });
+    this.showOverlay(card);
   }
   victory(stats) {
     $("#stage").classList.remove("playing");
-    this.showOverlay(`
-      <div class="rune">\u2726</div>
-      <h2 style="color:#ffe8a8">\u4F59\u70EC\u4ECD\u5728</h2>
-      <div class="sub">\u4E09\u5E55\u5DF2\u5C3D\uFF0C\u5B88\u536B\u8005\u5F52\u4E8E\u5C18\u571F\u3002</div>
-      ${this.statGrid(stats)}
-      <div class="skill-strip">
-        <span><b>WASD</b> \u79FB\u52A8</span><span><b>J</b> \u65A9</span><span><b>K</b> \u706B</span><span><b>L</b> \u971C</span><span><b>U</b> \u96F7</span><span><b>I</b> \u6108</span><span><b>O</b> \u9668</span>
-      </div>
-      <div class="overlay-actions">
-        <button class="cta" type="button" data-action="restart">\u518D\u8D70\u4E00\u904D <small>ENTER</small></button>
-      </div>`);
+    const body2 = document.createElement("div");
+    const rule = document.createElement("div");
+    rule.className = "px-rule";
+    rule.style.marginBottom = "calc(var(--px-u) * 10)";
+    body2.append(
+      rule,
+      statGrid([
+        { value: stats.kills, label: "\u51FB\u7834" },
+        { value: "Lv." + stats.level, label: "\u7B49\u7EA7" },
+        { value: fmtTime(stats.time), label: "\u7528\u65F6" }
+      ])
+    );
+    const strip = document.createElement("div");
+    strip.className = "px-skill-strip";
+    strip.style.marginTop = "calc(var(--px-u) * 12)";
+    strip.innerHTML = "<span><b>J</b> \u65A9</span><span><b>K</b> \u706B</span><span><b>L</b> \u971C</span><span><b>U</b> \u96F7</span><span><b>I</b> \u6108</span><span><b>O</b> \u9668</span>";
+    body2.append(strip);
+    const card = modal({
+      kicker: "VICTORY",
+      title: "\u4F59\u70EC\u4ECD\u5728",
+      sub: "\u4E09\u5E55\u5DF2\u5C3D\uFF0C\u5B88\u536B\u8005\u5F52\u4E8E\u5C18\u571F\u3002",
+      body: body2,
+      footer: button({ label: "\u518D\u8D70\u4E00\u904D", sub: "ENTER", variant: "primary", action: "restart" }),
+      note: "\u611F\u8C22\u6E38\u73A9 \xB7 \u6309 ENTER \u91CD\u65B0\u5F00\u59CB"
+    });
+    this.showOverlay(card);
   }
   start() {
     $("#stage").classList.add("playing");
     this.hideOverlay();
-    this.bannerTimer = 0;
-    this.toastTimer = 0;
-    $("#banner").classList.remove("show");
+    clearTimeout(this.bannerTimer);
+    clearTimeout(this.toastTimer);
+    $("#banner").classList.remove("is-open");
+    $("#pickup-toast").classList.remove("is-open");
     this.hideBoss();
   }
   // ---------------------------------------------------------------- stage / wave
@@ -12400,8 +12730,7 @@ var UI2 = class {
     $("#stage-act").textContent = stage.act;
     $("#stage-name").textContent = stage.name;
     $("#stage-wave").textContent = stage.sub;
-    const acts = [...document.querySelectorAll("#acts i")];
-    acts.forEach((el, i) => el.classList.toggle("on", i === this.g.stageIndex));
+    setPips($("#acts"), this.g.stageIndex);
     this.stage = stage;
   }
   setWave(i, count) {
@@ -12415,48 +12744,39 @@ var UI2 = class {
     $("#banner-kicker").textContent = kicker;
     $("#banner-title").textContent = title;
     $("#banner-sub").textContent = sub2;
-    b.classList.add("show");
+    b.classList.add("is-open");
     clearTimeout(this.bannerTimer);
-    this.bannerTimer = setTimeout(() => b.classList.remove("show"), kind === "CLEAR" ? 2500 : kind === "LEVEL" ? 1600 : 1900);
+    this.bannerTimer = setTimeout(() => b.classList.remove("is-open"), kind === "CLEAR" ? 2500 : kind === "LEVEL" ? 1600 : 1900);
   }
   toast(text) {
     const t = $("#pickup-toast");
     t.textContent = text;
-    t.classList.add("show");
+    t.classList.add("is-open");
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => t.classList.remove("show"), 1e3);
+    this.toastTimer = setTimeout(() => t.classList.remove("is-open"), 1e3);
   }
   combo(n) {
     const c = $("#combo");
     if (n >= 2) {
       $("#combo-n").textContent = n;
-      c.classList.add("show");
-    } else c.classList.remove("show");
+      c.classList.add("is-on");
+    } else c.classList.remove("is-on");
   }
   pulseSkill(id) {
-    const s = this.slots[id];
-    if (!s) return;
-    s.el.classList.remove("pulse");
-    void s.el.offsetWidth;
-    s.el.classList.add("pulse");
-    clearTimeout(s.pulseT);
-    s.pulseT = setTimeout(() => s.el.classList.remove("pulse"), 280);
+    pulseSkill(this.slots[id]?.el);
   }
   deny(id) {
-    const s = this.slots[id];
-    if (!s) return;
-    s.el.classList.add("deny");
-    clearTimeout(s.denyT);
-    s.denyT = setTimeout(() => s.el.classList.remove("deny"), 220);
+    denySkill(this.slots[id]?.el);
   }
   showBoss() {
-    $("#boss-wrap").classList.remove("hidden");
+    const wrap2 = $("#boss-wrap");
+    wrap2.hidden = false;
     const b = this.g.bossRef;
     if (b) $("#boss-name").textContent = b.name;
     $("#boss-phase").textContent = "\u76F8\u4F4D I";
   }
   hideBoss() {
-    $("#boss-wrap").classList.add("hidden");
+    $("#boss-wrap").hidden = true;
   }
   // ---------------------------------------------------------------- per-frame bars
   update(g) {
@@ -12464,13 +12784,9 @@ var UI2 = class {
     if (now - this.last < 45) return;
     this.last = now;
     const h = g.hero;
-    const hpPct = Math.max(0, h.hp / h.maxHp) * 100;
-    const mpPct = Math.max(0, h.mp / h.maxMp) * 100;
-    $("#hp-fill").style.width = hpPct.toFixed(1) + "%";
-    $("#mp-fill").style.width = mpPct.toFixed(1) + "%";
-    $("#hp-text").textContent = `${Math.ceil(h.hp)} / ${h.maxHp}`;
-    $("#mp-text").textContent = `${Math.floor(h.mp)} / ${h.maxMp}`;
-    $("#xp-fill").style.width = Math.min(100, h.xp / h.xpNext * 100).toFixed(1) + "%";
+    setBar($("#hp-bar"), Math.max(0, h.hp / h.maxHp), `${Math.ceil(h.hp)} / ${h.maxHp}`);
+    setBar($("#mp-bar"), Math.max(0, h.mp / h.maxMp), `${Math.floor(h.mp)} / ${h.maxMp}`);
+    setBar($("#xp-bar"), Math.min(1, h.xp / h.xpNext), null);
     $("#hero-level").textContent = "Lv." + h.level;
     $("#kills").textContent = g.kills;
     if (!this.portraitDrawn) {
@@ -12478,14 +12794,12 @@ var UI2 = class {
       this.portraitDrawn = true;
     }
     for (const s of SKILL_META) {
-      const slot = this.slots[s.id];
-      const left = h.cd[s.id] ?? 0;
-      const cooled = left <= 1e-4;
-      slot.el.classList.toggle("cooling", !cooled);
-      slot.el.classList.toggle("ready", cooled && h.mp >= s.cost);
-      slot.el.classList.toggle("nomana", h.mp < s.cost);
-      slot.cd.style.setProperty("--cd", cooled ? "0%" : Math.min(100, left / s.cd * 100).toFixed(1) + "%");
-      slot.num.textContent = cooled ? "" : left >= 1 ? Math.ceil(left) : left.toFixed(1);
+      setSkill(this.slots[s.id].el, {
+        left: h.cd[s.id] ?? 0,
+        total: s.cd,
+        mp: h.mp,
+        cost: s.cost
+      });
     }
     if (this.stage && g.state !== "title") {
       const alive = g.enemies.filter((e) => !e.dead).length + g.spawnQueue.length;
@@ -12498,9 +12812,10 @@ var UI2 = class {
     }
     if (g.bossRef && !g.bossRef.dead) {
       const b = g.bossRef;
-      $("#boss-fill").style.width = Math.max(0, b.hp / b.maxHp * 100).toFixed(1) + "%";
+      $("#boss-wrap").hidden = false;
+      $("#boss-name").textContent = b.name;
+      setBar($("#boss-bar"), Math.max(0, b.hp / b.maxHp), "");
       $("#boss-phase").textContent = ["\u76F8\u4F4D I", "\u76F8\u4F4D II", "\u76F8\u4F4D III"][b.phase - 1] ?? "\u76F8\u4F4D I";
-      $("#boss-wrap").classList.remove("hidden");
     } else if (g.bossDefeated) {
       this.hideBoss();
     }
@@ -13143,6 +13458,15 @@ var Game = class {
     this.combo.count++;
     this.combo.timer = 2.4;
     this.ui.combo(this.combo.count, this.combo.timer);
+    if (this.combo.count > 0 && this.combo.count % 10 === 0) {
+      this.addFx(this.fx.comboCounter, {
+        x: this.hero.x,
+        y: this.hero.y - 58,
+        count: this.combo.count,
+        label: "COMBO",
+        light: 0.85
+      });
+    }
   }
   dropLoot(x, y, typeId) {
     if (typeId === "boss") return;
@@ -13298,14 +13622,14 @@ function unlockAndStart() {
   game.audio.unlock();
 }
 window.addEventListener("keydown", (e) => {
-  const key = e.key.toLowerCase();
+  const key2 = e.key.toLowerCase();
   if (e.target instanceof HTMLInputElement) return;
-  if (MOVE.has(key)) {
-    game.keys.add(key);
+  if (MOVE.has(key2)) {
+    game.keys.add(key2);
     e.preventDefault();
     return;
   }
-  if (key === "escape") {
+  if (key2 === "escape") {
     e.preventDefault();
     if (game.state === "playing" || game.state === "paused") {
       game.togglePause();
@@ -13313,50 +13637,50 @@ window.addEventListener("keydown", (e) => {
     }
     return;
   }
-  if (key === "enter") {
+  if (key2 === "enter") {
     e.preventDefault();
     unlockAndStart();
     if (game.state === "title" || game.state === "gameover" || game.state === "victory") game.startRun();
     else if (game.state === "paused") game.togglePause();
     return;
   }
-  if (key === "r" && (game.state === "paused" || game.state === "gameover" || game.state === "victory")) {
+  if (key2 === "r" && (game.state === "paused" || game.state === "gameover" || game.state === "victory")) {
     e.preventDefault();
     unlockAndStart();
     game.restart();
     return;
   }
-  if (key === "m") {
+  if (key2 === "m") {
     e.preventDefault();
     game.ui.toggleMute();
     return;
   }
-  if (SKILL[key] && !e.repeat) {
+  if (SKILL[key2] && !e.repeat) {
     e.preventDefault();
     if (game.state === "title") return;
     unlockAndStart();
-    castSkill(game, SKILL[key]);
+    castSkill(game, SKILL[key2]);
   }
 });
 window.addEventListener("keyup", (e) => {
-  const key = e.key.toLowerCase();
-  if (MOVE.has(key)) game.keys.delete(key);
+  const key2 = e.key.toLowerCase();
+  if (MOVE.has(key2)) game.keys.delete(key2);
 });
 window.addEventListener("blur", () => game.keys.clear());
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && game.state === "playing") game.togglePause();
 });
 for (const btn of document.querySelectorAll(".tbtn")) {
-  const key = btn.dataset.key;
+  const key2 = btn.dataset.key;
   const press = (e) => {
     e.preventDefault();
     unlockAndStart();
-    if (MOVE.has(key)) game.keys.add(key);
-    else if (game.state === "playing") castSkill(game, key);
+    if (MOVE.has(key2)) game.keys.add(key2);
+    else if (game.state === "playing") castSkill(game, key2);
   };
   const release = (e) => {
     e.preventDefault();
-    game.keys.delete(key);
+    game.keys.delete(key2);
   };
   btn.addEventListener("pointerdown", press);
   btn.addEventListener("pointerup", release);
