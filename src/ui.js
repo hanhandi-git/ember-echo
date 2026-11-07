@@ -159,7 +159,7 @@ export class UI {
           "WASD MOVE",
           "J SLASH   K FIRE   L FROST",
           "U BOLT    I MEND   O METEOR",
-          "ESC PAUSE   M SOUND",
+          `ESC PAUSE   ${g.audio.muted ? "M SOUND OFF" : "M SOUND ON"}`,
         ],
         prompt: "PRESS ENTER", width: 272, height: 140, tone: "gold",
       });
