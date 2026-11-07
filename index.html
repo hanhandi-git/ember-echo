@@ -4,13 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>余烬回响 · Ember Echo</title>
-<meta name="description" content="余烬回响 — 一个用 pixelfx 素材与像素 UI 效果驱动的动作 RPG Demo。WASD 移动，J K L U I O 施法。">
+<meta name="description" content="余烬回响 — 一个用 pixelfx 素材与像素 UI 效果驱动的动作 RPG Demo。WASD 移动，TAB 背包，Q/SHIFT 闪避，SPACE 快速移动。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%2307060d'/%3E%3Crect x='5' y='3' width='6' height='10' fill='%23ff7a3c'/%3E%3Crect x='7' y='5' width='4' height='7' fill='%23ffd36a'/%3E%3Crect x='8' y='7' width='2' height='4' fill='%23fff6d8'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <main id="stage">
-  <canvas id="game" width="320" height="240" aria-label="余烬回响 · Ember Echo"></canvas>
+  <canvas id="game" width="320" height="180" aria-label="余烬回响 · Ember Echo"></canvas>
+  <section id="settings-panel" class="settings-panel" hidden aria-label="游戏设置">
+    <div class="settings-shell">
+      <header class="settings-header">
+        <div>
+          <p class="eyebrow" data-i18n="menu.kicker">余烬回响 / LOADOUT</p>
+          <h1 data-i18n="menu.title">背包与设置</h1>
+          <p class="settings-subtitle" data-i18n="menu.subtitle">选择你的武器、技能组合和语言。</p>
+        </div>
+        <button class="icon-button close-settings" type="button" aria-label="关闭" data-action="close">×</button>
+      </header>
+      <nav class="settings-tabs" role="tablist">
+        <button class="settings-tab is-active" type="button" data-tab="loadout" data-i18n="tabs.loadout">装备</button>
+        <button class="settings-tab" type="button" data-tab="profile" data-i18n="tabs.profile">人物</button>
+        <button class="settings-tab" type="button" data-tab="settings" data-i18n="tabs.settings">设置</button>
+      </nav>
+      <div class="settings-content" data-content="loadout"></div>
+      <div class="settings-content" data-content="profile" hidden></div>
+      <div class="settings-content" data-content="settings" hidden></div>
+      <footer class="settings-footer">
+        <span data-i18n="footer.hint">选择后立即生效</span>
+        <button class="secondary-button" type="button" data-action="close" data-i18n="footer.return">返回战斗</button>
+      </footer>
+    </div>
+  </section>
+  <nav id="game-tools" class="game-tools" hidden aria-label="游戏菜单">
+    <button type="button" data-game-action="bag" aria-label="背包" title="背包 · Tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7V5a4 4 0 0 1 8 0v2M5 7h14l1 14H4L5 7Z"/></svg></button>
+    <button type="button" data-game-action="pause" aria-label="暂停" title="暂停 · P"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
+  </nav>
+  <section id="touch-controls" class="touch-controls" hidden aria-label="触屏控制">
+    <div class="touch-joystick" data-touch-joystick aria-label="移动摇杆"><span></span></div>
+    <div class="touch-skills" data-touch-skills></div>
+    <div class="touch-actions">
+      <button type="button" data-touch-action="quick" aria-label="快速移动"><span>↗</span><small>快移</small></button>
+      <button type="button" data-touch-action="dodge" aria-label="闪避"><span>✦</span><small>闪避</small></button>
+    </div>
+  </section>
 </main>
 <script type="module" src="game.js"></script>
 </body>

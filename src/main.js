@@ -1,14 +1,17 @@
-// Boot, keyboard/pointer input, and the one requestAnimationFrame loop. There is no DOM HUD:
-// the whole interface is pixel art drawn into the 320 x 240 canvas.
+// Boot, keyboard/pointer input, and the loop. Touch controls and settings are separate DOM layers.
 
 import { boot } from "./game.js";
 import { castSkill } from "./skills.js";
+import { createSettingsUI } from "./settings-ui.js";
+import { createTouchControls } from "./touch-controls.js";
 
 const game = boot();
+game.domUi = createSettingsUI(game);
+game.touchUi = createTouchControls(game);
 const canvas = document.querySelector("#game");
 
 const MOVE = new Set(["w", "a", "s", "d"]);
-const SKILL = { j: "j", k: "k", l: "l", u: "u", i: "i", o: "o" };
+const SKILL_SLOT = { j: 0, k: 1, l: 2, u: 3, i: 4, o: 5 };
 
 function unlock() { game.audio.unlock(); }
 
@@ -19,13 +22,38 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     return;
   }
+  if (game.state === "inventory" && (game.domUi?.handleKey(key) || game.ui.handleInventoryKey(key))) {
+    e.preventDefault();
+    unlock();
+    game.domUi?.render();
+    return;
+  }
+  if (key === "tab") {
+    e.preventDefault();
+    unlock();
+    if (game.state === "playing" || game.state === "inventory") game.toggleInventory();
+    return;
+  }
   if (key === "escape") {
     e.preventDefault();
     unlock();
-    if (game.state === "playing" || game.state === "paused") {
+    if (game.state === "inventory") game.toggleInventory();
+    else if (game.state === "playing" || game.state === "paused") {
       game.togglePause();
       game.audio.play("ui");
     }
+    return;
+  }
+  if ((key === "q" || key === "shift") && !e.repeat) {
+    e.preventDefault();
+    unlock();
+    if (game.state === "playing") game.hero.tryDash(game);
+    return;
+  }
+  if (key === " " && !e.repeat) {
+    e.preventDefault();
+    unlock();
+    if (game.state === "playing") game.hero.tryQuickMove(game);
     return;
   }
   if (key === "enter") {
@@ -48,11 +76,21 @@ window.addEventListener("keydown", (e) => {
     game.audio.play("ui");
     return;
   }
-  if (SKILL[key] && !e.repeat) {
+  if (key === "p") {
+    e.preventDefault();
+    unlock();
+    if (game.state === "playing" || game.state === "paused") {
+      game.togglePause();
+      game.audio.play("ui");
+    }
+    return;
+  }
+  if (SKILL_SLOT[key] != null && !e.repeat) {
     e.preventDefault();
     unlock();
     if (game.state === "title") return;
-    castSkill(game, SKILL[key]);
+    const id = game.hero.skillSlots[SKILL_SLOT[key]];
+    castSkill(game, id);
   }
 });
 
@@ -63,8 +101,14 @@ window.addEventListener("keyup", (e) => {
 window.addEventListener("blur", () => game.keys.clear());
 
 // clicking anywhere on the canvas does the same thing as ENTER / ESC, so the demo is usable with a mouse
-canvas.addEventListener("click", () => {
+canvas.addEventListener("click", (e) => {
   unlock();
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * 320 / rect.width;
+  const y = (e.clientY - rect.top) * canvas.height / rect.height;
+  if (game.state === "inventory" || game.state === "playing" || game.state === "paused") {
+    if (game.handlePointer(x, y)) return;
+  }
   if (game.state === "title" || game.state === "gameover" || game.state === "victory") game.startRun();
   else if (game.state === "paused") game.togglePause();
 });
@@ -84,6 +128,7 @@ function frame(now) {
   last = now;
   game.ui.update(dt);
   game.tick(dt);
+  game.touchUi?.sync();
   game.render();
   requestAnimationFrame(frame);
 }

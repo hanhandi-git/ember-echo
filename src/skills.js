@@ -5,6 +5,7 @@
 import { createFx, clamp } from "../../pixelfx/src/core/index.js";
 import { FX, SKILL_META } from "./data.js";
 import { HERO_TRACKS } from "./hero.js";
+import { COMBAT_SCALE, combatDistance as size } from "./combat-scale.js";
 
 export const SKILLS = SKILL_META.map((s) => ({ ...s, cast: null }));
 
@@ -14,7 +15,7 @@ function faceTo(hero, x) {
 
 function nearest(g, maxDist = 220) {
   const h = g.hero;
-  let best = null, bd = maxDist;
+  let best = null, bd = size(maxDist);
   for (const e of g.enemies) {
     if (!e.alive) continue;
     const d = Math.hypot(e.x - h.x, (e.y - h.y) * 1.25);
@@ -27,17 +28,36 @@ function aimPoint(g, maxDist = 220) {
   const h = g.hero;
   const t = nearest(g, maxDist);
   if (t) return { x: t.x, y: t.y, target: t };
-  return { x: clamp(h.x + h.facing * 66, 24, 296), y: h.y, target: null };
+  return { x: g.clampX(h.x + h.facing * size(66), 24), y: h.y, target: null };
 }
 
 function inFront(g, e, range, dy = 20) {
   const h = g.hero;
   const dx = (e.x - h.x) * h.facing;
-  return dx > -8 && dx < range && Math.abs(e.y - h.y) < dy;
+  return dx > -size(8) && dx < range && Math.abs(e.y - h.y) < size(dy);
 }
 
 function rollCrit(extra = 0) {
   return Math.random() < 0.1 + extra;
+}
+
+function castWeaponProjectile(g, combo, profile) {
+  const h = g.hero, aim = aimPoint(g, profile.range ?? 240);
+  faceTo(h, aim.x);
+  h.startAnim("castK", HERO_TRACKS.castK, false);
+  const sx = h.x + h.facing * 12 * COMBAT_SCALE, sy = h.y - 22 * COMBAT_SCALE;
+  const dx = aim.x - sx, dy = aim.y - sy, len = Math.hypot(dx, dy) || 1;
+  const speed = profile.speed ?? 220;
+  const module = h.weapon?.module;
+  const fx = module ? createFx(module, { x: sx, y: sy, flip: dx < 0, seed: 800 + combo, light: 1 }) : createFx(FX.plasmaShot, { x: sx, y: sy, flip: dx < 0, seed: 800 + combo });
+  g.projectiles.push({
+    x: sx, y: sy, vx: dx / len * speed, vy: dy / len * speed, prevX: sx, prevY: sy,
+    r: size(profile.radius ?? 4), dmg: [12, 16, 25][combo] * h.dmgMul, team: "hero", fx,
+    life: ((profile.range ?? 240) / speed + 0.45) * COMBAT_SCALE, kind: "weapon", color: "#fff0c0",
+    pierce: !!profile.pierce, maxHits: profile.maxHits ?? 1, response: profile.response,
+    returnSpeed: profile.returnSpeed, blastRadius: size(profile.blastRadius ?? 0), status: profile.status, statusTime: profile.statusTime,
+  });
+  g.audio.play("slash");
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -50,23 +70,43 @@ function castJ(g) {
   if (t) faceTo(h, t.x);
   const mods = [FX.swordSlash, FX.doubleSlash, FX.heavyCleave];
   const tracks = [HERO_TRACKS.attack1, HERO_TRACKS.attack2, HERO_TRACKS.attack3];
+  const profile = h.weapon?.attack ?? { kind: "line", range: [60, 68, 80][c], radius: 11, pierce: false };
+  // Weapon geometry is scaled once by Game.weaponStrike; keep these combo modifiers in art units.
+  const scaledProfile = { ...profile, range: (profile.range ?? 60) * [1, 1.04, 1.12][c], radius: (profile.radius ?? 11) + c * 1.5 };
   const dmg = [11, 14, 24][c];
-  const range = [60, 68, 80][c];
+  if (scaledProfile.kind === "projectile") {
+    h.comboIndex = (c + 1) % 3;
+    h.comboTimer = 0.95;
+    castWeaponProjectile(g, c, scaledProfile);
+    return;
+  }
   const knock = [18, 28, 52][c];
   h.startAnim("attack" + (c + 1), tracks[c], false);
   h.comboIndex = (c + 1) % 3;
   h.comboTimer = 0.95;
-  h.vx += h.facing * [18, 26, 44][c];
-  g.addFx(mods[c], { x: h.x, y: h.y, flip: h.facing < 0, light: c === 2 ? 1.15 : 0.95 });
+  h.vx += h.facing * size([18, 26, 44][c]);
+  const weaponFx = h.weapon?.module;
+  const attackFx = weaponFx
+    ? g.addFx(weaponFx, { x: h.x, y: h.y, flip: h.facing < 0, seed: 200 + c, light: c === 2 ? 1.15 : 0.95 }, { life: weaponFx.meta?.loop ? 0.9 : 0 })
+    : g.addFx(mods[c], { x: h.x, y: h.y, flip: h.facing < 0, light: c === 2 ? 1.15 : 0.95 });
+  h.attackFx = attackFx;
   g.audio.play(c === 2 ? "cleave" : c === 1 ? "slash2" : "slash");
   g.after(0.06 + c * 0.02, () => {
-    const hit = g.hitEnemies((e) => inFront(g, e, range, 21), { dmg: dmg * h.dmgMul, knock, crit: rollCrit(c === 2 ? 0.05 : 0) });
+    const result = g.weaponStrike(scaledProfile, { dmg: dmg * h.dmgMul, knock, crit: rollCrit(c === 2 ? 0.05 : 0), maxHits: scaledProfile.maxHits });
+    const hit = result.hits.length;
+    if (hit && !scaledProfile.pierce) {
+      attackFx.stop();
+      // Dynamic move effects use their own local target, so terminating the instance at the hit
+      // frame keeps its visible travel from continuing through the enemy.
+      attackFx.options.x = result.end.x;
+      attackFx.options.y = result.end.y;
+    }
     if (hit) {
       g.hitStop = Math.max(g.hitStop, [0.045, 0.06, 0.11][c]);
       g.shake([1.8, 2.4, 4.6][c], [0.16, 0.2, 0.32][c]);
       if (c === 2) {
         g.flashScreen("#ffd36a", 0.1);
-        g.addFx(FX.smallExplosion, { x: h.x + h.facing * 40, y: h.y, size: 0.42, light: 0.8 });
+        g.addFx(FX.smallExplosion, { x: result.end.x, y: result.end.y, size: 0.42, light: 0.8 });
       }
     }
   });
@@ -83,23 +123,23 @@ function castK(g) {
   g.audio.play("cast");
   g.after(0.18, () => {
     if (!h.alive) return;
-    const sx = h.x + h.facing * 12, sy = h.y - 24;
+    const sx = h.x + h.facing * size(12), sy = h.y - size(24);
     const dx = aim.x - sx, dy = aim.y - sy;
     const len = Math.hypot(dx, dy) || 1;
     const speed = 178;
     const inst = createFx(FX.fireball, { x: sx, y: sy, flip: dx < 0, seed: 31 + Math.floor(Math.random() * 9) });
     g.projectiles.push({
-      x: sx, y: sy, vx: (dx / len) * speed, vy: (dy / len) * speed, r: 8, dmg: 19 * h.dmgMul,
-      team: "hero", fx: inst, life: 1.5, kind: "fireball", color: "#ff9a4a",
+      x: sx, y: sy, vx: (dx / len) * speed, vy: (dy / len) * speed, r: size(8), dmg: 19 * h.dmgMul,
+      team: "hero", fx: inst, life: 1.5 * COMBAT_SCALE, kind: "fireball", color: "#ff9a4a",
     });
     g.audio.play("fire");
   });
 }
 
 export function explodeFireball(g, p) {
-  g.addFx(FX.smallExplosion, { x: p.x, y: p.y + 8, size: 0.6, light: 1.1, seed: 12 });
+  g.addFx(FX.smallExplosion, { x: p.x, y: p.y + size(8), size: 0.6, light: 1.1, seed: 12 });
   g.addFx(FX.hitSpark, { x: p.x, y: p.y, light: 1 });
-  const hit = g.hitEnemies((e) => Math.hypot(e.x - p.x, (e.y - p.y) * 1.2) < 30, {
+  const hit = g.hitEnemies((e) => Math.hypot(e.x - p.x, (e.y - p.y) * 1.2) < size(30), {
     dmg: p.dmg, knock: 34, status: "burn", statusTime: 3.2, crit: rollCrit(),
   });
   if (hit) {
@@ -118,7 +158,7 @@ function castL(g) {
   g.addFx(FX.frostNova, { x: h.x, y: h.y, light: 1, seed: 44 + Math.floor(Math.random() * 7) }, { layer: "ground" });
   g.audio.play("ice");
   g.after(0.45, () => {
-    const hit = g.hitEnemies((e) => Math.hypot(e.x - h.x, (e.y - h.y) * 1.4) < 74, {
+    const hit = g.hitEnemies((e) => Math.hypot(e.x - h.x, (e.y - h.y) * 1.4) < size(74), {
       dmg: 20 * h.dmgMul, knock: 10, status: "freeze", statusTime: 2.1, crit: rollCrit(),
     });
     if (hit) {
@@ -139,14 +179,14 @@ function castU(g) {
   faceTo(h, aim.x);
   h.startAnim("castU", HERO_TRACKS.castU, false);
   g.audio.play("cast");
-  const tx = clamp(aim.x, 26, 294), ty = clamp(aim.y, 138, 168);
+  const tx = g.clampX(aim.x, 26), ty = clamp(aim.y, 138, 168);
   g.telegraph(tx, ty, 40, 0.95, "#c9a8ff");
   g.after(0.18, () => {
     g.addFx(FX.lightningStrike, { x: tx, y: ty, light: 1.25, seed: 51 + Math.floor(Math.random() * 11) });
     g.audio.play("thunder");
   });
   g.after(0.18 + 0.76, () => {
-    const hit = g.hitEnemies((e) => Math.hypot(e.x - tx, (e.y - ty) * 1.4) < 43, {
+    const hit = g.hitEnemies((e) => Math.hypot(e.x - tx, (e.y - ty) * 1.4) < size(43), {
       dmg: 34 * h.dmgMul, knock: 30, status: "stun", statusTime: 1.6, crit: rollCrit(0.08),
     });
     if (hit) {
@@ -164,7 +204,7 @@ function castI(g) {
   const h = g.hero;
   h.startAnim("castI", HERO_TRACKS.castI, false);
   g.addFx(FX.healAoe, { x: h.x, y: h.y, light: 0.9, seed: 61 }, { layer: "ground" });
-  g.addFx(FX.blessing, { x: h.x, y: h.y - 12, seed: 62, light: 0.8 }, { life: 3.4, follow: () => h });
+  g.addFx(FX.blessing, { x: h.x, y: h.y - size(12), seed: 62, light: 0.8 }, { life: 3.4, follow: () => h });
   g.audio.play("heal");
   g.after(0.18, () => {
     h.heal(g, Math.min(48, h.maxHp * 0.32), { big: true, linger: 4 });
@@ -184,11 +224,11 @@ function castO(g) {
   faceTo(h, aim.x);
   h.startAnim("castO", HERO_TRACKS.castO, false);
   h.invuln = Math.max(h.invuln, 0.9);
-  const tx = clamp(aim.x, 40, 280), ty = clamp(aim.y, 140, 166);
+  const tx = g.clampX(aim.x, 40), ty = clamp(aim.y, 140, 166);
   const spots = [
     [tx, ty],
-    [clamp(tx - 46, 35, 285), clamp(ty + 5, 142, 166)],
-    [clamp(tx + 46, 35, 285), clamp(ty - 5, 142, 166)],
+    [g.clampX(tx - size(46), 35), clamp(ty + size(5), 142, 166)],
+    [g.clampX(tx + size(46), 35), clamp(ty - size(5), 142, 166)],
   ];
   spots.forEach(([x, y], i) => {
     g.telegraph(x, y, 38, 1.15 + i * 0.16, "#ffa050");
@@ -196,7 +236,7 @@ function castO(g) {
       g.addFx(FX.meteor, { x, y, light: 1.35, seed: 70 + i });
       g.audio.play("meteor");
       g.after(0.62, () => {
-        const hit = g.hitEnemies((e) => Math.hypot(e.x - x, (e.y - y) * 1.3) < 52, {
+        const hit = g.hitEnemies((e) => Math.hypot(e.x - x, (e.y - y) * 1.3) < size(52), {
           dmg: (i === 0 ? 46 : 30) * h.dmgMul, knock: 60, status: "burn", statusTime: 4, crit: rollCrit(0.06),
         });
         if (hit) {
@@ -209,13 +249,73 @@ function castO(g) {
   });
 }
 
-const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO };
-for (const s of SKILLS) s.cast = CASTS[s.id];
+// E — 魂爆 / Soul Burst: a compact Hades-style panic button that creates space.
+function castE(g) {
+  const h = g.hero;
+  h.startAnim("castL", HERO_TRACKS.castL, false);
+  g.addFx(FX.manaBurst, { x: h.x, y: h.y - size(12), light: 1.2, seed: 88 });
+  g.addFx(FX.thunderclap, { x: h.x, y: h.y, light: 0.85, seed: 89 }, { layer: "ground" });
+  g.audio.play("thunder");
+  g.after(0.16, () => {
+    const hit = g.hitEnemies((e) => Math.hypot(e.x - h.x, (e.y - h.y) * 1.35) < size(62), {
+      dmg: 28 * h.dmgMul, knock: 92, status: "stun", statusTime: 0.8, crit: rollCrit(0.06),
+    });
+    if (hit) {
+      g.hitStop = Math.max(g.hitStop, 0.07);
+      g.shake(5.2, 0.35);
+      g.flashScreen("#e7b7ff", 0.15);
+    }
+  });
+}
+
+// Every combat-capable pixelfx module can be used as a skill. The catalog entry supplies the
+// effect and the small combat adapter supplies a readable target, damage window and status.
+// This keeps the library's own choreography intact instead of duplicating 100+ spell files here.
+function castGeneric(g, sk) {
+  const h = g.hero, mod = sk.module;
+  const target = nearest(g, 240);
+  const x = target ? target.x : g.clampX(h.x + h.facing * size(72), 26);
+  const y = target ? target.y : h.y;
+  faceTo(h, x);
+  const options = {
+    x: h.x + h.facing * size(8), y: h.y, flip: h.facing < 0,
+    angle: sk.category === "projectiles" || sk.category === "thrown" ? 0 : undefined,
+    seed: 1000 + Math.floor(g.time * 17), light: sk.category === "fire" || sk.category === "lightning" ? 1.2 : 0.95,
+  };
+  // Ground effects anchor at the target; actor/move effects anchor at the caster.
+  if (mod.meta.bg === "ground" || sk.category === "nature" || sk.category === "ice" && !mod.meta.actor) {
+    options.x = x; options.y = y;
+  }
+  const cfg = { layer: mod.meta.bg === "ground" ? "ground" : "front" };
+  if (mod.meta.loop) cfg.life = Math.min(2.1, Math.max(0.85, Number(mod.meta.duration ?? 1)));
+  try {
+    g.addFx(mod, options, cfg);
+  } catch (err) {
+    // A catalog effect with a specialized optional parameter still gets a fallback burst,
+    // so browsing the full library never breaks the run.
+    g.addFx(FX.manaBurst, { x: options.x, y: options.y - size(12), light: 1, seed: options.seed });
+  }
+  h.startAnim("castK", HERO_TRACKS.castK, false);
+  g.audio.play(sk.category === "fire" ? "fire" : sk.category === "ice" ? "ice" : sk.category === "lightning" ? "thunder" : "cast");
+  const hitTime = Math.max(0.06, Math.min(1.6, Number(sk.module.act?.hits?.[0]?.t ?? (mod.meta.loop ? 0.42 : (mod.meta.duration ?? 1) * 0.5))));
+  g.after(hitTime, () => {
+    if (!h.alive) return;
+    const range = size(sk.category === "melee" || sk.category === "thrown" || sk.category === "moves" ? 76 : 66);
+    const status = sk.category === "fire" ? "burn" : sk.category === "ice" ? "freeze" : sk.category === "lightning" ? "stun" : sk.category === "nature" ? "slow" : undefined;
+    const hit = g.hitEnemies((e) => target ? Math.hypot(e.x - x, (e.y - y) * 1.35) < range : inFront(g, e, range, 24), {
+      dmg: sk.power * h.dmgMul, knock: sk.category === "melee" ? 42 : 24, status, statusTime: 2.2, crit: rollCrit(sk.category === "lightning" ? 0.08 : 0),
+    });
+    if (hit) { g.hitStop = Math.max(g.hitStop, sk.category === "melee" ? 0.07 : 0.04); g.shake(sk.category === "moves" ? 4 : 2.4, 0.22); }
+  });
+}
+
+const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO, e: castE };
+for (const s of SKILLS) s.cast = CASTS[s.id] ?? ((g) => castGeneric(g, s));
 
 /** Try to cast. Returns true when the skill actually fired. */
 export function castSkill(g, id) {
   const sk = SKILLS.find((s) => s.id === id);
-  if (!sk || g.state !== "playing" || !g.hero.alive || g.hero.dead) return false;
+  if (!sk || g.state !== "playing" || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
   const h = g.hero;
   if (h.cd[id] > 0) {
     g.audio.play("deny");

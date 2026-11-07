@@ -1,4 +1,4 @@
-// The loop: one 320×180 pixel stage, a duelist, critters, six spells and three acts. The map, every
+// The loop: a 480×180 scrolling world shown through a 320×180 viewport, a duelist, critters, six spells and three acts. The map, every
 // creature and every spell is a pixelfx module; this file is the game around them.
 
 import { createFrame, clearFrame, createFx, painterFor, composite, hex, clamp, TAU } from "../../pixelfx/src/core/index.js";
@@ -9,8 +9,13 @@ import { castSkill, explodeFireball } from "./skills.js";
 import { UI } from "./ui.js";
 import { AudioEngine } from "./audio.js";
 import { spawnEnemy } from "./enemies.js";
+import { drawMovementTrail } from "./movement-fx.js";
+import { SKILL_RECTS, RESUME_BUTTON, contains } from "./controls.js";
+import { GATE_PALETTES } from "./fx/stage-portal.js";
+import { projectileSweep } from "./collision.js";
+import { COMBAT_SCALE } from "./combat-scale.js";
 
-const SW = 320, SH = 240, BH = 180;
+const SW = 320, SH = 180, BH = 180, WORLD_W = 480;
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, bg: hex("#05060c"),
   warn: hex("#ff8a5a"), warnLit: hex("#ffd36a"), gold: hex("#ffd36a"), green: hex("#a8ff9a"),
@@ -28,6 +33,7 @@ export class Game {
     this.ui = new UI(this);
     this.hero = new Hero();
     this.keys = new Set();
+    this.touchMove = { x: 0, y: 0 };
     this.state = "title";
     this.time = 0;
     this.runTime = 0;
@@ -38,6 +44,7 @@ export class Game {
     this.pickups = [];
     this.numbers = [];
     this.motes = [];
+    this.dashTrails = [];
     this.telegraphs = [];
     this.timers = [];
     this.spawnQueue = [];
@@ -54,9 +61,14 @@ export class Game {
     this.hold = 0;
     this.bossRef = null;
     this.bossDefeated = false;
+    this.portal = null;
     this.deathT = 0;
     this.stage = STAGES[0];
     this.mapFx = null;
+    this.mapFxTiles = [];
+    this.mapTileFrames = [];
+    this.worldW = WORLD_W;
+    this.cameraX = 0;
     this.spawnQueue = [];
     // the title idles on the volcanic act: lava light is a better first impression than a night sky
     this.loadStage(2, true);
@@ -66,9 +78,12 @@ export class Game {
   loadStage(index, title = false) {
     this.stageIndex = index;
     this.stage = STAGES[index];
-    this.mapFx = createFx(this.stage.map, { x: 0, y: 0, seed: 3 + index });
+    this.mapFxTiles = [0, 320].map((x) => createFx(this.stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
+    this.mapFx = this.mapFxTiles[0];
+    this.mapTileFrames = this.mapFxTiles.map(() => createFrame(320, 180));
     this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
+    this.cameraX = 0;
     this.enemies = [];
     this.effects = [];
     this.projectiles = [];
@@ -78,6 +93,8 @@ export class Game {
     this.telegraphs = [];
     this.timers = [];
     this.spawnQueue = [];
+    this.dashTrails = [];
+    this.portal = null;
     this.bossRef = null;
     this.bossDefeated = false;
     this.waveIndex = 0;
@@ -110,38 +127,211 @@ export class Game {
   togglePause() {
     if (this.state === "playing") {
       this.state = "paused";
+      this.keys.clear();
       this.shakeState = { amp: 0, t: 0, dur: 0 };
     } else if (this.state === "paused") {
       this.state = "playing";
     }
   }
 
+  addDashTrail(trail) {
+    this.dashTrails.push(trail);
+  }
+
+  updateDashTrails(dt) {
+    for (const t of this.dashTrails) {
+      t.t += dt;
+      // Dodge echoes follow the path only during its short movement window.
+      if (t.kind === "dodge" && t.t <= 0.22) t.to = { x: this.hero.x, y: this.hero.y };
+    }
+    this.dashTrails = this.dashTrails.filter((t) => t.t < t.life);
+  }
+
+  openPortal() {
+    const targetStage = this.stageIndex + 1;
+    const exit = targetStage >= STAGES.length;
+    const finalGate = targetStage === STAGES.length - 1;
+    const palette = exit ? GATE_PALETTES.exit : finalGate ? GATE_PALETTES.final : GATE_PALETTES.normal;
+    const x = this.worldW - 70, y = 152;
+    const distance = Math.hypot(this.hero.x - x, (this.hero.y - y) * 1.4);
+    this.portal = {
+      x, y, finalGate, exit, targetStage, t: 0, armed: distance > 20,
+      label: exit ? "ESCAPE" : finalGate ? "FINAL STAGE" : "NEXT STAGE",
+      color: hex(palette[5]),
+      fx: createFx(this.fx.stagePortal, { x, y, palette, reveal: 0, seed: 910 + this.stageIndex }),
+    };
+    this.ui.toast(exit ? "ESCAPE GATE OPEN" : finalGate ? "FINAL STAGE GATE OPEN" : "PORTAL OPEN - MOVE RIGHT");
+    this.audio.play("portal");
+  }
+
+  updatePortal(dt) {
+    if (!this.portal) return;
+    this.portal.t += dt;
+    this.portal.fx.update(dt);
+    this.portal.fx.options.reveal = Math.min(1, this.portal.t / 0.65);
+    const distance = Math.hypot(this.hero.x - this.portal.x, (this.hero.y - this.portal.y) * 1.4);
+    if (distance > 22) this.portal.armed = true;
+    if (this.phase === "clear" && this.portal.t > 0.8 && this.portal.armed && this.hero.alive && distance < 14) this.enterPortal();
+  }
+
+  enterPortal() {
+    if (!this.portal || this.phase !== "clear" || !this.hero.alive) return;
+    this.phase = "travel";
+    this.phaseT = 0;
+    this.keys.clear();
+    this.hero.vx = this.hero.vy = this.hero.dashT = 0;
+    this.audio.play("portal");
+    this.shake(2, 0.25);
+  }
+
+  toggleInventory() {
+    if (this.state === "playing" && this.phase !== "travel" && this.hero.alive) {
+      this.state = "inventory";
+      this.keys.clear();
+      this.ui.inventorySkillPick = null;
+      this.domUi?.open("loadout");
+      this.audio.play("ui");
+    } else if (this.state === "inventory") {
+      this.state = "playing";
+      this.ui.inventorySkillPick = null;
+      this.domUi?.close();
+      this.audio.play("ui");
+    }
+  }
+
+  handlePointer(x, y) {
+    if (this.state === "inventory") return this.ui.handlePointer(x, y);
+    if (this.state === "paused" && contains(RESUME_BUTTON, x, y)) {
+      this.togglePause(); this.audio.play("ui"); return "resume";
+    }
+    if (this.state !== "playing") return null;
+    const slot = SKILL_RECTS.findIndex((rect) => contains(rect, x, y));
+    if (slot >= 0) { this.cast(this.hero.skillSlots[slot]); return "skill"; }
+    return null;
+  }
+
+  clampX(x, pad = 18) {
+    return clamp(x, pad, this.worldW - pad);
+  }
+
+  updateCamera() {
+    const target = clamp(this.hero.x - SW * 0.5, 0, this.worldW - SW);
+    this.cameraX += (target - this.cameraX) * 0.12;
+  }
+
+  drawMapTiles(frame) {
+    for (let i = 0; i < this.mapFxTiles.length; i++) {
+      const fx = this.mapFxTiles[i], tile = this.mapTileFrames[i];
+      clearFrame(tile);
+      tile.ox = 0;
+      tile.oy = 0;
+      fx.options.x = 0;
+      fx.options.y = 0;
+      fx.draw(tile);
+      const worldX = i * 320;
+      const screenX = Math.round(worldX - frame.ox);
+      const screenY = -frame.oy;
+      const x0 = Math.max(0, -screenX), x1 = Math.min(tile.w, frame.w - screenX);
+      const y0 = Math.max(0, -screenY), y1 = Math.min(tile.h, frame.h - screenY);
+      for (let y = y0; y < y1; y++) {
+        const dstRow = (screenY + y) * frame.w + screenX;
+        const srcRow = y * tile.w;
+        for (let x = x0; x < x1; x++) {
+          const c = tile.color[srcRow + x];
+          if (c) frame.color[dstRow + x] = c;
+          const l = tile.light[srcRow + x];
+          if (l) frame.light[dstRow + x] = l;
+        }
+      }
+    }
+  }
+
+  drawScaledFx(fx, x, y, scale = 1) {
+    if (scale >= 0.999) {
+      fx.options.x = x;
+      fx.options.y = y;
+      fx.draw(this.frame);
+      return;
+    }
+    // Use the module's bounds, including both directions when flipped. Large spells must not
+    // be cropped to the small critter scratch frame when sharing the combat scale.
+    const [w, h] = fx.meta.size ?? [160, 140];
+    const [anchorX, anchorY] = fx.meta.origin ?? [w / 2, h * 0.75];
+    const ox = Math.ceil(Math.max(anchorX, w - anchorX)) + 8;
+    const oy = Math.ceil(Math.max(anchorY, h - anchorY)) + 8;
+    const cache = this.fxScratchFrames ??= new Map();
+    const key = `${ox}:${oy}`;
+    if (!cache.has(key)) cache.set(key, createFrame(ox * 2, oy * 2));
+    const scratch = cache.get(key);
+    clearFrame(scratch);
+    const oldX = fx.options.x, oldY = fx.options.y;
+    fx.options.x = ox;
+    fx.options.y = oy;
+    fx.draw(scratch);
+    fx.options.x = oldX;
+    fx.options.y = oldY;
+    const dst = this.frame, offsetX = dst.ox, offsetY = dst.oy;
+    const p = painterFor(dst);
+    const x0 = Math.max(0, Math.floor(x - ox * scale - offsetX));
+    const y0 = Math.max(0, Math.floor(y - oy * scale - offsetY));
+    const x1 = Math.min(dst.w, Math.ceil(x + ox * scale - offsetX));
+    const y1 = Math.min(dst.h, Math.ceil(y + oy * scale - offsetY));
+    for (let dy = y0; dy < y1; dy++) {
+      const sy = Math.floor((dy + offsetY + 0.5 - y) / scale + oy);
+      if (sy < 0 || sy >= scratch.h) continue;
+      for (let dx = x0; dx < x1; dx++) {
+        const sx = Math.floor((dx + offsetX + 0.5 - x) / scale + ox);
+        if (sx < 0 || sx >= scratch.w) continue;
+        const si = sy * scratch.w + sx;
+        const di = dy * dst.w + dx;
+        const color = scratch.color[si], alpha = color >>> 24;
+        if (alpha === 255) dst.color[di] = color;
+        else if (alpha) p.blendPx(dx + offsetX, dy + offsetY, color, alpha / 255);
+        const light = scratch.light[si];
+        if (light) p.add(dx + offsetX, dy + offsetY, light);
+      }
+    }
+  }
+
   // ------------------------------------------------------------------ tick
   tick(dt) {
     this.time += dt;
-    if (this.state === "paused") return;
+    if (this.state === "paused" || this.state === "inventory") return;
 
     if (this.state === "title") {
-      this.mapFx.update(dt * 0.8);
+      for (const map of this.mapFxTiles) map.update(dt * 0.8);
       this.hero.update(this, dt, this.keys);
       this.updateEffects(dt);
+      this.updateDashTrails(dt);
       return;
     }
 
     if (this.state === "gameover" || this.state === "victory") {
-      this.mapFx.update(dt * 0.5);
+      for (const map of this.mapFxTiles) map.update(dt * 0.5);
       this.updateMotes(dt);
       this.updateNumbers(dt);
+      this.updateDashTrails(dt);
       return;
     }
 
     this.runTime += dt;
 
+    if (this.phase === "travel") {
+      for (const map of this.mapFxTiles) map.update(dt);
+      this.updatePortal(dt);
+      this.updateEffects(dt);
+      this.updateDashTrails(dt);
+      this.updateShake(dt);
+      this.updateFlow(dt);
+      return;
+    }
+
     if (this.hitStop > 0) {
       this.hitStop -= dt;
-      this.mapFx.update(dt);
+      for (const map of this.mapFxTiles) map.update(dt);
       this.updateShake(dt);
       this.updateFlash(dt);
+      this.updateDashTrails(dt);
       return;
     }
 
@@ -156,11 +346,14 @@ export class Game {
       for (const t of due) t.fn();
     }
 
-    this.mapFx.update(dt);
+    for (const map of this.mapFxTiles) map.update(dt);
     this.hero.update(this, dt, this.keys);
+    this.updateCamera();
     for (const e of this.enemies) e.update(this, dt);
     this.enemies = this.enemies.filter((e) => !e.dead);
     this.updateEffects(dt);
+    this.updateDashTrails(dt);
+    this.updatePortal(dt);
     this.updateProjectiles(dt);
     this.updatePickups(dt);
     this.updateMotes(dt);
@@ -186,6 +379,7 @@ export class Game {
   }
 
   updateFlow(dt) {
+    if (!this.hero.alive) return;
     if (this.hold > 0) {
       this.hold -= dt;
       return;
@@ -203,11 +397,17 @@ export class Game {
         }
       } else this.clearT = 0;
     } else if (this.phase === "clear") {
-      if (this.phaseT > 2.8) {
-        if (this.stageIndex + 1 < STAGES.length) {
+      if (!this.portal) this.openPortal();
+    } else if (this.phase === "travel") {
+      if (this.phaseT > 0.65) {
+        const next = this.portal?.targetStage ?? this.stageIndex + 1;
+        if (next < STAGES.length) {
           this.fade = 1;
-          this.loadStage(this.stageIndex + 1, false);
-        } else this.victory();
+          this.loadStage(next, false);
+        } else {
+          this.portal = null;
+          this.victory();
+        }
       }
     }
   }
@@ -244,6 +444,7 @@ export class Game {
   }
 
   stageClear() {
+    if (!this.hero.alive || this.phase === "clear" || this.phase === "travel") return;
     this.phase = "clear";
     this.phaseT = 0;
     this.ui.stageClear();
@@ -252,6 +453,10 @@ export class Game {
     this.hero.mp = Math.min(this.hero.maxMp, this.hero.mp + 24);
     this.projectiles = [];
     this.spawnQueue = [];
+    this.timers = [];
+    this.telegraphs = [];
+    this.portal = null;
+    this.openPortal();
   }
 
   victory() {
@@ -275,6 +480,7 @@ export class Game {
     this.effects.push({
       inst, layer: cfg.layer ?? "front", age: 0, life: cfg.life ?? 0,
       follow: cfg.follow ?? null, offsetY: cfg.offsetY ?? 0,
+      scale: cfg.scale ?? COMBAT_SCALE,
     });
     return inst;
   }
@@ -297,6 +503,7 @@ export class Game {
     const hero = this.hero;
     for (const p of this.projectiles) {
       p.life -= dt;
+      const prev = { x: p.x, y: p.y };
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.fx.options.x = p.x;
@@ -304,17 +511,19 @@ export class Game {
       p.fx.options.flip = p.vx < 0;
       p.fx.update(dt);
       if (p.team === "hero") {
-        let hit = null;
+        let hit = null, hitInfo = null;
         for (const e of this.enemies) {
           if (!e.alive) continue;
-          if (Math.hypot(e.x - p.x, (e.y - 16 - p.y) * 0.75) < 10 + e.w * 0.4) { hit = e; break; }
+          if (p.hitIds?.has(e)) continue;
+          const info = projectileSweep(prev, p, e, p.r ?? 5);
+          if (info && (!hitInfo || info.t < hitInfo.t)) { hit = e; hitInfo = info; }
         }
         if (hit) {
-          explodeFireball(this, p);
-          p.fx.stop();
-          p.dead = true;
+          p.x = hitInfo.point.x; p.y = hitInfo.point.y;
+          if (p.kind === "fireball") explodeFireball(this, p);
+          else this.resolveWeaponProjectileHit(p, hit);
         }
-      } else if (hero.alive && Math.hypot(hero.x - p.x, (hero.y - 22 - p.y) * 0.8) < 11) {
+      } else if (hero.alive && Math.hypot(hero.x - p.x, (hero.y - 22 * COMBAT_SCALE - p.y) * 0.8) < 11 * COMBAT_SCALE) {
         if (hero.hurt(this, p.dmg, { fromX: p.x })) {
           this.addFx(FX.hitSpark, { x: p.x, y: p.y, flip: p.vx < 0, light: 0.9 });
           this.audio.play("hit");
@@ -323,14 +532,46 @@ export class Game {
         p.fx.stop();
         p.dead = true;
       }
-      if (p.x < 4 || p.x > SW - 4 || p.y < 0 || p.y > BH || p.life <= 0) { p.fx.stop(); p.dead = true; }
+      if (p.x < 4 || p.x > this.worldW - 4 || p.y < 0 || p.y > BH || p.life <= 0) { p.fx.stop(); p.dead = true; }
     }
     this.projectiles = this.projectiles.filter((p) => !p.dead);
   }
 
+  resolveWeaponProjectileHit(p, first) {
+    const hitEnemies = [first];
+    p.hitIds ??= new Set();
+    p.hitIds.add(first);
+    const blast = p.blastRadius ?? 0;
+    if (blast) {
+      for (const e of this.enemies) {
+        if (!e.alive || p.hitIds.has(e)) continue;
+        if (Math.hypot(e.x - p.x, (e.y - p.y) * 1.2) <= blast) {
+          e.hurt(this, p.dmg, { knock: p.knock ?? 28, status: p.status, statusTime: p.statusTime, crit: p.crit });
+          p.hitIds.add(e); hitEnemies.push(e);
+        }
+      }
+    } else {
+      first.hurt(this, p.dmg, { knock: p.knock ?? 28, status: p.status, statusTime: p.statusTime, crit: p.crit });
+    }
+    this.addFx(FX.hitSpark, { x: p.x, y: p.y - 4, light: 1, seed: 730 + this.kills });
+    this.number(p.x, p.y - 16, String(Math.round(p.dmg)), { color: "#fff0d0" });
+    this.hitStop = Math.max(this.hitStop, p.pierce ? 0.045 : 0.07);
+    this.shake(p.pierce ? 2.2 : 3.4, p.pierce ? 0.16 : 0.25);
+    this.audio.play(p.pierce ? "hit" : "crit");
+    if (p.response === "return" && !p.returning) {
+      p.returning = true;
+      p.vx = -Math.sign(p.vx || 1) * (p.returnSpeed ?? 220);
+      p.vy = -p.vy * 0.25;
+      p.life = Math.max(p.life, 0.7);
+      return;
+    }
+    if (p.pierce && (!p.maxHits || p.hitIds.size < p.maxHits)) return;
+    p.fx.stop(); p.dead = true;
+  }
+
   enemyShot(enemy, hero) {
-    const sx = enemy.x + enemy.facing * 10, sy = enemy.y - 20;
-    const tx = hero.x, ty = hero.y - 22;
+    const sx = enemy.x + enemy.facing * 10 * COMBAT_SCALE, sy = enemy.y - 20 * COMBAT_SCALE;
+    const tx = hero.x, ty = hero.y - 22 * COMBAT_SCALE;
     const dx = tx - sx, dy = ty - sy;
     const len = Math.hypot(dx, dy) || 1;
     const speed = enemy.type.shot?.speed ?? 85;
@@ -339,8 +580,8 @@ export class Game {
       palette: enemy.type.shot?.palette, size: enemy.type.shot?.r ?? 5,
     });
     this.projectiles.push({
-      x: sx, y: sy, vx: (dx / len) * speed, vy: (dy / len) * speed, r: enemy.type.shot?.r ?? 5,
-      dmg: enemy.dmg, team: "enemy", fx: inst, life: 2.6, color: enemy.type.shot?.color ?? "#ff7a6a",
+      x: sx, y: sy, vx: (dx / len) * speed, vy: (dy / len) * speed, r: (enemy.type.shot?.r ?? 5) * COMBAT_SCALE,
+      dmg: enemy.dmg, team: "enemy", fx: inst, life: 2.6 * COMBAT_SCALE, color: enemy.type.shot?.color ?? "#ff7a6a",
     });
   }
 
@@ -350,8 +591,96 @@ export class Game {
       if (!e.alive || !pred(e)) continue;
       e.hurt(this, opts.dmg, { knock: opts.knock ?? 22, status: opts.status, statusTime: opts.statusTime, crit: opts.crit });
       hits++;
+      if (opts.maxHits && hits >= opts.maxHits) break;
     }
     return hits;
+  }
+
+  enemyPathHit(e, shape, opts = {}) {
+    const x0 = e.prevX ?? e.x, y0 = e.prevY ?? e.y, x1 = e.x, y1 = e.y;
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 3));
+    for (let i = 0; i <= n; i++) {
+      const u = i / n, x = x0 + (x1 - x0) * u, y = y0 + (y1 - y0) * u;
+      if (shape(x, y, e)) return true;
+    }
+    return false;
+  }
+
+  weaponHitTest(e, attack, hero = this.hero) {
+    const raw = attack ?? { kind: "line", range: 60, radius: 12, pierce: false, maxHits: 1 };
+    const cfg = { ...raw, range: (raw.range ?? 60) * COMBAT_SCALE, radius: (raw.radius ?? 10) * COMBAT_SCALE };
+    const dx = e.x - hero.x, dy = (e.y - hero.y) * 1.2;
+    const facingDx = dx * hero.facing;
+    const radius = cfg.radius;
+    if (cfg.kind === "arc") {
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, facingDx);
+      return dist <= (cfg.range ?? 70) && angle > -0.95 && angle < 0.95 && this.enemyPathHit(e, (x, y) => Math.hypot(x - hero.x, (y - hero.y) * 1.2) <= radius);
+    }
+    if (cfg.kind === "projectile") {
+      return facingDx > -4 && facingDx <= (cfg.range ?? 100) && Math.abs(dy) <= radius * 1.4 && this.enemyPathHit(e, (x, y) => {
+        const pdx = (x - hero.x) * hero.facing, pdy = (y - hero.y) * 1.2;
+        return pdx > -4 && pdx <= (cfg.range ?? 100) && Math.abs(pdy) <= radius;
+      });
+    }
+    return facingDx > -8 && facingDx <= (cfg.range ?? 60) && Math.abs(dy) <= radius && this.enemyPathHit(e, (x, y) => {
+      const pdx = (x - hero.x) * hero.facing, pdy = (y - hero.y) * 1.2;
+      return pdx > -8 && pdx <= (cfg.range ?? 60) && Math.abs(pdy) <= radius;
+    });
+  }
+
+  weaponAttackPath(profile, hero = this.hero) {
+    const facing = hero.facing || 1, range = (profile?.range ?? 60) * COMBAT_SCALE;
+    if (profile?.kind === "arc") {
+      const points = [];
+      for (let i = 0; i <= 10; i++) {
+        const u = i / 10, a = -1.25 + u * 2.5;
+        points.push({ x: hero.x + facing * (10 * COMBAT_SCALE + Math.cos(a) * range * 0.72), y: hero.y - 5 * COMBAT_SCALE + Math.sin(a) * range * 0.28 });
+      }
+      return points;
+    }
+    // Grounded enemies' hurt centers sit on the same floor line as the hero's feet.
+    // A small weapon-height offset keeps thrusts aligned while preserving the drawn arc.
+    const pathY = hero.y - (profile?.kind === "thrust" ? 1 : 3) * COMBAT_SCALE;
+    return [{ x: hero.x + facing * 3 * COMBAT_SCALE, y: pathY }, { x: hero.x + facing * range, y: pathY }];
+  }
+
+  weaponStrike(profile, opts = {}) {
+    const hero = this.hero, points = this.weaponAttackPath(profile, hero), hits = [];
+    const radius = (profile?.radius ?? 10) * COMBAT_SCALE;
+    const pointSegmentDistance = (px, py, ax, ay, bx, by) => {
+      const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1;
+      const u = clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1);
+      return Math.hypot(px - (ax + dx * u), (py - (ay + dy * u)) * 1.2);
+    };
+    const pathDistance = (x, y) => {
+      let best = Infinity, along = 0;
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1], b = points[i], len = Math.hypot(b.x - a.x, b.y - a.y);
+        best = Math.min(best, pointSegmentDistance(x, y, a.x, a.y, b.x, b.y));
+        along += len;
+      }
+      return best;
+    };
+    const candidates = [];
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      const samples = [];
+      const ex0 = e.prevX ?? e.x, ey0 = e.prevY ?? e.y, ex1 = e.x, ey1 = e.y;
+      for (let i = 0; i <= 5; i++) {
+        const u = i / 5;
+        samples.push({ x: ex0 + (ex1 - ex0) * u, y: ey0 + (ey1 - ey0) * u });
+      }
+      const d = Math.min(...samples.map((s) => pathDistance(s.x, s.y)));
+      if (d <= radius + Math.max(5 * COMBAT_SCALE, e.w * (e.renderScale ?? COMBAT_SCALE) * 0.55)) candidates.push({ e, d });
+    }
+    candidates.sort((a, b) => a.d - b.d);
+    const limit = profile?.pierce ? (profile.maxHits ?? 99) : 1;
+    for (const { e } of candidates.slice(0, limit)) {
+      e.hurt(this, opts.dmg, { knock: opts.knock ?? 22, status: opts.status, statusTime: opts.statusTime, crit: opts.crit });
+      hits.push(e);
+    }
+    return { hits, points, end: hits.length ? { x: hits[0].x, y: hits[0].y } : points.at(-1) };
   }
 
   number(x, y, text, opts = {}) {
@@ -392,7 +721,7 @@ export class Game {
   }
 
   telegraph(x, y, r, dur, color) {
-    this.telegraphs.push({ x, y, r, t: 0, dur, color: hex(color) });
+    this.telegraphs.push({ x, y, r: r * COMBAT_SCALE, t: 0, dur, color: hex(color) });
   }
 
   updateTelegraphs(dt) {
@@ -495,17 +824,23 @@ export class Game {
       sx = Math.sin(sh.t * 93) * sh.amp * k;
       sy = Math.cos(sh.t * 71) * sh.amp * 0.55 * k;
     }
-    f.ox = -Math.round(sx);
+    this.updateCamera();
+    f.ox = Math.round(this.cameraX - sx);
     f.oy = -Math.round(sy);
     clearFrame(f);
 
     // the stage itself
-    if (this.mapFx) { this.mapFx.options.x = 0; this.mapFx.options.y = 0; this.mapFx.draw(f); }
+    this.drawMapTiles(f);
 
     let p = painterFor(f);
     // floor marks are under everyone
     for (const t of this.telegraphs) this.drawTelegraph(p, t);
-    for (const ef of this.effects) if (ef.layer === "ground") { ef.inst.draw(f); p = painterFor(f); }
+    for (const ef of this.effects) if (ef.layer === "ground") {
+      this.drawScaledFx(ef.inst, ef.inst.options.x ?? 0, ef.inst.options.y ?? 0, ef.scale);
+      p = painterFor(f);
+    }
+    if (this.portal) { this.portal.fx.draw(f, "back"); p = painterFor(f); }
+    for (const trail of this.dashTrails) drawMovementTrail(p, trail);
 
     // pickups sit on the floor, sorted with the bodies so depth reads
     const actors = [...this.pickups.filter((q) => !q.dead).map((q) => ({ y: q.y, kind: "pickup", ref: q }))];
@@ -524,8 +859,21 @@ export class Game {
     }
 
     // spells over the bodies
-    for (const ef of this.effects) if (ef.layer !== "ground") { ef.inst.draw(f); p = painterFor(f); }
-    for (const pr of this.projectiles) { pr.fx.draw(f); p = painterFor(f); }
+    for (const ef of this.effects) if (ef.layer !== "ground") {
+      this.drawScaledFx(ef.inst, ef.inst.options.x ?? 0, ef.inst.options.y ?? 0, ef.scale);
+      p = painterFor(f);
+    }
+    for (const pr of this.projectiles) { this.drawScaledFx(pr.fx, pr.x, pr.y, COMBAT_SCALE); p = painterFor(f); }
+
+    // short-lived movement streaks sit above the floor and below the HUD
+    // so a dash reads as a deliberate burst rather than a teleport.
+    if (this.portal) {
+      this.portal.fx.options.x = this.portal.x;
+      this.portal.fx.options.y = this.portal.y;
+      this.portal.fx.draw(f, "front");
+      p = painterFor(f);
+      p.text(this.portal.label, this.portal.x, this.portal.y - 56, this.portal.color, { align: "center", outline: C.ink, font: "mini" });
+    }
 
     // grit and footstep dust
     for (const m of this.motes) {
@@ -556,6 +904,9 @@ export class Game {
     p = painterFor(f);
     if (this.flashState.a > 0) {
       p.rect(0, 0, SW, SH, this.flashState.color, Math.min(1, this.flashState.a / Math.max(0.001, this.flashState.max)));
+    }
+    if (this.phase === "travel") {
+      p.rect(0, 0, SW, SH, hex("#050409"), Math.min(1, this.phaseT / 0.5));
     }
     if (this.fade > 0.001) {
       p.rect(0, 0, SW, SH, hex("#050409"), this.fade);

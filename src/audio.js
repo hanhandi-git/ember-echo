@@ -199,6 +199,19 @@ export class AudioEngine {
       case "ui":
         this.tone({ f: 660, dur: 0.06, type: "square", vol: 0.035 });
         break;
+      case "dash":
+        this.noise({ dur: 0.16, vol: 0.14, type: "highpass", f: 1200, f2: 3800, q: 1.1 });
+        this.tone({ f: 180, f2: 640, dur: 0.15, type: "triangle", vol: 0.07 });
+        break;
+      case "quick":
+        this.noise({ dur: 0.08, vol: 0.08, type: "highpass", f: 1800, f2: 800, q: 1.2 });
+        this.tone({ f: 480, f2: 720, dur: 0.08, type: "square", vol: 0.035 });
+        break;
+      case "portal":
+        this.tone({ f: 180, f2: 520, dur: 0.42, type: "sine", vol: 0.07 });
+        this.tone({ f: 360, f2: 880, dur: 0.5, type: "triangle", vol: 0.045, delay: 0.08 });
+        this.noise({ dur: 0.35, vol: 0.05, type: "bandpass", f: 1400, f2: 500 });
+        break;
       case "spawn":
         this.tone({ f: 160, f2: 380, dur: 0.3, type: "triangle", vol: 0.05 });
         this.noise({ dur: 0.3, vol: 0.05, type: "bandpass", f: 900 });

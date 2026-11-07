@@ -8,13 +8,18 @@
 
 ```
 WASD      移动（八向，纵向有轻微纵深）
+SPACE     快速移动（短距离位移）
+Q / SHIFT 闪避（0.42 秒无敌窗口，带输入缓冲和冷却）
+TAB       背包（更换武器与技能槽）
 J         星刃斩（三段连斩，无消耗）
 K         烈焰术（火球，爆炸并灼烧）
 L         霜环（身周冰环，冻结）
 U         雷罚（落雷，眩晕；有落点预警）
 I         圣愈（治疗 + 护盾）
 O         陨星（三重陨石，大范围）
+E         魂爆（可在背包装入任意技能槽）
 Esc       暂停 / 继续
+P         暂停 / 继续（战斗按钮也可点击）
 M         静音
 Enter     开始 / 重新开始
 ```
@@ -51,12 +56,16 @@ node build.mjs
 
 ## 内容
 
-- **三幕**：苔痕遗迹 → 幽火沼泽 → 熔岩深窟，逐幕解锁新的小怪，最后一幕有 Boss。
+- **七幕长场景**：苔痕遗迹 → 幽火沼泽 → 熔岩深窟 → 极光隘口 → 晶脉空洞 → 墨影神龛 → 日灼圣殿；每幕是 480px 横向战场，镜头随主角推进，最后一幕有 Boss。
 - **小怪**：苔泥、草蛇、沼蛙、夜蝠、鬼火、游魂、窥视者、焚颅。每种都有自己的像素循环、追击方式、攻击前摇与地面/连线预警。
 - **Boss**：冥河守卫 · 阿刻戎。镰刀横扫、雷击落点、全屏雷环、召唤鬼火、三重陨石；66% / 33% 血量切换相位，并召唤增援。
-- **成长**：击破获得经验，升级提升生命、法力与伤害；敌人掉落红心、法力药水、经验球，会自动吸附。
-- **战斗手感**：三段连击、会心、受击白闪、击退、命中停顿、屏幕震动、技能冷却与法力门槛、连击计数。
-- **像素 UI**：UI 文本使用 pixelfx 的 5×7 像素字体（英文，与 Quest complete / Achievement 一致）。320×240 canvas，上方 320×180 战斗、下方 60px 命令条；全部 UI 都用 pixelfx 的 Painter/像素字体绘制。HUD 使用 `ui/panel` + `ui/status-bar`，技能栏使用 `ui/skill-slot`，标题/暂停/失败/胜利共用 `ui/dialog`，关卡/波次横幅使用 `ui/banner`，拾取提示使用 `ui/toast`；通关复用 `ui/quest-complete`，十连击复用 `ui/combo-counter`，升级复用 `ui/level-up`。
+- **成长**：击破获得经验，升级提升生命、法力与伤害；敌人掉落红心、法力药水、经验球，会自动吸附。`TAB` 打开背包面板，可在 22 把 pixelfx 武器/投掷装备和 199 个 pixelfx 技能效果中选择，并把技能自由放进六个快捷槽。
+- **语言**：设置页支持中文（默认）、English、日本語，选择会保存在本机。
+- **战斗手感**：三段连击、会心、受击白闪、击退、命中停顿、屏幕震动、技能冷却与法力门槛、连击计数；快速移动和闪避会留下不同颜色的残影与拖尾。
+- **关卡流程**：每幕清场后会在长场景右侧打开传送门，走入传送门才会进入下一幕；最终关卡的传送门使用赤红色终焉配色。
+- **UI**：战斗 HUD 保持 320×240 像素画布和像素反馈；`TAB` 背包/设置使用清晰的 HTML 面板，武器和技能用 SVG 图标卡片选择，设置页提供中文（默认）、English、日本語。
+- **HUD 排布**：左上是圆形头像与生命/法力，右侧是竖排技能节点，底部是移动摇杆和快速移动/闪避/背包/暂停动作区；人物页展示头像、武器、技能和核心属性。
+- **H5 触屏**：桌面端不绘制底部控制条；检测到触屏后显示 DOM 虚拟摇杆、技能按钮、快速移动、闪避、背包和暂停按钮。摇杆支持圆形死区、对角线归一化、多指同时操作，并处理松手、切后台和暂停复位。
 - **声音**：WebAudio 现场合成，无音频文件；首次点击或按键后启动。
 
 ## 素材来源
@@ -66,7 +75,7 @@ node build.mjs
 - 地图：`world/mossy-ruins`、`world/wisp-marsh`、`world/ember-depths`
 - 怪物：`critters/slime`、`snake`、`frog`、`bat`、`wisp`、`ghost`、`eyeball`、`flying-skull`
 - 技能：`melee/sword-slash`、`double-slash`、`heavy-cleave`、`fire/fireball`、`meteor`、`ice/frost-nova`、`lightning/lightning-strike`、`holy/heal-aoe`、`divine-shield`、`blessing`
-- 反馈：`impacts/hit-spark`、`crit-hit`、`explosions/small-explosion`、`spawn/poof`、`spawn/shatter-death`、`spawn/spawn-portal`、`pickups/*`、`status/frozen`、`burning`、`stunned`、`ui/level-up`、`ui/combo-counter`、`arcane/rune-circle`
+- 反馈：`impacts/hit-spark`、`crit-hit`、`explosions/small-explosion`、`spawn/poof`、`spawn/shatter-death`、`spawn/spawn-portal`、`pickups/*`、`status/frozen`、`burning`、`stunned`、`ui/level-up`、`ui/combo-counter`、`arcane/rune-circle`；关卡传送门使用游戏内的 `stage-portal` 动态特效。
 - UI：`ui/panel`、`ui/status-bar`、`ui/skill-slot`、`ui/dialog`、`ui/banner`、`ui/toast`，以及复用的 `ui/quest-complete`、`ui/combo-counter`、`ui/level-up`
 - 角色：`src/core/characters.js` 的 `ember-duelist`（主角）与 `styx-warden`（Boss），由 `src/core/rig.js` 的骨骼/姿势系统绘制。
 
@@ -103,6 +112,6 @@ src/audio.js        WebAudio 合成音效
 
 ## 已知边界
 
-- 这是一个单机 Demo，没有存档、装备、技能树和联网。
+- 这是一个单机 Demo，没有存档、技能树和联网；当前版本包含可在战斗中打开的背包、武器装备、技能槽替换、快速移动与闪避。
 - 主要按桌面键盘设计；点击画布也可以开始/继续/重开。
 - 打包依赖同级 `pixelfx` 仓库（素材、特效与 `src/fx/ui/` 像素 UI 效果）；`game.js` 已是自包含产物，部署时只需要 `index.html`、`styles.css`、`game.js`。
