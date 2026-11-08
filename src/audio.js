@@ -28,6 +28,101 @@ const VARIATION = {
 
 const DUCK = { boss: 0.4, meteor: 0.5, phase: 0.45, thunder: 0.35 };
 
+const IMPULSE_SHAPE = { seconds: 1.8, decay: 2.6 };
+const NOISE_SECONDS = 2;
+const TEMPLATE_RATES = [44100, 48000];
+
+/** Channel data keyed by sample rate; copied into AudioBuffer instead of regenerating on unlock. */
+const impulseTemplates = new Map();
+const noiseTemplates = new Map();
+
+function synthesizeImpulseChannels(rate, seconds = IMPULSE_SHAPE.seconds, decay = IMPULSE_SHAPE.decay) {
+  const len = Math.max(1, Math.floor(rate * seconds));
+  const taps = [0.011, 0.023, 0.041, 0.067];
+  const channels = [];
+  for (let ch = 0; ch < 2; ch++) {
+    const d = new Float32Array(len);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {
+      const t = i / len;
+      const n = Math.random() * 2 - 1;
+      lp += (n - lp) * 0.34;
+      d[i] = (lp * 0.85 + n * 0.3) * Math.pow(1 - t, decay);
+    }
+    taps.forEach((sec, k) => {
+      const i = Math.floor((sec + (ch ? 0.004 : 0)) * rate);
+      if (i < len) d[i] += (k % 2 ? -1 : 1) * (0.21 / (k + 1));
+    });
+    channels.push(d);
+  }
+  return channels;
+}
+
+function synthesizeNoiseChannel(rate, seconds = NOISE_SECONDS) {
+  const len = Math.max(1, Math.floor(rate * seconds));
+  const d = new Float32Array(len);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const fade = Math.min(Math.floor(rate * 0.012), len >> 2);
+  for (let i = 0; i < fade; i++) {
+    const k = i / fade;
+    d[i] *= k;
+    d[len - 1 - i] *= k;
+  }
+  return d;
+}
+
+function ensureAudioTemplates(rate) {
+  const r = Math.round(rate);
+  if (!impulseTemplates.has(r)) impulseTemplates.set(r, synthesizeImpulseChannels(r));
+  if (!noiseTemplates.has(r)) noiseTemplates.set(r, synthesizeNoiseChannel(r));
+}
+
+let audioTemplatesReady = false;
+
+/** Idle hook: build impulse/noise templates before the player hits「继续冒险」(once per page). */
+export function warmAudioTemplates(rates = TEMPLATE_RATES) {
+  if (audioTemplatesReady) return;
+  for (const rate of rates) ensureAudioTemplates(rate);
+  audioTemplatesReady = true;
+}
+
+function bufferFromChannels(ctx, channels) {
+  const len = channels[0].length;
+  const buf = ctx.createBuffer(channels.length, len, ctx.sampleRate);
+  for (let ch = 0; ch < channels.length; ch++) {
+    const src = channels[ch];
+    const dest = buf.getChannelData(ch);
+    if (src.length === len) dest.set(src);
+    else {
+      for (let i = 0; i < len; i++) {
+        const pos = (i / len) * (src.length - 1);
+        const i0 = Math.floor(pos);
+        const i1 = Math.min(src.length - 1, i0 + 1);
+        const f = pos - i0;
+        dest[i] = src[i0] * (1 - f) + src[i1] * f;
+      }
+    }
+  }
+  return buf;
+}
+
+function bufferFromMono(ctx, mono) {
+  const len = mono.length;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const dest = buf.getChannelData(0);
+  if (mono.length === len) dest.set(mono);
+  else {
+    for (let i = 0; i < len; i++) {
+      const pos = (i / len) * (mono.length - 1);
+      const i0 = Math.floor(pos);
+      const i1 = Math.min(mono.length - 1, i0 + 1);
+      const f = pos - i0;
+      dest[i] = mono[i0] * (1 - f) + mono[i1] * f;
+    }
+  }
+  return buf;
+}
+
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function clamp01(v) { return clamp(Number(v) || 0, 0, 1); }
 
@@ -90,15 +185,36 @@ export class AudioEngine {
     return { ...this.volume, muted: this.muted };
   }
 
+  _resetAudioGraph() {
+    this.ctx = null;
+    this.master = null;
+    this.comp = null;
+    this.sfxBus = null;
+    this.ambBus = null;
+    this.ambDuck = null;
+    this.musicBus = null;
+    this.musicFade = null;
+    this.music = null;
+    this.reverb = null;
+    this.reverbReturn = null;
+    this.noiseBuf = null;
+    this.pad = null;
+    this.sfxSend = null;
+    this.musicSend = null;
+    this.ambSend = null;
+  }
+
   /** `context` is an optional OfflineAudioContext hook used by the render test harness. */
   unlock(context = null) {
-    if (this.ctx) {
+    if (this.ctx && this.sfxBus) {
       if (!context && this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
       return;
     }
+    if (this.ctx && !this.sfxBus) this._resetAudioGraph();
     const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
     if (!context && !AC) return;
     const c = context ?? new AC();
+    try {
     this.ctx = c;
 
     // master → destination; the limiter keeps layered hits from clipping
@@ -165,46 +281,28 @@ export class AudioEngine {
       });
     }
     if (!context && c.state === "suspended") c.resume().catch(() => {});
+    } catch (err) {
+      console.error("Audio unlock failed", err);
+      this._resetAudioGraph();
+    }
   }
 
   /** Smooth, dark stereo impulse: early reflections plus a long diffuse tail. */
-  makeImpulse(seconds = 1.8, decay = 2.6) {
+  makeImpulse(seconds = IMPULSE_SHAPE.seconds, decay = IMPULSE_SHAPE.decay) {
     const c = this.ctx;
-    const rate = c.sampleRate;
-    const len = Math.max(1, Math.floor(rate * seconds));
-    const buf = c.createBuffer(2, len, rate);
-    const taps = [0.011, 0.023, 0.041, 0.067];
-    for (let ch = 0; ch < 2; ch++) {
-      const d = buf.getChannelData(ch);
-      let lp = 0;
-      for (let i = 0; i < len; i++) {
-        const t = i / len;
-        const n = Math.random() * 2 - 1;
-        lp += (n - lp) * 0.34;
-        d[i] = (lp * 0.85 + n * 0.3) * Math.pow(1 - t, decay);
-      }
-      taps.forEach((sec, k) => {
-        const i = Math.floor((sec + (ch ? 0.004 : 0)) * rate);
-        if (i < len) d[i] += (k % 2 ? -1 : 1) * (0.21 / (k + 1));
-      });
-    }
-    return buf;
+    ensureAudioTemplates(c.sampleRate);
+    const cached = impulseTemplates.get(Math.round(c.sampleRate));
+    if (cached) return bufferFromChannels(c, cached);
+    return bufferFromChannels(c, synthesizeImpulseChannels(c.sampleRate, seconds, decay));
   }
 
   /** Loop-friendly noise bed, used for wind and every noisy transient. */
-  makeNoise(seconds = 2) {
+  makeNoise(seconds = NOISE_SECONDS) {
     const c = this.ctx;
-    const len = Math.max(1, Math.floor(c.sampleRate * seconds));
-    const buf = c.createBuffer(1, len, c.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    const fade = Math.min(Math.floor(c.sampleRate * 0.012), len >> 2);
-    for (let i = 0; i < fade; i++) {
-      const k = i / fade;
-      d[i] *= k;
-      d[len - 1 - i] *= k;
-    }
-    return buf;
+    ensureAudioTemplates(c.sampleRate);
+    const cached = noiseTemplates.get(Math.round(c.sampleRate));
+    if (cached) return bufferFromMono(c, cached);
+    return bufferFromMono(c, synthesizeNoiseChannel(c.sampleRate, seconds));
   }
 
   setMuted(m) {

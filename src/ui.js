@@ -16,7 +16,7 @@ import * as hudToggleFx from "../../pixelfx/src/fx/ui/hud-toggle.js";
 import { SKILL_META, STAGES, MELEE_WEAPONS, THROWN_WEAPONS } from "./data.js";
 import { gameLang, skillLabel, stageAct, stageName, uiCopy, weaponLabel } from "./copy.js";
 import {
-  RESUME_BUTTON, SKILL_RECTS, SKILL_KEYS, AUTO_TOGGLE_RECTS, AUTO_TOGGLE_SIZE, AUTO_TOGGLE_X, contains,
+  RESUME_BUTTON, CAMP_BUTTON, SKILL_RECTS, SKILL_KEYS, AUTO_TOGGLE_RECTS, AUTO_TOGGLE_SIZE, AUTO_TOGGLE_X, contains,
 } from "./controls.js";
 
 const SW = 320, SH = 180;
@@ -118,9 +118,12 @@ export class UI {
     p = painterFor(frame);
     if (g.state === "paused") {
       this.drawMenu(g, p, 0.62);
-      const r = RESUME_BUTTON;
-      plate(p, t, r.x + r.w / 2, r.y + r.h / 2, r.w, r.h);
-      p.text(uiCopy(g).continue, r.x + r.w / 2, r.y + 7, C.gold2, { align: "center", outline: C.ink });
+      const resume = RESUME_BUTTON;
+      plate(p, t, resume.x + resume.w / 2, resume.y + resume.h / 2, resume.w, resume.h);
+      p.text(uiCopy(g).continue, resume.x + resume.w / 2, resume.y + 6, C.gold2, { align: "center", outline: C.ink, font: "mini" });
+      const camp = CAMP_BUTTON;
+      plate(p, t, camp.x + camp.w / 2, camp.y + camp.h / 2, camp.w, camp.h);
+      p.text(uiCopy(g).returnCamp, camp.x + camp.w / 2, camp.y + 6, C.muted, { align: "center", outline: C.ink, font: "mini" });
     }
     else if (g.state === "gameover") this.drawMenu(g, p, 0.7);
     else if (g.state === "victory") this.drawMenu(g, p, 0.7);
@@ -339,7 +342,7 @@ export class UI {
       card(p, this.t, 160, 90, {
         kicker: uiCopy(g).pausedKicker, title: uiCopy(g).pausedTitle, subtitle: uiCopy(g).pausedSub,
         lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
-        prompt: "ESC RESUME   R RESTART", width: 240, height: 150,
+        prompt: uiCopy(g).pausedPrompt, width: 240, height: 158,
       });
     } else if (g.state === "gameover") {
       card(p, this.t, 160, 90, {

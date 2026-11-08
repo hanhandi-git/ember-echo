@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "drops": [
+    {
+      "p": 0.12,
+      "kind": "heart",
+      "pickup": "heart",
+      "label": "HP +18",
+      "color": "#ff7a8a",
+      "heal": 18
+    },
+    {
+      "p": 0.13,
+      "kind": "potion",
+      "pickup": "potion",
+      "label": "MP +24",
+      "color": "#ff86e6",
+      "mp": 24
+    },
+    {
+      "p": 0.5,
+      "kind": "xp",
+      "pickup": "xp",
+      "label": "XP +8",
+      "color": "#c4f060",
+      "xp": 8
+    }
+  ]
+}

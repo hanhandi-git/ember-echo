@@ -37,7 +37,7 @@ export const saveSystem = {
   },
 
   startRun(opts = {}) {
-    this.domUi?.close?.();
+    if (!opts.uiClosed) this.domUi?.close?.();
     this.keys.clear();
     const fresh = opts === true || opts?.fresh;
     if (!fresh && resumeRun(this, loadSave())) return;
@@ -50,9 +50,21 @@ export const saveSystem = {
     clearRunSave(this);
   },
 
-  /** Leave the fight (defeat/victory) and open the camp hub. */
-  enterCamp() {
+  /** Save the run and return to the camp hub from battle (pause, bag, or end screens). */
+  retreatToCamp() {
+    if (!["playing", "paused", "inventory"].includes(this.state) || !this.hero.alive) return;
+    this.keys.clear();
+    if (this.state === "playing") this.togglePause();
+    if (this.state === "inventory") this.domUi?.close?.();
     this.persistSave?.();
+    const enter = () => this.enterCamp({ synced: true });
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(enter);
+    else enter();
+  },
+
+  /** Leave the fight (defeat/victory) and open the camp hub. */
+  enterCamp(opts = {}) {
+    if (!opts.synced) this.persistSave?.();
     this.keys.clear();
     this.loadStage(this.stageIndex, true);
     this.hero.reset();
@@ -60,11 +72,15 @@ export const saveSystem = {
     this.kills = 0;
     this.runTime = 0;
     this.domUi?.openCamp?.();
+    this.scheduleCampPrewarm?.();
   },
 
   /** Primary camp action: resume a saved expedition when one exists. */
   enterBattle() {
-    this.startRun();
+    this.domUi?.close?.();
+    const begin = () => this.startRun({ uiClosed: true });
+    const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (fn) => fn();
+    frame(() => frame(begin));
   },
 
   restart() {

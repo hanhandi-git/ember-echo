@@ -6,7 +6,7 @@ import { Hero } from "../hero.js";
 import { castSkill } from "../skills.js";
 import { UI } from "../ui.js";
 import { AudioEngine } from "../audio.js";
-import { SKILL_RECTS, RESUME_BUTTON, contains } from "../controls.js";
+import { SKILL_RECTS, RESUME_BUTTON, CAMP_BUTTON, contains } from "../controls.js";
 import { stageAct, stageName, stageSub } from "../copy.js";
 import { SW, SH, WORLD_W, PALETTE } from "./constants.js";
 
@@ -66,9 +66,12 @@ export class Game {
   loadStage(index, camp = false) {
     this.stageIndex = index;
     this.stage = STAGES[index];
-    this.mapFxTiles = [0, 320].map((x) => createFx(this.stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
-    this.mapFx = this.mapFxTiles[0];
-    this.mapTileFrames = this.mapFxTiles.map(() => createFrame(320, 180));
+    if (camp) this.invalidateStagePrewarm?.();
+    if (camp || !this.adoptStagePrewarm?.(index)) {
+      this.mapFxTiles = [0, 320].map((x) => createFx(this.stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
+      this.mapFx = this.mapFxTiles[0];
+      this.mapTileFrames = this.mapFxTiles.map(() => createFrame(320, 180));
+    }
     this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
     this.cameraX = 0;
@@ -95,7 +98,8 @@ export class Game {
     this.state = camp ? "camp" : "playing";
     this.fade = camp ? 0 : 1;
     this.audio.setScene({ camp, stageIndex: index, boss: false });
-    if (!camp) {
+    if (camp) this.seedBattlePrewarmFromBackdrop?.();
+    else {
       this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));
       this.audio.play("ui");
     }
@@ -128,6 +132,10 @@ export class Game {
 
   handlePointer(x, y) {
     if (this.state === "inventory") return this.ui.handlePointer(x, y);
+    if (this.state === "paused" && contains(CAMP_BUTTON, x, y)) {
+      this.retreatToCamp?.();
+      return "camp";
+    }
     if (this.state === "paused" && contains(RESUME_BUTTON, x, y)) {
       this.togglePause();
       this.audio.play("ui");

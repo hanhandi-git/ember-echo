@@ -8,6 +8,7 @@ import { fxEntitySystem } from "./systems/fx-entities.js";
 import { loopSystem } from "./systems/loop.js";
 import { sceneRenderSystem } from "./systems/scene-render.js";
 import { saveSystem } from "./systems/save-system.js";
+import { prewarmSystem } from "./systems/prewarm-system.js";
 import { autoSystem } from "./systems/auto-system.js";
 
 mixin(
@@ -21,6 +22,7 @@ mixin(
   sceneRenderSystem,
   autoSystem,
   saveSystem,
+  prewarmSystem,
 );
 
 export { Game, boot };

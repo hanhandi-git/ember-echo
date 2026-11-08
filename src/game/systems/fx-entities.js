@@ -117,7 +117,11 @@ export const fxEntitySystem = {
     for (const l of LOOT) { acc += l.p; if (r < acc) { loot = l; break; } }
     if (!loot) return;
     const fx = createFx(loot.mod, { x, y, seed: 200 + Math.floor(Math.random() * 400) });
-    this.pickups.push({ x, y, kind: loot.kind, mod: loot.mod, label: loot.label, color: loot.color, fx, age: 0, dead: false });
+    this.pickups.push({
+      x, y, kind: loot.kind, mod: loot.mod, label: loot.label, color: loot.color,
+      heal: loot.heal, mp: loot.mp, xp: loot.xp,
+      fx, age: 0, dead: false,
+    });
   },
 
   updatePickups(dt) {
@@ -148,14 +152,15 @@ export const fxEntitySystem = {
     this.addFx(FX.collectBurst, { x: p.x, y: p.y, light: 0.9, seed: 90 + Math.floor(Math.random() * 20) });
     this.audio.play("pickup");
     if (p.kind === "heart") {
-      this.hero.heal(this, 18);
+      this.hero.heal(this, p.heal ?? 18);
     } else if (p.kind === "potion") {
-      const n = Math.min(24, this.hero.maxMp - this.hero.mp);
+      const grant = p.mp ?? 24;
+      const n = Math.min(grant, this.hero.maxMp - this.hero.mp);
       this.hero.mp += n;
       this.number(p.x, p.y - 20, "+" + Math.round(n) + " MP", { color: "#8fd0ff", small: true });
       this.ui.toast(lootLabel(this, "potion"));
     } else {
-      this.hero.gainXp(this, 8);
+      this.hero.gainXp(this, p.xp ?? 8);
       this.ui.toast(lootLabel(this, "xp"));
     }
   },

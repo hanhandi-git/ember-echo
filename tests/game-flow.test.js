@@ -2,12 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Game } from "../src/game.js";
 import { STAGES, SKILL_META, WEAPONS } from "../src/data.js";
-import { RESUME_BUTTON, SKILL_RECTS } from "../src/controls.js";
+import { RESUME_BUTTON, CAMP_BUTTON, SKILL_RECTS } from "../src/controls.js";
 import { GATE_PALETTES } from "../src/fx/stage-portal.js";
 import { WEAPON_PROFILES } from "../src/weapon-profiles.js";
 import { projectileSweep, hurtbox } from "../src/collision.js";
 import { COMBAT_SCALE, HERO_RENDER_SCALE, BOSS_RENDER_SCALE } from "../src/combat-scale.js";
 import { ENEMY_TYPES } from "../src/data.js";
+import { loadSave } from "../src/save.js";
 import * as stagePortal from "../src/fx/stage-portal.js";
 import { createFrame, clearFrame, createFx } from "../../pixelfx/src/core/index.js";
 import { joystickVector } from "../src/touch-controls.js";
@@ -85,6 +86,33 @@ test("pause button freezes enemies, timers, projectiles, movement and gates; con
   advance(g, 0.2);
   assert.equal(g.state, "playing");
   assert.equal(called, true);
+});
+
+test("paused retreat saves the run and returns to camp", () => {
+  const store = new Map();
+  const previous = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (k) => store.get(k) ?? null,
+    setItem: (k, v) => store.set(k, v),
+  };
+  try {
+    const g = game();
+    g.spawnEnemy("bat", 250, 150);
+    g.kills = 3;
+    g.waveIndex = 1;
+    g.phase = "fight";
+    g.togglePause();
+    click(g, CAMP_BUTTON);
+    assert.equal(g.state, "camp");
+    assert.equal(g.canContinueSave?.(), true);
+    const data = loadSave();
+    assert.equal(data?.run?.active, true);
+    assert.equal(data?.run?.kills, 3);
+    assert.equal(data?.run?.waveIndex, 1);
+  } finally {
+    if (previous === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previous;
+  }
 });
 
 test("clearing stays in the current stage until the hero enters the portal", () => {

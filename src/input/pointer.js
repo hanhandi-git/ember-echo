@@ -18,6 +18,10 @@ export function installPointer(game, canvas) {
 
 export function installVisibilityPause(game) {
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden && game.state === "playing") game.togglePause();
+    if (document.hidden) {
+      if (game.state === "playing") game.togglePause();
+      return;
+    }
+    game.audio.unlock();
   });
 }

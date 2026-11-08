@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "stages": [
+    {
+      "id": "mossy-ruins",
+      "act": "第一幕",
+      "name": "苔痕遗迹",
+      "sub": "月下的旧圣所",
+      "chapter": "I",
+      "actEn": "STAGE I",
+      "nameEn": "MOSSY RUINS",
+      "subEn": "THE OLD SANCTUM",
+      "map": "mossy",
+      "palette": "#8fd88a",
+      "waves": [
+        [
+          { "type": "slime", "x": 126, "y": 150 },
+          { "type": "slime", "x": 218, "y": 158 },
+          { "type": "snake", "x": 268, "y": 146 }
+        ],
+        [
+          { "type": "goblin-warrior", "x": 118, "y": 158 },
+          { "type": "goblin-agile", "x": 192, "y": 150 },
+          { "type": "slime", "x": 262, "y": 158 },
+          { "type": "goblin-warrior", "x": 332, "y": 146 }
+        ],
+        [
+          { "type": "goblin-agile", "x": 126, "y": 160 },
+          { "type": "goblin-warrior", "x": 214, "y": 146 },
+          { "type": "goblin-giant", "x": 302, "y": 158 },
+          { "type": "snake", "x": 402, "y": 150 },
+          { "type": "goblin-agile", "x": 462, "y": 156 }
+        ]
+      ]
+    },
+    {
+      "id": "wisp-marsh",
+      "act": "第二幕",
+      "name": "幽火沼泽",
+      "sub": "亡者的灯",
+      "chapter": "II",
+      "actEn": "STAGE II",
+      "nameEn": "WISP MARSH",
+      "subEn": "LANTERNS OF THE DEAD",
+      "map": "marsh",
+      "palette": "#8ed7bf",
+      "waves": [
+        [
+          { "type": "goblin-archer", "x": 118, "y": 150 },
+          { "type": "bat", "x": 208, "y": 142 },
+          { "type": "goblin-mage", "x": 278, "y": 156 }
+        ],
+        [
+          { "type": "ghost", "x": 122, "y": 154 },
+          { "type": "goblin-archer", "x": 198, "y": 140 },
+          { "type": "goblin-mage", "x": 268, "y": 160 },
+          { "type": "wisp", "x": 348, "y": 150 }
+        ],
+        [
+          { "type": "bat", "x": 338, "y": 142 },
+          { "type": "ghost", "x": 372, "y": 158 },
+          { "type": "wisp", "x": 416, "y": 146 },
+          { "type": "bat", "x": 454, "y": 160 }
+        ]
+      ]
+    },
+    {
+      "id": "ember-depths",
+      "act": "第三幕",
+      "name": "熔岩深窟",
+      "sub": "余烬的源头",
+      "chapter": "III",
+      "actEn": "STAGE III",
+      "nameEn": "EMBER DEPTHS",
+      "subEn": "THE SOURCE OF ASH",
+      "map": "ember",
+      "palette": "#ff9a5c",
+      "waves": [
+        [
+          { "type": "bat", "x": 118, "y": 144 },
+          { "type": "eyeball", "x": 206, "y": 150 },
+          { "type": "flying-skull", "x": 268, "y": 158 },
+          { "type": "bat", "x": 298, "y": 148 }
+        ],
+        [
+          { "type": "eyeball", "x": 344, "y": 146 },
+          { "type": "flying-skull", "x": 384, "y": 158 },
+          { "type": "bat", "x": 426, "y": 142 },
+          { "type": "eyeball", "x": 460, "y": 154 }
+        ],
+        [
+          { "type": "boss", "x": 410, "y": 152 }
+        ]
+      ]
+    },
+    {
+      "id": "aurora-pass",
+      "act": "第四幕",
+      "name": "极光隘口",
+      "sub": "风雪中的回响",
+      "chapter": "IV",
+      "actEn": "STAGE IV",
+      "nameEn": "AURORA PASS",
+      "subEn": "THE SKY ROAD",
+      "map": "aurora",
+      "palette": "#9be8e8",
+      "waves": [
+        [
+          { "type": "ghost", "x": 126, "y": 150 },
+          { "type": "bat", "x": 224, "y": 144 },
+          { "type": "wisp", "x": 292, "y": 156 }
+        ],
+        [
+          { "type": "eyeball", "x": 152, "y": 146 },
+          { "type": "ghost", "x": 264, "y": 158 },
+          { "type": "bat", "x": 344, "y": 144 },
+          { "type": "wisp", "x": 430, "y": 150 }
+        ],
+        [
+          { "type": "flying-skull", "x": 356, "y": 148 },
+          { "type": "eyeball", "x": 414, "y": 154 },
+          { "type": "ghost", "x": 458, "y": 146 }
+        ]
+      ]
+    },
+    {
+      "id": "crystal-hollow",
+      "act": "第五幕",
+      "name": "晶脉空洞",
+      "sub": "沉睡的矿脉",
+      "chapter": "V",
+      "actEn": "STAGE V",
+      "nameEn": "CRYSTAL HOLLOW",
+      "subEn": "THE SLEEPING VEIN",
+      "map": "crystal",
+      "palette": "#9ac8ff",
+      "waves": [
+        [
+          { "type": "slime", "x": 132, "y": 150 },
+          { "type": "frog", "x": 218, "y": 158 },
+          { "type": "snake", "x": 286, "y": 146 }
+        ],
+        [
+          { "type": "wisp", "x": 168, "y": 144 },
+          { "type": "eyeball", "x": 274, "y": 152 },
+          { "type": "slime", "x": 386, "y": 158 },
+          { "type": "ghost", "x": 448, "y": 148 }
+        ],
+        [
+          { "type": "flying-skull", "x": 362, "y": 148 },
+          { "type": "eyeball", "x": 424, "y": 154 },
+          { "type": "wisp", "x": 466, "y": 146 }
+        ]
+      ]
+    },
+    {
+      "id": "inkbound-shrine",
+      "act": "第六幕",
+      "name": "墨影神龛",
+      "sub": "无名的誓约",
+      "chapter": "VI",
+      "actEn": "STAGE VI",
+      "nameEn": "INKBOUND SHRINE",
+      "subEn": "THE UNNAMED OATH",
+      "map": "inkbound",
+      "palette": "#c5a5ff",
+      "waves": [
+        [
+          { "type": "snake", "x": 118, "y": 154 },
+          { "type": "ghost", "x": 204, "y": 146 },
+          { "type": "wisp", "x": 292, "y": 158 }
+        ],
+        [
+          { "type": "bat", "x": 150, "y": 142 },
+          { "type": "eyeball", "x": 246, "y": 150 },
+          { "type": "ghost", "x": 354, "y": 158 },
+          { "type": "wisp", "x": 446, "y": 148 }
+        ],
+        [
+          { "type": "flying-skull", "x": 352, "y": 148 },
+          { "type": "eyeball", "x": 418, "y": 154 },
+          { "type": "ghost", "x": 462, "y": 146 }
+        ]
+      ]
+    },
+    {
+      "id": "sunscar-temple",
+      "act": "第七幕",
+      "name": "日灼圣殿",
+      "sub": "最后的守门人",
+      "chapter": "VII",
+      "actEn": "STAGE VII",
+      "nameEn": "SUNSCAR TEMPLE",
+      "subEn": "THE LAST WARDEN",
+      "map": "sunscar",
+      "palette": "#ffba6a",
+      "waves": [
+        [
+          { "type": "bat", "x": 124, "y": 144 },
+          { "type": "eyeball", "x": 218, "y": 150 },
+          { "type": "flying-skull", "x": 298, "y": 158 }
+        ],
+        [
+          { "type": "ghost", "x": 168, "y": 154 },
+          { "type": "wisp", "x": 276, "y": 144 },
+          { "type": "eyeball", "x": 382, "y": 150 },
+          { "type": "bat", "x": 458, "y": 158 }
+        ],
+        [
+          { "type": "boss", "x": 418, "y": 152 }
+        ]
+      ]
+    }
+  ]
+}

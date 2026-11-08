@@ -135,6 +135,12 @@ export function installKeyboard(game) {
       if (game.state === "playing" || game.state === "paused") handlePauseKey();
       return;
     }
+    if (key === "c" && !e.repeat && (game.state === "paused" || game.state === "inventory")) {
+      e.preventDefault();
+      unlock();
+      game.retreatToCamp?.();
+      return;
+    }
     if (SKILL_SLOT_KEYS[key] != null && !e.repeat) {
       e.preventDefault();
       unlock();

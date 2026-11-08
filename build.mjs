@@ -23,6 +23,7 @@ const args = [
   "--target=es2020",
   "--outfile=" + join(HERE, "game.js"),
   "--loader:.js=js",
+  "--loader:.json=json",
   "--log-level=warning",
   ...(process.argv.includes("--watch") ? ["--watch"] : ["--minify"]),
 ];

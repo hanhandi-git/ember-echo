@@ -15,6 +15,11 @@ const C = {
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 
+/** Flat armor: final damage = max(1, raw − defense), before crit multipliers. */
+function damageAfterDefense(amount, defense = 0) {
+  return Math.max(1, Math.round(amount) - Math.max(0, defense));
+}
+
 function dotRing(p, x, y, r, color, a, count = 18) {
   for (let i = 0; i < count; i++) {
     const ang = (i / count) * TAU;
@@ -38,6 +43,7 @@ export class Enemy {
     this.combatScale = COMBAT_SCALE;
     this.reach = size(t.reach);
     this.dmg = Math.round(t.dmg * (opts.dmgScale ?? 1));
+    this.defense = Math.max(0, Math.round(t.defense ?? 0));
     this.xp = t.xp;
     this.w = t.w;
     this.baseBarH = t.barH;
@@ -325,7 +331,7 @@ export class Enemy {
 
   hurt(g, amount, opts = {}) {
     if (!this.alive) return 0;
-    let dmg = Math.max(1, Math.round(amount));
+    let dmg = damageAfterDefense(amount, this.defense);
     const crit = opts.crit ?? Math.random() < 0.12;
     if (crit) dmg = Math.round(dmg * 1.65);
     this.hp -= dmg;
@@ -487,6 +493,7 @@ export class Boss {
     this.renderScale = BOSS_RENDER_SCALE;
     this.reach = size(t.reach);
     this.dmg = t.dmg;
+    this.defense = Math.max(0, Math.round(t.defense ?? 0));
     this.xp = t.xp;
     this.w = 34;
     this.facing = -1;
@@ -708,7 +715,7 @@ export class Boss {
 
   hurt(g, amount, opts = {}) {
     if (!this.alive || this.phaseLock > 0) return 0;
-    let dmg = Math.max(1, Math.round(amount));
+    let dmg = damageAfterDefense(amount, this.defense);
     const crit = opts.crit ?? Math.random() < 0.1;
     if (crit) dmg = Math.round(dmg * 1.6);
     this.hp -= dmg;

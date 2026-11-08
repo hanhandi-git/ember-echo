@@ -3,21 +3,16 @@
 import { effects as PIXELFX_EFFECTS } from "../../pixelfx/src/fx/index.js";
 import { ARMORY as PIXELFX_ARMORY } from "../../pixelfx/src/core/weapons.js";
 import { CHARACTERS } from "../../pixelfx/src/core/characters.js";
-import { FX, MAPS, CRITTER_MODS, PICKUP_MODS } from "./content/fx-registry.js";
-import { buildGoblinEnemyTypes } from "./content/mob-catalog.js";
+import { FX } from "./content/fx-registry.js";
+import { STAGES, ENEMY_TYPES, LOOT } from "./content/compose-content.js";
 import { ATTR_FROM_CATEGORY, buildFxSpellMeta, iconOf } from "./content/spell-catalog.js";
+
 import { localizeArmoryWeapon } from "./weapon-i18n.js";
+
+export { STAGES, ENEMY_TYPES, LOOT };
 export { STASH_ITEMS, STASH_FX, stashItem, stashLabel } from "./content/stash-catalog.js";
 
 export { FX };
-
-const {
-  mapMossy, mapMarsh, mapEmber, mapAurora, mapCrystal, mapInkbound, mapSunscar,
-} = MAPS;
-const {
-  slime, snake, frog, bat, wisp, ghost, eyeball, flyingSkull,
-} = CRITTER_MODS;
-const { heartPickup, potionPickup, xpOrb, poof, shatterDeath } = PICKUP_MODS;
 
 export const HERO_LOOK_DEFAULT = "ember-duelist";
 export const HERO_LOOK = HERO_LOOK_DEFAULT;
@@ -36,166 +31,6 @@ export function loadHeroLook() {
   const saved = localStorage.getItem("ember-echo-look");
   return HERO_LOOKS.some((c) => c.id === saved) ? saved : HERO_LOOK_DEFAULT;
 }
-
-/** Three acts: a moonlit ruin, a drowned marsh, and the volcano under it. */
-const BASE_STAGES = [
-  {
-    act: "第一幕", name: "苔痕遗迹", sub: "月下的旧圣所", chapter: "I",
-    actEn: "STAGE I", nameEn: "MOSSY RUINS", subEn: "THE OLD SANCTUM",
-    map: mapMossy,
-    palette: "#8fd88a",
-    waves: [
-      [
-        { type: "slime", x: 126, y: 150 },
-        { type: "slime", x: 218, y: 158 },
-        { type: "snake", x: 268, y: 146 },
-      ],
-      [
-        { type: "goblin-warrior", x: 118, y: 158 },
-        { type: "goblin-agile", x: 192, y: 150 },
-        { type: "slime", x: 262, y: 158 },
-        { type: "goblin-warrior", x: 332, y: 146 },
-      ],
-      [
-        { type: "goblin-agile", x: 126, y: 160 },
-        { type: "goblin-warrior", x: 214, y: 146 },
-        { type: "goblin-giant", x: 302, y: 158 },
-        { type: "snake", x: 402, y: 150 },
-        { type: "goblin-agile", x: 462, y: 156 },
-      ],
-    ],
-  },
-  {
-    act: "第二幕", name: "幽火沼泽", sub: "亡者的灯", chapter: "II",
-    actEn: "STAGE II", nameEn: "WISP MARSH", subEn: "LANTERNS OF THE DEAD",
-    map: mapMarsh,
-    palette: "#8ed7bf",
-    waves: [
-      [
-        { type: "goblin-archer", x: 118, y: 150 },
-        { type: "bat", x: 208, y: 142 },
-        { type: "goblin-mage", x: 278, y: 156 },
-      ],
-      [
-        { type: "ghost", x: 122, y: 154 },
-        { type: "goblin-archer", x: 198, y: 140 },
-        { type: "goblin-mage", x: 268, y: 160 },
-        { type: "wisp", x: 348, y: 150 },
-      ],
-      [
-        { type: "bat", x: 338, y: 142 },
-        { type: "ghost", x: 372, y: 158 },
-        { type: "wisp", x: 416, y: 146 },
-        { type: "bat", x: 454, y: 160 },
-      ],
-    ],
-  },
-  {
-    act: "第三幕", name: "熔岩深窟", sub: "余烬的源头", chapter: "III",
-    actEn: "STAGE III", nameEn: "EMBER DEPTHS", subEn: "THE SOURCE OF ASH",
-    map: mapEmber,
-    palette: "#ff9a5c",
-    waves: [
-      [
-        { type: "bat", x: 118, y: 144 },
-        { type: "eyeball", x: 206, y: 150 },
-        { type: "flying-skull", x: 268, y: 158 },
-        { type: "bat", x: 298, y: 148 },
-      ],
-      [
-        { type: "eyeball", x: 344, y: 146 },
-        { type: "flying-skull", x: 384, y: 158 },
-        { type: "bat", x: 426, y: 142 },
-        { type: "eyeball", x: 460, y: 154 },
-      ],
-      [
-        { type: "boss", x: 410, y: 152 },
-      ],
-    ],
-  },
-];
-
-export const STAGES = [
-  ...BASE_STAGES,
-  {
-    act: "第四幕", name: "极光隘口", sub: "风雪中的回响", chapter: "IV", actEn: "STAGE IV", nameEn: "AURORA PASS", subEn: "THE SKY ROAD", map: mapAurora,
-    palette: "#9be8e8", waves: [
-      [{ type: "ghost", x: 126, y: 150 }, { type: "bat", x: 224, y: 144 }, { type: "wisp", x: 292, y: 156 }],
-      [{ type: "eyeball", x: 152, y: 146 }, { type: "ghost", x: 264, y: 158 }, { type: "bat", x: 344, y: 144 }, { type: "wisp", x: 430, y: 150 }],
-      [{ type: "flying-skull", x: 356, y: 148 }, { type: "eyeball", x: 414, y: 154 }, { type: "ghost", x: 458, y: 146 }],
-    ],
-  },
-  {
-    act: "第五幕", name: "晶脉空洞", sub: "沉睡的矿脉", chapter: "V", actEn: "STAGE V", nameEn: "CRYSTAL HOLLOW", subEn: "THE SLEEPING VEIN", map: mapCrystal,
-    palette: "#9ac8ff", waves: [
-      [{ type: "slime", x: 132, y: 150 }, { type: "frog", x: 218, y: 158 }, { type: "snake", x: 286, y: 146 }],
-      [{ type: "wisp", x: 168, y: 144 }, { type: "eyeball", x: 274, y: 152 }, { type: "slime", x: 386, y: 158 }, { type: "ghost", x: 448, y: 148 }],
-      [{ type: "flying-skull", x: 362, y: 148 }, { type: "eyeball", x: 424, y: 154 }, { type: "wisp", x: 466, y: 146 }],
-    ],
-  },
-  {
-    act: "第六幕", name: "墨影神龛", sub: "无名的誓约", chapter: "VI", actEn: "STAGE VI", nameEn: "INKBOUND SHRINE", subEn: "THE UNNAMED OATH", map: mapInkbound,
-    palette: "#c5a5ff", waves: [
-      [{ type: "snake", x: 118, y: 154 }, { type: "ghost", x: 204, y: 146 }, { type: "wisp", x: 292, y: 158 }],
-      [{ type: "bat", x: 150, y: 142 }, { type: "eyeball", x: 246, y: 150 }, { type: "ghost", x: 354, y: 158 }, { type: "wisp", x: 446, y: 148 }],
-      [{ type: "flying-skull", x: 352, y: 148 }, { type: "eyeball", x: 418, y: 154 }, { type: "ghost", x: 462, y: 146 }],
-    ],
-  },
-  {
-    act: "第七幕", name: "日灼圣殿", sub: "最后的守门人", chapter: "VII", actEn: "STAGE VII", nameEn: "SUNSCAR TEMPLE", subEn: "THE LAST WARDEN", map: mapSunscar,
-    palette: "#ffba6a", waves: [
-      [{ type: "bat", x: 124, y: 144 }, { type: "eyeball", x: 218, y: 150 }, { type: "flying-skull", x: 298, y: 158 }],
-      [{ type: "ghost", x: 168, y: 154 }, { type: "wisp", x: 276, y: 144 }, { type: "eyeball", x: 382, y: 150 }, { type: "bat", x: 458, y: 158 }],
-      [{ type: "boss", x: 418, y: 152 }],
-    ],
-  },
-];
-
-export const ENEMY_TYPES = {
-  slime: {
-    mod: slime, name: "苔泥", hp: 34, speed: 15, dmg: 8, reach: 30, want: 17, windup: 0.55, cd: 1.9,
-    xp: 10, barH: 44, w: 14, scale: 0.58, fly: false, deathFx: poof,
-  },
-  snake: {
-    mod: snake, name: "草蛇", hp: 24, speed: 35, dmg: 7, reach: 32, want: 18, windup: 0.32, cd: 1.35,
-    xp: 9, barH: 34, w: 16, scale: 0.58, fly: false, deathFx: poof,
-  },
-  frog: {
-    mod: frog, name: "沼蛙", hp: 32, speed: 22, dmg: 9, reach: 32, want: 18, windup: 0.46, cd: 1.7,
-    xp: 12, barH: 36, w: 14, scale: 0.58, fly: false, deathFx: poof,
-  },
-  bat: {
-    mod: bat, name: "夜蝠", hp: 19, speed: 48, dmg: 6, reach: 28, want: 16, windup: 0.26, cd: 1.15,
-    xp: 8, barH: 44, w: 12, scale: 0.5, fly: true, deathFx: poof,
-  },
-  wisp: {
-    mod: wisp, name: "鬼火", hp: 23, speed: 20, dmg: 7, reach: 105, want: 78, windup: 0.68, cd: 2.4,
-    xp: 12, barH: 58, w: 13, scale: 0.5, fly: true, ranged: true, shot: { speed: 82, r: 5, color: "#7cf0d8", palette: ["#061a1f", "#0d3b3f", "#14707e", "#1fa8a8", "#4fe0c8", "#a8fff0", "#ffffff"] }, deathFx: poof,
-  },
-  ghost: {
-    mod: ghost, name: "游魂", hp: 40, speed: 18, dmg: 10, reach: 34, want: 20, windup: 0.5, cd: 2.1,
-    xp: 15, barH: 52, w: 15, scale: 0.5, fly: true, deathFx: poof,
-  },
-  eyeball: {
-    mod: eyeball, name: "窥视者", hp: 27, speed: 14, dmg: 8, reach: 125, want: 92, windup: 0.82, cd: 2.9,
-    xp: 14, barH: 64, w: 14, scale: 0.5, fly: true, ranged: true, shot: { speed: 92, r: 5, color: "#ff6a7a", palette: ["#1a0410", "#4a1020", "#8a1830", "#c9264a", "#f2526a", "#ff9aa2", "#ffe0e2"] }, deathFx: poof,
-  },
-  "flying-skull": {
-    mod: flyingSkull, name: "焚颅", hp: 46, speed: 27, dmg: 11, reach: 34, want: 21, windup: 0.54, cd: 1.85,
-    xp: 18, barH: 70, w: 17, scale: 0.5, fly: true, deathFx: poof,
-  },
-  ...buildGoblinEnemyTypes({ poof, goblinHit: FX.goblinHit, goblinDeath: FX.goblinDeath }),
-  boss: {
-    mod: null, name: "冥河守卫", nameEn: "THE WARDEN", hp: 360, speed: 23, dmg: 15, reach: 40, want: 27, windup: 0.8, cd: 2.1,
-    xp: 120, barH: 0, w: 30, fly: false, boss: true, deathFx: shatterDeath, look: "styx-warden",
-  },
-};
-
-export const LOOT = [
-  { p: 0.12, kind: "heart", mod: heartPickup, label: "HP +18", color: "#ff7a8a" },
-  { p: 0.13, kind: "potion", mod: potionPickup, label: "MP +24", color: "#ff86e6" },
-  { p: 0.5, kind: "xp", mod: xpOrb, label: "XP +8", color: "#c4f060" },
-];
 
 export const DEFAULT_MELEE_WEAPON_ID = "ember-blade";
 export const DEFAULT_THROWN_WEAPON_ID = "armory:kunai";

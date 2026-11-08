@@ -4,7 +4,8 @@ export const SKILL_KEYS = ["J", "K", "L", "U", "I", "O", "T"];
 export const SKILL_RECTS = Array.from({ length: SKILL_SLOT_COUNT }, (_, i) => ({
   x: 274, y: 38 + i * 18, w: 42, h: 17,
 }));
-export const RESUME_BUTTON = { x: 105, y: 123, w: 110, h: 20 };
+export const RESUME_BUTTON = { x: 105, y: 118, w: 110, h: 18 };
+export const CAMP_BUTTON = { x: 105, y: 142, w: 110, h: 18 };
 /** Left HUD auto toggles — square pixelfx tiles under the XP bar. */
 export const AUTO_TOGGLE_SIZE = 15;
 export const AUTO_TOGGLE_X = 10;
