@@ -107,10 +107,7 @@ export class UI {
 
   draw(g, p, frame) {
     const t = this.t;
-    if (g.state === "title") {
-      this.drawMenu(g, p, 0.58);
-      return;
-    }
+    if (g.state === "camp") return;
     if (g.state === "inventory") {
       this.drawHud(g, p, t);
       return;
@@ -145,6 +142,7 @@ export class UI {
     meter(p, t, 64, 41, { label: c.ap, value: h.ap / h.maxAp, text: `${Math.floor(h.ap)}/${h.maxAp}`, tone: "gold", width: 108, height: 8, cells: 10 });
     meter(p, t, 64, 50, { label: "", value: h.xp / h.xpNext, text: "", tone: "xp", width: 108, height: 3, cells: 10 });
     this.drawAutoToggles(g, p, t, c);
+    p.text(`${c.embers} ${h.embers ?? 0}`, 10, 86, C.gold2, { outline: C.ink, font: "mini" });
 
     // stage card
     p.text(stageAct(g, g.stage), 186, 8, C.gold, { align: "center", outline: C.ink });
@@ -337,20 +335,7 @@ export class UI {
   drawMenu(g, p, dim) {
     p.rect(0, 0, SW, SH, C.ink, dim);
     const s = g.stats();
-    if (g.state === "title") {
-      card(p, this.t, 160, 90, {
-        kicker: "A PIXEL ACTION RPG", title: "EMBER ECHO", subtitle: "THE EMBERS NEVER DIE",
-        lines: [
-          "WASD MOVE",
-          "J SLASH   K FIRE   L FROST",
-          "U BOLT    I MEND   O METEOR",
-          "TAB BAG   Q/SHIFT DODGE   SPACE QUICK",
-          `ESC PAUSE   ${g.audio.muted ? "M SOUND OFF" : "M SOUND ON"}`,
-        ],
-        prompt: g.canContinueSave?.() ? uiCopy(g).continueSave : "PRESS ENTER",
-        width: 272, height: 140, tone: "gold",
-      });
-    } else if (g.state === "paused") {
+    if (g.state === "paused") {
       card(p, this.t, 160, 90, {
         kicker: uiCopy(g).pausedKicker, title: uiCopy(g).pausedTitle, subtitle: uiCopy(g).pausedSub,
         lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
@@ -360,13 +345,13 @@ export class UI {
       card(p, this.t, 160, 90, {
         kicker: "DEFEAT", title: "YOU FELL", subtitle: "THE EMBER WENT OUT",
         lines: [`STAGE ${s.stage}`, `KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
-        prompt: "ENTER TRY AGAIN", width: 240, height: 140, tone: "blood",
+        prompt: `${uiCopy(g).toCamp}   R RETRY`, width: 240, height: 140, tone: "blood",
       });
     } else if (g.state === "victory") {
       card(p, this.t, 160, 90, {
         kicker: "VICTORY", title: "EMBER STILL BURNS", subtitle: "THE WARDEN IS ASH",
         lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
-        prompt: "ENTER AGAIN", width: 260, height: 130,
+        prompt: `${uiCopy(g).toCamp}   R RETRY`, width: 260, height: 130,
       });
     }
   }

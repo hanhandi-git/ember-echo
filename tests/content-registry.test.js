@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FX, MAPS, CRITTER_MODS } from "../src/content/fx-registry.js";
-import { STAGES, SKILL_META } from "../src/data.js";
+import { FX, MAPS, CRITTER_MODS, MOB_MODS } from "../src/content/fx-registry.js";
+import { STAGES, SKILL_META, ENEMY_TYPES } from "../src/data.js";
 import {
   iconOf,
   ATTR_FROM_CATEGORY,
@@ -15,8 +15,26 @@ test("fx registry exposes draw/create modules for combat, maps and critters", ()
     const mod = CRITTER_MODS[key];
     assert.ok(mod?.draw || mod?.create, `critter module ${key} is playable`);
   }
+  for (const key of Object.keys(MOB_MODS)) {
+    const mod = MOB_MODS[key];
+    assert.ok(mod?.draw, `mob module ${key} draws`);
+    assert.ok(mod?.mob?.attacks?.[0], `mob module ${key} has combat data`);
+    assert.ok(mod.mob.hurtFor > 0 && mod.mob.dieFor > 0, `${key} exports hurt/die timing`);
+    assert.ok(mod.mob.attacks[0].fx?.attack?.pose, `${key} attack has body pose`);
+  }
   for (const stage of STAGES) {
     assert.ok(stage.map, `stage map module exists for ${stage.id ?? stage.name}`);
+  }
+});
+
+test("stage waves only reference registered enemy types", () => {
+  for (const stage of STAGES) {
+    for (const wave of stage.waves) {
+      for (const spawn of wave) {
+        assert.ok(ENEMY_TYPES[spawn.type], `${stage.name}: unknown enemy ${spawn.type}`);
+        assert.ok(ENEMY_TYPES[spawn.type].mod || ENEMY_TYPES[spawn.type].boss, `${spawn.type} has visuals`);
+      }
+    }
   }
 });
 

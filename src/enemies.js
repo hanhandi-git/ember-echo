@@ -5,6 +5,8 @@ import { createFx, painterFor, posed, poseAt, STAND, hex, clamp, TAU } from "../
 import { ENEMY_TYPES, BOSS_LOOK } from "./data.js";
 import { COMBAT_SCALE, BOSS_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
 import { uiCopy } from "./copy.js";
+import { emberForXp } from "./upgrades.js";
+import { clearMobPoseOptions, mobCastEndAt, mobCastHitAt, syncMobPoseOptions } from "./content/mob-reactions.js";
 
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, barBack: hex("#1a0d18"), bar: hex("#d8422f"),
@@ -59,10 +61,17 @@ export class Enemy {
     this.auras = {};
     this.seed = opts.seed ?? Math.floor(Math.random() * 9999);
     this.fx = createFx(t.mod, { x, y, flip: true, seed: this.seed, ...(opts.fxOptions ?? {}) });
+    this.poseState = "idle";
+    this.poseT = 0;
+    this.castHit = false;
+    this.hurtDir = -1;
+    this.dying = false;
     g.audio.play("spawn");
   }
 
-  get alive() { return !this.dead && this.hp > 0 && this.state !== "spawn"; }
+  get alive() {
+    return !this.dead && this.state !== "spawn" && (this.hp > 0 || this.state === "dying");
+  }
   get boss() { return false; }
 
   addStatus(g, key, time) {
@@ -125,12 +134,28 @@ export class Enemy {
     if (this.state === "spawn") {
       this.timer -= dt;
       this.spawnT -= dt;
-      if (this.timer <= 0) this.setState("chase");
+      if (this.timer <= 0) this.setState(g, "chase");
       this.x += this.vx * dt;
       this.y += this.vy * dt;
       this.vx *= Math.max(0, 1 - 8 * dt);
       this.vy *= Math.max(0, 1 - 8 * dt);
       return;
+    }
+
+    if (this.state === "dying") {
+      this.poseT += dt;
+      syncMobPoseOptions(this);
+      if (this.poseT >= (this.type.mobReact?.dieFor ?? 0.9)) this.die(g);
+      return;
+    }
+
+    if (this.poseState === "hurt") {
+      this.poseT += dt;
+      syncMobPoseOptions(this);
+      if (this.poseT >= (this.type.mobReact?.hurtFor ?? 0.34)) {
+        this.poseState = "idle";
+        clearMobPoseOptions(this.fx.options);
+      }
     }
 
     // knockback carries through every state
@@ -149,7 +174,7 @@ export class Enemy {
       }
     }
     if (!hero.alive) {
-      this.setState("chase");
+      this.setState(g, "chase");
       return;
     }
     const dx = hero.x - this.x, dy = hero.y - this.y;
@@ -157,6 +182,24 @@ export class Enemy {
     if (dx) this.facing = dx > 0 ? 1 : -1;
 
     if (this.freeze > 0 || this.stun > 0) return;
+
+    if (this.state === "windup" && this.type.mobReact) {
+      const react = this.type.mobReact;
+      this.poseState = "cast";
+      this.poseT += dt;
+      syncMobPoseOptions(this);
+      if (!this.castHit && this.poseT >= mobCastHitAt(react)) {
+        this.castHit = true;
+        this.strike(g, dx, dy, dist);
+      }
+      if (this.poseT >= mobCastEndAt(react)) {
+        this.poseState = "idle";
+        clearMobPoseOptions(this.fx.options);
+        this.setState(g, "chase");
+      }
+      this.clampPos(g);
+      return;
+    }
 
     if (this.state === "windup") {
       this.timer -= dt;
@@ -166,7 +209,7 @@ export class Enemy {
     }
     if (this.state === "recover") {
       this.timer -= dt;
-      if (this.timer <= 0) this.setState("chase");
+      if (this.timer <= 0) this.setState(g, "chase");
       this.clampPos(g);
       return;
     }
@@ -177,7 +220,7 @@ export class Enemy {
       ? dist < this.reach && Math.abs(dy) < size(26)
       : Math.abs(dx) < this.reach && Math.abs(dy) < size(17);
     if (this.atkCd <= 0 && canHit) {
-      this.setState("windup");
+      this.setState(g, "windup");
       this.timer = this.type.windup;
       this.atkCd = this.type.cd + rnd(0, 0.35);
       return;
@@ -207,22 +250,63 @@ export class Enemy {
     }
   }
 
-  setState(s) {
+  setState(g, s) {
     this.state = s;
-    if (s === "chase") this.timer = 0;
+    if (s === "chase") {
+      this.timer = 0;
+      this.castHit = false;
+      if (this.type.mobReact) {
+        this.poseState = "idle";
+        clearMobPoseOptions(this.fx.options);
+      }
+    }
+    if (s === "windup" && this.type.mobReact) {
+      const react = this.type.mobReact;
+      this.poseState = "cast";
+      this.poseT = 0;
+      this.castHit = false;
+      g.addFx(react.attackFx, {
+        x: this.x,
+        y: this.y,
+        flip: this.facing < 0,
+        seed: this.seed + 17,
+      }, {
+        life: react.attackDuration,
+        follow: () => ({ x: this.x, y: this.y }),
+        scale: this.renderScale,
+      });
+    }
   }
 
   strike(g, dx, dy, dist) {
     const hero = g.hero;
+    if (this.type.mobReact) {
+      if (this.type.ranged) {
+        g.enemyShot(this, hero);
+        g.audio.play("cast");
+      } else {
+        const ddx = hero.x - this.x, ddy = hero.y - this.y;
+        if (Math.abs(ddx) < this.reach + size(12) && Math.abs(ddy) < size(19)) {
+          if (hero.hurt(g, this.dmg, { fromX: this.x })) {
+            g.addFx(g.fx.hitSpark, { x: hero.x, y: hero.y - size(20), flip: ddx < 0, light: 0.9 });
+            g.hitStop = Math.max(g.hitStop, 0.045);
+            g.shake(2.4, 0.2);
+            g.audio.play("hit");
+          }
+        }
+        this.vx = this.facing * 85;
+      }
+      return;
+    }
     if (this.type.ranged) {
-      this.setState("recover");
+      this.setState(g, "recover");
       this.timer = 0.45;
       this.y = clamp(this.y, 136, 169);
       g.enemyShot(this, hero);
       g.audio.play("cast");
       return;
     }
-    this.setState("recover");
+    this.setState(g, "recover");
     this.timer = 0.42;
     this.vx = this.facing * 85;
     g.after(0.07, () => {
@@ -245,7 +329,7 @@ export class Enemy {
     const crit = opts.crit ?? Math.random() < 0.12;
     if (crit) dmg = Math.round(dmg * 1.65);
     this.hp -= dmg;
-    this.hitFlash = 0.14;
+    this.hitFlash = this.type.mobReact ? 0 : 0.14;
     const dir = Math.sign(this.x - g.hero.x) || 1;
     this.vx += (opts.knock ?? 26) * dir;
     if (opts.status) this.addStatus(g, opts.status, opts.statusTime ?? 2);
@@ -258,6 +342,19 @@ export class Enemy {
       if (opts.dot) {
         // a tiny ember instead of a full impact for damage over time
         g.dust(this.x, this.y - 8, 2, 0, "#ff8a3a");
+      } else if (this.type.mobReact && this.type.hitFx) {
+        this.poseState = "hurt";
+        this.poseT = 0;
+        this.hurtDir = dir;
+        syncMobPoseOptions(this);
+        g.addFx(this.type.hitFx, {
+          x: this.x - dir * size(8),
+          y: this.y - size(8),
+          flip: dir < 0,
+          seed: this.seed + 31,
+          light: crit ? 1.05 : 0.9,
+        }, { scale: this.renderScale });
+        g.audio.play(crit ? "crit" : "hit");
       } else {
         g.addFx(crit ? g.fx.critHit : g.fx.hitSpark, {
           x: this.x, y: this.y - size(18), flip: g.hero.x > this.x, light: crit ? 1.2 : 0.9,
@@ -265,21 +362,42 @@ export class Enemy {
         g.audio.play(crit ? "crit" : "hit");
       }
     }
-    if (this.hp <= 0) this.die(g);
+    if (this.hp <= 0) {
+      if (this.type.mobReact) this.beginDie(g);
+      else this.die(g);
+    }
     return dmg;
+  }
+
+  beginDie(g) {
+    if (this.dying || this.dead) return;
+    this.dying = true;
+    this.state = "dying";
+    this.poseState = "die";
+    this.poseT = 0;
+    this.vx *= 0.35;
+    this.vy *= 0.35;
+    syncMobPoseOptions(this);
   }
 
   die(g) {
     if (this.dead) return;
     this.dead = true;
     this.hp = 0;
+    clearMobPoseOptions(this.fx.options);
     const frozen = this.freeze > 0;
-    g.addFx(frozen ? g.fx.shatterDeath : this.type.deathFx, {
-      x: this.x, y: this.y, light: 0.8, seed: this.seed, ...(frozen ? {} : {}),
-    });
-    g.addFx(g.fx.poof, { x: this.x, y: this.y - 8, seed: this.seed + 3, light: 0.5 });
+    const fx = frozen ? g.fx.shatterDeath : this.type.deathFx;
+    if (fx) {
+      g.addFx(fx, {
+        x: this.x, y: this.y, light: 0.8, seed: this.seed,
+      }, this.type.mobReact ? { scale: this.renderScale } : undefined);
+    }
+    if (!this.type.mobReact) {
+      g.addFx(g.fx.poof, { x: this.x, y: this.y - 8, seed: this.seed + 3, light: 0.5 });
+    }
     g.kills++;
     g.hero.gainXp(g, this.xp);
+    g.hero.earnEmbers(emberForXp(this.xp));
     g.dropLoot(this.x, this.y, this.typeId);
     g.tryStashDrop?.(this.x, this.y);
     g.audio.play("death");
@@ -292,6 +410,7 @@ export class Enemy {
     this.fx.options.x = this.x;
     this.fx.options.y = this.y;
     this.fx.options.flip = g.hero.x < this.x;
+    syncMobPoseOptions(this);
     if (this.state !== "spawn" || this.spawnT < 0.32) {
       g.drawScaledFx(this.fx, this.x, this.y, this.renderScale);
       p = painterFor(g.frame);
@@ -302,7 +421,7 @@ export class Enemy {
     }
 
     // wind-up telegraph: a dotted floor ring, brighter as the blow approaches
-    if (this.state === "windup") {
+    if (this.state === "windup" && !this.type.mobReact) {
       const k = 1 - this.timer / this.type.windup;
       const r = this.type.ranged ? size(16 + k * 8) : this.reach * 0.9;
       dotRing(p, x, y - 1, r, k > 0.55 ? C.warnLit : C.warn, 0.55 + 0.35 * k, this.type.ranged ? 14 : 16);
@@ -646,6 +765,7 @@ export class Boss {
     g.audio.play("meteor");
     g.kills++;
     g.hero.gainXp(g, this.xp);
+    g.hero.earnEmbers(emberForXp(this.xp));
     g.bossDefeated = true;
     g.bossRef = null;
     g.hold = 2.4;

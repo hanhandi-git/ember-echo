@@ -23,7 +23,7 @@ export class Game {
     this.hero = new Hero();
     this.keys = new Set();
     this.touchMove = { x: 0, y: 0 };
-    this.state = "title";
+    this.state = "camp";
     this.time = 0;
     this.runTime = 0;
     this.hitStop = 0;
@@ -44,7 +44,7 @@ export class Game {
     this.fade = 0;
     this.stageIndex = 0;
     this.waveIndex = 0;
-    this.phase = "title";
+    this.phase = "camp";
     this.phaseT = 0;
     this.clearT = 0;
     this.hold = 0;
@@ -63,7 +63,7 @@ export class Game {
     this.loadPersistedProfile?.();
   }
 
-  loadStage(index, title = false) {
+  loadStage(index, camp = false) {
     this.stageIndex = index;
     this.stage = STAGES[index];
     this.mapFxTiles = [0, 320].map((x) => createFx(this.stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
@@ -91,10 +91,10 @@ export class Game {
     this.hold = 0;
     this.deathT = 0;
     this.combo = { count: 0, timer: 0 };
-    this.phase = title ? "title" : "intro";
-    this.state = title ? "title" : "playing";
-    this.fade = title ? 0 : 1;
-    if (!title) {
+    this.phase = camp ? "camp" : "intro";
+    this.state = camp ? "camp" : "playing";
+    this.fade = camp ? 0 : 1;
+    if (!camp) {
       this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));
       this.audio.play("ui");
     }

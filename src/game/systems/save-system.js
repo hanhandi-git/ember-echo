@@ -37,6 +37,8 @@ export const saveSystem = {
   },
 
   startRun(opts = {}) {
+    this.domUi?.close?.();
+    this.keys.clear();
     const fresh = opts === true || opts?.fresh;
     if (!fresh && resumeRun(this, loadSave())) return;
     this.audio.unlock();
@@ -46,6 +48,23 @@ export const saveSystem = {
     this.runTime = 0;
     this.loadStage(0, false);
     clearRunSave(this);
+  },
+
+  /** Leave the fight (defeat/victory) and open the camp hub. */
+  enterCamp() {
+    this.persistSave?.();
+    this.keys.clear();
+    this.loadStage(this.stageIndex, true);
+    this.hero.reset();
+    applyHeroProfile(this.hero, loadSave()?.profile);
+    this.kills = 0;
+    this.runTime = 0;
+    this.domUi?.openCamp?.();
+  },
+
+  /** Primary camp action: resume a saved expedition when one exists. */
+  enterBattle() {
+    this.startRun();
   },
 
   restart() {

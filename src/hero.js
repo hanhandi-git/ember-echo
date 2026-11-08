@@ -12,6 +12,7 @@ import { stashItem, stashLabel } from "./content/stash-catalog.js";
 import { weaponEquipKind } from "./weapons-util.js";
 import { createMovementTrail } from "./movement-fx.js";
 import { COMBAT_SCALE, HERO_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
+import { UPGRADE_STATS, emptyUpgrades, spentUpgrades, upgradeById, upgradeCost } from "./upgrades.js";
 
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
 const IDLE = { ...GUARD, fx: 10, fy: -20, bx: 7, by: -19, crouch: 1 };
@@ -65,6 +66,10 @@ export class Hero {
     this.look = loadHeroLook();
     this.combatScale = COMBAT_SCALE;
     this.renderScale = HERO_RENDER_SCALE;
+    this.upgrades = emptyUpgrades();
+    this.embers = 0;
+    this._upgradeHp = 0;
+    this._upgradeMp = 0;
     this.reset();
   }
 
@@ -83,6 +88,10 @@ export class Hero {
     this.ap = 100;
     this.apRegen = 22;
     this.stash = { ...(this.stash ?? {}) };
+    this.upgrades = { ...emptyUpgrades(), ...(this.upgrades ?? {}) };
+    this.embers = Math.max(0, Math.round(this.embers ?? 0));
+    this._upgradeHp = 0;
+    this._upgradeMp = 0;
     this.xp = 0;
     this.xpNext = XP_STEPS[1];
     this.dmgMul = 1;
@@ -113,7 +122,7 @@ export class Hero {
     this.regen = 0;
     this.regenT = 0;
     this.cd = { j: 0, k: 0, l: 0, u: 0, i: 0, o: 0, t: 0, e: 0 };
-    this.applyMeleeStats();
+    this.applyUpgrades();
     this.comboIndex = 0;
     this.comboTimer = 0;
     this.healGlow = 0;
@@ -135,9 +144,68 @@ export class Hero {
   applyMeleeStats() {
     const weapon = this.meleeWeapon;
     if (!weapon) return;
-    this.dmgMul = weapon.dmgMul * (1 + (this.level - 1) * 0.12);
-    this.speed = weapon.speed;
+    const might = this.upgradeRank("might");
+    const haste = this.upgradeRank("haste");
+    this.dmgMul = weapon.dmgMul * (1 + (this.level - 1) * 0.12) * (1 + might * 0.06);
+    this.speed = weapon.speed + haste * 2;
     this.dashMax = 1.15 * weapon.dashCdMul;
+  }
+
+  // ---- permanent camp upgrades (embers survive death and restart)
+
+  upgradeRank(id) {
+    return this.upgrades?.[id] ?? 0;
+  }
+
+  upgradeTotal() {
+    return UPGRADE_STATS.reduce((total, def) => total + this.upgradeRank(def.id), 0);
+  }
+
+  earnEmbers(amount) {
+    const gain = Math.max(0, Math.round(amount ?? 0));
+    this.embers = Math.max(0, this.embers ?? 0) + gain;
+    return gain;
+  }
+
+  /** Recompute max HP/MP from the ranks without losing level-up gains. */
+  applyUpgrades() {
+    const hpBonus = this.upgradeRank("vitality") * upgradeById("vitality").per;
+    const mpBonus = this.upgradeRank("spirit") * upgradeById("spirit").per;
+    const dHp = hpBonus - (this._upgradeHp ?? 0);
+    const dMp = mpBonus - (this._upgradeMp ?? 0);
+    this._upgradeHp = hpBonus;
+    this._upgradeMp = mpBonus;
+    if (this.maxHp != null) {
+      this.maxHp += dHp;
+      this.hp = Math.min(this.maxHp, Math.max(0, this.hp + Math.max(0, dHp)));
+    }
+    if (this.maxMp != null) {
+      this.maxMp += dMp;
+      this.mp = Math.min(this.maxMp, Math.max(0, this.mp + Math.max(0, dMp)));
+    }
+    this.applyMeleeStats();
+  }
+
+  buyUpgrade(id) {
+    const def = upgradeById(id);
+    if (!def) return false;
+    const rank = this.upgradeRank(id);
+    if (rank >= def.max) return false;
+    const cost = upgradeCost(def, rank);
+    if ((this.embers ?? 0) < cost) return false;
+    this.embers -= cost;
+    this.upgrades[id] = rank + 1;
+    this.applyUpgrades();
+    return true;
+  }
+
+  respecUpgrades() {
+    const refund = spentUpgrades(this.upgrades);
+    if (!refund) return 0;
+    this.upgrades = emptyUpgrades();
+    this.embers = Math.max(0, this.embers ?? 0) + refund;
+    this.applyUpgrades();
+    return refund;
   }
 
   equipWeapon(id, g = null) {

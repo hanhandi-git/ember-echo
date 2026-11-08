@@ -98,15 +98,24 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 
 /* Steel frames are rendered by pixelfx; text uses the device's readable UI font. */
 .settings-panel { --panel-padding: clamp(12px, 3vw, 32px); position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: var(--panel-padding); background: radial-gradient(ellipse 90% 80% at 50% 45%, rgba(24, 18, 34, 0.88) 0%, rgba(7, 6, 13, 0.94) 60%, rgba(2, 2, 4, 0.97) 100%); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans", "Microsoft YaHei", sans-serif; color: var(--hud-text); }
+.settings-panel.is-camp { background: radial-gradient(ellipse 92% 84% at 50% 46%, rgba(16, 12, 26, 0.62) 0%, rgba(6, 5, 12, 0.88) 62%, rgba(2, 2, 4, 0.96) 100%); }
 .settings-panel[hidden], .settings-content[hidden] { display: none; }
+.settings-panel [hidden] { display: none !important; }
 .settings-shell { display: flex; flex-direction: column; width: min(960px, 100%); height: min(800px, calc(var(--app-height, 100svh) - var(--panel-padding) * 2)); min-height: 0; overflow: hidden; border: 8px solid transparent; border-image: var(--frame-steel) 12 / 8px / 0 stretch; background: rgba(7, 6, 13, 0.35); box-shadow: 0 0 0 1px var(--hud-line), 0 24px 80px rgba(0, 0, 0, 0.55); }
+.settings-panel.is-camp .settings-shell { width: min(1080px, 100%); }
+.settings-body { display: flex; flex: 1 1 auto; min-height: 0; }
+.settings-main { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; flex-direction: column; }
 .settings-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 22px 12px; border-bottom: 1px solid var(--hud-line); background: transparent; }
 .eyebrow { margin: 0 0 4px; color: var(--hud-gold); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-shadow: 1px 0 var(--hud-ink), -1px 0 var(--hud-ink), 0 1px var(--hud-ink); }
 .settings-header h1 { margin: 0; color: var(--hud-gold2); font-size: 22px; font-weight: 700; text-shadow: 1px 0 var(--hud-ink), -1px 0 var(--hud-ink), 0 1px var(--hud-ink); }
+.settings-header-side { display: flex; align-items: center; gap: 12px; }
+.camp-badge { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--hud-line); padding: 5px 10px; color: var(--hud-gold); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+.camp-badge strong { font-size: 15px; }
 .settings-subtitle { margin: 4px 0 0; color: var(--hud-muted); font-size: 12px; }
 .icon-button { flex-shrink: 0; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--hud-line); background: transparent; color: var(--hud-gold2); cursor: pointer; font-size: 22px; line-height: 1; }
 .icon-button:hover { border-color: var(--hud-gold); color: var(--hud-gold); }
-.settings-tabs { flex-shrink: 0; display: flex; gap: 14px; padding: 8px 22px 0; border-bottom: 1px solid var(--hud-line); background: transparent; }
+.settings-tabs { flex-shrink: 0; display: flex; gap: 14px; padding: 8px 22px 0; border-bottom: 1px solid var(--hud-line); background: transparent; overflow-x: auto; scrollbar-width: none; }
+.settings-tabs::-webkit-scrollbar { display: none; }
 .settings-tab { min-width: 72px; min-height: 38px; border: 0; padding: 8px 4px 10px; background: transparent; color: var(--hud-muted); cursor: pointer; font: 700 13px/1.4 system-ui, sans-serif; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .settings-tab.is-active { color: var(--hud-gold2); border-bottom-color: var(--hud-gold); }
 .settings-content { min-height: 0; flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-color: #46536a #080b12; padding: 20px 22px 26px; }
@@ -188,12 +197,63 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
 .profile-stat-label { color: #8d9db2; font-size: 11px; }
 .profile-stat strong { color: #f5eddf; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .settings-footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--hud-line); padding: 12px 22px; color: var(--hud-muted); font-size: 11px; background: transparent; }
+.settings-footer-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .secondary-button { min-height: 40px; border: 1px solid var(--hud-gold); padding: 8px 16px; background: rgba(255, 211, 106, 0.08); color: var(--hud-gold2); cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; }
 .secondary-button:hover { background: rgba(255, 211, 106, 0.16); border-color: var(--hud-gold2); }
+.secondary-button:disabled { opacity: 0.38; cursor: default; background: transparent; border-color: var(--hud-line); color: var(--hud-muted); }
+.primary-button { min-height: 44px; border: 1px solid var(--hud-gold2); padding: 9px 24px; background: linear-gradient(180deg, rgba(255, 211, 106, 0.28), rgba(255, 138, 60, 0.14)); color: #fff6dc; cursor: pointer; font: 800 14px/1.2 inherit; letter-spacing: 0.08em; box-shadow: 0 0 0 1px rgba(7, 6, 13, 0.7), 0 0 20px rgba(255, 150, 60, 0.16); }
+.primary-button:hover { background: linear-gradient(180deg, rgba(255, 226, 150, 0.42), rgba(255, 150, 70, 0.22)); border-color: #fff6dc; }
+.primary-button:active { transform: translateY(1px); }
+
+/* Camp hub: a persistent hero card on the left, tabbed management on the right. */
+.camp-hero { flex: 0 0 248px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-right: 1px solid var(--hud-line); padding: 14px 14px 18px; scrollbar-color: #46536a #080b12; touch-action: pan-y; }
+.camp-hero[hidden] { display: none; }
+.camp-hero-card { display: flex; flex-direction: column; gap: 10px; }
+.camp-portrait { border: 6px solid transparent; border-image: var(--frame-steel) 12 / 6px / 0 stretch; background: radial-gradient(ellipse at 50% 70%, rgba(255, 138, 60, 0.12), rgba(7, 6, 13, 0.5) 70%); padding: 8px; }
+.camp-portrait canvas { display: block; width: min(100%, 160px); height: auto; margin: 0 auto; image-rendering: pixelated; }
+.camp-name { margin: 0; color: var(--hud-gold2); font-size: 19px; line-height: 1.25; font-weight: 700; text-shadow: 1px 0 var(--hud-ink), -1px 0 var(--hud-ink), 0 1px var(--hud-ink); }
+.camp-role { margin: -6px 0 0; color: var(--hud-muted); font-size: 11px; line-height: 1.5; }
+.camp-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.camp-ember, .camp-ranks { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--hud-line); padding: 3px 8px; color: var(--hud-gold); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+.camp-ranks { color: var(--hud-muted); font-weight: 400; }
+.camp-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 2px 0 0; padding: 0; background: var(--hud-line); border: 1px solid var(--hud-line); }
+.camp-stat { display: grid; gap: 2px; padding: 7px 9px; background: rgba(7, 6, 13, 0.86); }
+.camp-stat dt { color: var(--hud-muted); font-size: 10px; letter-spacing: 0.06em; }
+.camp-stat dd { margin: 0; color: var(--hud-text); font-size: 12px; font-weight: 700; }
+.camp-hint { margin: 0; color: var(--hud-muted); font-size: 11px; line-height: 1.7; }
+.camp-enter { width: 100%; }
+
+/* Ember upgrade cards reuse the steel frame language of the loadout cards. */
+.upgrade-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--hud-line); background: rgba(7, 6, 13, 0.28); }
+.upgrade-ember { color: var(--hud-gold); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
+.upgrade-ember strong { font-size: 17px; }
+.upgrade-invested { color: var(--hud-muted); font-size: 11px; }
+.upgrade-respec { margin-left: auto; min-height: 34px; padding: 6px 12px; font-size: 12px; }
+.upgrade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 12px; }
+.upgrade-card { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto auto auto; gap: 3px 10px; align-items: center; border: 6px solid transparent; border-image: var(--frame-steel) 12 / 6px / 0 stretch; padding: 12px; background: rgba(7, 6, 13, 0.28); color: var(--hud-text); cursor: pointer; font-family: inherit; text-align: left; transition: filter 0.16s ease; }
+.upgrade-card:hover { border-image-source: var(--frame-selected); }
+.upgrade-card.is-ready .upgrade-cost { color: var(--hud-gold2); }
+.upgrade-card.is-locked { cursor: default; }
+.upgrade-card.is-locked .upgrade-cost { color: var(--hud-muted); }
+.upgrade-card.is-maxed { cursor: default; }
+.upgrade-card.is-denied { animation: upgrade-deny 0.28s ease; }
+@keyframes upgrade-deny { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-3px); filter: saturate(0.4); } 60% { transform: translateX(3px); } }
+.upgrade-icon { grid-row: 1 / span 2; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--hud-line); color: var(--hud-gold); font-size: 22px; }
+.upgrade-card.is-ready .upgrade-icon { border-color: var(--hud-gold); background: rgba(255, 211, 106, 0.08); }
+.upgrade-name { color: var(--hud-gold2); font-size: 14px; font-weight: 700; }
+.upgrade-desc { color: var(--hud-muted); font-size: 11px; line-height: 1.5; }
+.upgrade-pips { grid-column: 1 / -1; display: flex; gap: 4px; margin-top: 4px; }
+.upgrade-pip { width: 16px; height: 3px; background: rgba(154, 143, 174, 0.32); }
+.upgrade-pip.is-on { background: var(--hud-gold); box-shadow: 0 0 6px rgba(255, 211, 106, 0.5); }
+.upgrade-cost { grid-column: 1 / -1; color: var(--hud-gold); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; }
+@media (max-width: 900px) {
+  .camp-hero { display: none; }
+}
 @media (max-width: 720px) {
   .settings-header, .settings-content, .settings-footer { padding-left: 12px; padding-right: 12px; }
+  .settings-footer-hint { display: none; }
   .settings-tabs { padding-left: 12px; padding-right: 12px; }
-  .settings-tab { min-width: 0; flex: 1; padding: 8px 6px; font-size: 12px; }
+  .settings-tab { min-width: 0; flex: 0 0 auto; padding: 8px 10px; font-size: 12px; }
   .item-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .skill-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .language-grid { grid-template-columns: 1fr; }

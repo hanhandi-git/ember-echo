@@ -1,4 +1,6 @@
-/** Browser persistence for loadout, stash, and in-progress runs. */
+/** Browser persistence for loadout, stash, permanent upgrades, and in-progress runs. */
+
+import { emptyUpgrades } from "./upgrades.js";
 
 export const SAVE_KEY = "ember-echo-save";
 export const SAVE_VERSION = 1;
@@ -40,6 +42,8 @@ export function heroProfile(hero) {
     thrownWeaponId: hero.thrownWeaponId,
     skillSlots: [...hero.skillSlots],
     stash: { ...hero.stash },
+    upgrades: { ...emptyUpgrades(), ...(hero.upgrades ?? {}) },
+    embers: Math.max(0, Math.round(hero.embers ?? 0)),
   };
 }
 
@@ -63,16 +67,17 @@ export function heroRunStats(hero) {
     xpNext: hero.xpNext,
     dmgMul: hero.dmgMul,
     speed: hero.speed,
+    upgradeHp: hero._upgradeHp ?? 0,
+    upgradeMp: hero._upgradeMp ?? 0,
   };
 }
 
 export function collectSave(game) {
-  const playing = game.state === "playing" && game.hero.alive
-    && game.phase !== "title" && game.phase !== "travel";
-  return {
-    v: SAVE_VERSION,
-    profile: { ...heroProfile(game.hero), ...gameProfile(game) },
-    run: playing ? {
+  const playing = ["playing", "paused", "inventory"].includes(game.state) && game.hero.alive
+    && game.phase !== "camp" && game.phase !== "travel";
+  let run = { active: false };
+  if (playing) {
+    run = {
       active: true,
       stageIndex: game.stageIndex,
       waveIndex: game.waveIndex,
@@ -80,7 +85,16 @@ export function collectSave(game) {
       kills: game.kills,
       runTime: game.runTime,
       hero: heroRunStats(game.hero),
-    } : { active: false },
+    };
+  } else if (game.state === "camp") {
+    // Equipping gear at camp must not erase an expedition that can still be resumed.
+    const previous = loadSave()?.run;
+    if (previous?.active) run = previous;
+  }
+  return {
+    v: SAVE_VERSION,
+    profile: { ...heroProfile(game.hero), ...gameProfile(game) },
+    run,
   };
 }
 
@@ -100,6 +114,10 @@ export function applyGameProfile(game, profile) {
 
 export function applyHeroProfile(hero, profile) {
   if (!profile) return;
+  if (profile.upgrades && typeof profile.upgrades === "object") {
+    hero.upgrades = { ...emptyUpgrades(), ...profile.upgrades };
+  }
+  if (Number.isFinite(profile.embers)) hero.embers = Math.max(0, Math.round(profile.embers));
   if (profile.stash && typeof profile.stash === "object") hero.stash = { ...profile.stash };
   if (profile.look) hero.equipLook(profile.look);
   if (profile.meleeWeaponId) hero.equipWeapon(profile.meleeWeaponId);
@@ -107,16 +125,18 @@ export function applyHeroProfile(hero, profile) {
   if (Array.isArray(profile.skillSlots) && profile.skillSlots.length === hero.skillSlots.length) {
     hero.skillSlots = [...profile.skillSlots];
   }
+  hero.applyUpgrades();
 }
 
 export function applyHeroRunStats(hero, stats) {
   if (!stats) return;
+  // Upgrades bought at camp after this run was saved must carry into the resumed run.
+  const upgradeHp = hero._upgradeHp ?? 0;
+  const upgradeMp = hero._upgradeMp ?? 0;
+  const dHp = upgradeHp - (stats.upgradeHp ?? 0);
+  const dMp = upgradeMp - (stats.upgradeMp ?? 0);
   Object.assign(hero, {
     level: stats.level ?? hero.level,
-    hp: stats.hp ?? hero.hp,
-    maxHp: stats.maxHp ?? hero.maxHp,
-    mp: stats.mp ?? hero.mp,
-    maxMp: stats.maxMp ?? hero.maxMp,
     ap: stats.ap ?? hero.ap,
     maxAp: stats.maxAp ?? hero.maxAp,
     xp: stats.xp ?? hero.xp,
@@ -124,6 +144,10 @@ export function applyHeroRunStats(hero, stats) {
     dmgMul: stats.dmgMul ?? hero.dmgMul,
     speed: stats.speed ?? hero.speed,
   });
+  hero.maxHp = (stats.maxHp ?? hero.maxHp) + dHp;
+  hero.maxMp = (stats.maxMp ?? hero.maxMp) + dMp;
+  hero.hp = Math.min(hero.maxHp, (stats.hp ?? hero.hp) + Math.max(0, dHp));
+  hero.mp = Math.min(hero.maxMp, (stats.mp ?? hero.mp) + Math.max(0, dMp));
   hero.applyMeleeStats();
 }
 

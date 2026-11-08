@@ -4,6 +4,7 @@ import { effects as PIXELFX_EFFECTS } from "../../pixelfx/src/fx/index.js";
 import { ARMORY as PIXELFX_ARMORY } from "../../pixelfx/src/core/weapons.js";
 import { CHARACTERS } from "../../pixelfx/src/core/characters.js";
 import { FX, MAPS, CRITTER_MODS, PICKUP_MODS } from "./content/fx-registry.js";
+import { buildGoblinEnemyTypes } from "./content/mob-catalog.js";
 import { ATTR_FROM_CATEGORY, buildFxSpellMeta, iconOf } from "./content/spell-catalog.js";
 import { localizeArmoryWeapon } from "./weapon-i18n.js";
 export { STASH_ITEMS, STASH_FX, stashItem, stashLabel } from "./content/stash-catalog.js";
@@ -50,16 +51,17 @@ const BASE_STAGES = [
         { type: "snake", x: 268, y: 146 },
       ],
       [
-        { type: "frog", x: 116, y: 160 },
-        { type: "slime", x: 178, y: 144 },
-        { type: "snake", x: 236, y: 160 },
-        { type: "slime", x: 288, y: 150 },
+        { type: "goblin-warrior", x: 118, y: 158 },
+        { type: "goblin-agile", x: 192, y: 150 },
+        { type: "slime", x: 262, y: 158 },
+        { type: "goblin-warrior", x: 332, y: 146 },
       ],
       [
-        { type: "snake", x: 338, y: 146 },
-        { type: "frog", x: 374, y: 160 },
-        { type: "slime", x: 416, y: 146 },
-        { type: "snake", x: 452, y: 158 },
+        { type: "goblin-agile", x: 126, y: 160 },
+        { type: "goblin-warrior", x: 214, y: 146 },
+        { type: "goblin-giant", x: 302, y: 158 },
+        { type: "snake", x: 402, y: 150 },
+        { type: "goblin-agile", x: 462, y: 156 },
       ],
     ],
   },
@@ -70,15 +72,15 @@ const BASE_STAGES = [
     palette: "#8ed7bf",
     waves: [
       [
-        { type: "bat", x: 116, y: 142 },
-        { type: "wisp", x: 214, y: 148 },
-        { type: "bat", x: 272, y: 158 },
+        { type: "goblin-archer", x: 118, y: 150 },
+        { type: "bat", x: 208, y: 142 },
+        { type: "goblin-mage", x: 278, y: 156 },
       ],
       [
         { type: "ghost", x: 122, y: 154 },
-        { type: "wisp", x: 184, y: 140 },
-        { type: "ghost", x: 236, y: 160 },
-        { type: "wisp", x: 288, y: 150 },
+        { type: "goblin-archer", x: 198, y: 140 },
+        { type: "goblin-mage", x: 268, y: 160 },
+        { type: "wisp", x: 348, y: 150 },
       ],
       [
         { type: "bat", x: 338, y: 142 },
@@ -182,6 +184,7 @@ export const ENEMY_TYPES = {
     mod: flyingSkull, name: "焚颅", hp: 46, speed: 27, dmg: 11, reach: 34, want: 21, windup: 0.54, cd: 1.85,
     xp: 18, barH: 70, w: 17, scale: 0.5, fly: true, deathFx: poof,
   },
+  ...buildGoblinEnemyTypes({ poof, goblinHit: FX.goblinHit, goblinDeath: FX.goblinDeath }),
   boss: {
     mod: null, name: "冥河守卫", nameEn: "THE WARDEN", hp: 360, speed: 23, dmg: 15, reach: 40, want: 27, windup: 0.8, cd: 2.1,
     xp: 120, barH: 0, w: 30, fly: false, boss: true, deathFx: shatterDeath, look: "styx-warden",

@@ -22,6 +22,50 @@ function statusForCategory(cat) {
   return [undefined, 0];
 }
 
+/** Horizontal travel in effect-local pose units; long dashes need path sweeps, not a single end hit. */
+function actPoseTravel(act) {
+  const poses = act?.poses;
+  if (!poses?.length) return 0;
+  let min = Infinity, max = -Infinity;
+  for (const [, pose] of poses) {
+    const x = pose?.x ?? 0;
+    min = Math.min(min, x);
+    max = Math.max(max, x);
+  }
+  return min === Infinity ? 0 : max - min;
+}
+
+const PATH_SWEEP_TRAVEL = 100;
+
+function actHitOpts(ef, h, hit = {}) {
+  const sk = ef.sk;
+  const [status, statusTime] = statusForCategory(sk.category);
+  return {
+    dmg: sk.power * h.dmgMul,
+    knock: (hit.push ?? 24) * (sk.category === "moves" ? 1.15 : 0.85),
+    status,
+    statusTime,
+    crit: Math.random() < 0.12 + (sk.category === "lightning" || sk.category === "ninjutsu" ? 0.05 : 0),
+  };
+}
+
+function sweepAlongActPath(g, ef, x0, x1) {
+  if (!ef.pathSweep) return;
+  const h = g.hero;
+  if ((x1 - x0) * ef.facing < size(0.5)) return;
+  const lo = Math.min(x0, x1), hi = Math.max(x0, x1);
+  const aimY = h.y + size(-6);
+  const margin = size(22);
+  const struck = ef.struck;
+  g.hitEnemies((e) => {
+    if (struck.has(e)) return false;
+    if (Math.abs(e.y - aimY) > size(36)) return false;
+    if (e.x < lo - margin || e.x > hi + margin) return false;
+    struck.add(e);
+    return true;
+  }, { ...actHitOpts(ef, h, { push: 18 }), maxHits: 99 });
+}
+
 export function spellActBusy(g) {
   return g.effects.some((ef) => ef.act && !ef.dead);
 }
@@ -73,29 +117,28 @@ function resolveActHit(g, ef, hit) {
   const sk = ef.sk;
   if (hit.stop) g.hitStop = Math.max(g.hitStop, Math.min(hit.stop, 0.22));
   if (hit.shake) g.shake((hit.amp ?? 2) * 1.1, hit.shake);
-  const [status, statusTime] = statusForCategory(sk.category);
   const reach = size(hit.straw ? Math.min(120, hit.straw) : sk.category === "moves" ? 92 : 76);
   const aimY = h.y + (hit.y ? hit.y * 0.04 : -6);
-  const struck = g.hitEnemies((e) => {
+  const struck = ef.struck;
+  const hits = g.hitEnemies((e) => {
+    if (struck?.has(e)) return false;
     const along = (e.x - h.x) * h.facing;
     if (along < -size(24)) return false;
     if (Math.abs(e.y - aimY) > size(34)) return false;
-    return Math.hypot(e.x - h.x, (e.y - aimY) * 1.35) < reach;
-  }, {
-    dmg: sk.power * h.dmgMul,
-    knock: (hit.push ?? 24) * (sk.category === "moves" ? 1.15 : 0.85),
-    status,
-    statusTime,
-    crit: Math.random() < 0.12 + (sk.category === "lightning" ? 0.05 : 0),
-  });
-  if (struck && hit.stop) g.audio.play(sk.category === "melee" || sk.category === "moves" ? "cleave" : "hit");
+    if (Math.hypot(e.x - h.x, (e.y - aimY) * 1.35) >= reach) return false;
+    struck?.add(e);
+    return true;
+  }, actHitOpts(ef, h, hit));
+  if (hits && hit.stop) g.audio.play(sk.category === "melee" || sk.category === "moves" ? "cleave" : "hit");
 }
 
 export function updateSpellActs(g, dt) {
   for (const ef of g.effects) {
     if (!ef.act) continue;
+    const prevX = g.hero.x;
     ef.act.update(dt);
     syncHeroSpellAct(g, ef);
+    sweepAlongActPath(g, ef, prevX, g.hero.x);
     if (ef.act.done()) {
       g.hero.actPose = null;
       ef.dead = true;
@@ -118,6 +161,7 @@ export function castActSpell(g, sk, mod) {
   h.actPose = act.pose;
   h.vx = h.vy = 0;
   h.startAnim(`act:${sk.id}`, [[0, h.actPose]], false);
+  const pathSweep = actPoseTravel(mod.act) >= PATH_SWEEP_TRAVEL;
   const ef = {
     act,
     opts,
@@ -128,6 +172,8 @@ export function castActSpell(g, sk, mod) {
     facing: h.facing,
     posScale: ACT_POS_SCALE,
     dead: false,
+    pathSweep,
+    struck: pathSweep ? new WeakSet() : null,
   };
   act.onHit = (hit) => resolveActHit(g, ef, hit);
   g.effects.push(ef);

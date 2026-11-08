@@ -34,3 +34,19 @@ test("pixelfx act spells drive hero pose and forward movement", () => {
   advance(g, 2.5);
   assert.equal(g.hero.actPose, null, "pose override clears when the act ends");
 });
+
+test("chidori rush damages enemies along the dash path", () => {
+  const chidori = SKILL_META.find((s) => s.id === "fx:ninjutsu/chidori-rush");
+  const g = mockGame();
+  g.hero.skillSlots[0] = chidori.id;
+  g.hero.mp = 200;
+  const hx = g.hero.x, hy = g.hero.y;
+  const mid = g.spawnEnemy("slime", hx + 55, hy);
+  const far = g.spawnEnemy("slime", hx + 120, hy);
+  g.hero.facing = 1;
+  advance(g, 0.5);
+  assert.ok(g.cast(chidori.id));
+  advance(g, 1.6);
+  assert.ok(!mid.alive, "enemy on the dash lane should be hit while rushing");
+  assert.ok(!far.alive, "enemy further along the path should be hit before the end frame");
+});

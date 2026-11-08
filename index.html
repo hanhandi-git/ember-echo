@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
 <title>余烬回响 · Ember Echo</title>
-<meta name="description" content="余烬回响 — 一个用 pixelfx 素材与像素 UI 效果驱动的动作 RPG Demo。WASD 移动，TAB 背包，Q/SHIFT 闪避，SPACE 快速移动。">
+<meta name="description" content="余烬回响 — 一个用 pixelfx 素材与像素 UI 效果驱动的动作 RPG Demo。在营地整备角色、装备、技能与永久升级，再进入战斗。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%2307060d'/%3E%3Crect x='5' y='3' width='6' height='10' fill='%23ff7a3c'/%3E%3Crect x='7' y='5' width='4' height='7' fill='%23ffd36a'/%3E%3Crect x='8' y='7' width='2' height='4' fill='%23fff6d8'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,30 +14,44 @@
   <section id="settings-panel" class="settings-panel" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="settings-shell">
       <header class="settings-header">
-        <div>
-          <p class="eyebrow" data-i18n="menu.kicker">余烬回响 / LOADOUT</p>
-          <h1 id="settings-title" data-i18n="menu.title">背包与设置</h1>
-          <p class="settings-subtitle" data-i18n="menu.subtitle">选择你的武器、技能组合和语言。</p>
+        <div class="settings-heading">
+          <p class="eyebrow" data-header="kicker" data-i18n="menu.kicker">余烬回响 / LOADOUT</p>
+          <h1 id="settings-title" data-header="title" data-i18n="menu.title">背包与设置</h1>
+          <p class="settings-subtitle" data-header="subtitle" data-i18n="menu.subtitle">选择你的武器、技能组合和语言。</p>
         </div>
-        <button class="icon-button close-settings" type="button" aria-label="关闭" data-action="close">×</button>
+        <div class="settings-header-side">
+          <span class="camp-badge" data-camp-badge hidden>✦ <strong data-camp-badge-embers>0</strong> <span data-i18n="camp.embers">余烬</span></span>
+          <button class="icon-button close-settings" type="button" aria-label="关闭" data-action="close">×</button>
+        </div>
       </header>
-      <nav class="settings-tabs" role="tablist">
-        <button class="settings-tab is-active" type="button" data-tab="loadout" data-i18n="tabs.loadout">装备</button>
-        <button class="settings-tab" type="button" data-tab="stash" data-i18n="tabs.stash">收藏</button>
-        <button class="settings-tab" type="button" data-tab="skills" data-i18n="tabs.skills">技能</button>
-        <button class="settings-tab" type="button" data-tab="appearance" data-i18n="tabs.appearance">造型</button>
-        <button class="settings-tab" type="button" data-tab="profile" data-i18n="tabs.profile">人物</button>
-        <button class="settings-tab" type="button" data-tab="settings" data-i18n="tabs.settings">设置</button>
-      </nav>
-      <div class="settings-content" data-content="loadout"></div>
-      <div class="settings-content" data-content="stash" hidden></div>
-      <div class="settings-content" data-content="skills" hidden></div>
-      <div class="settings-content" data-content="appearance" hidden></div>
-      <div class="settings-content" data-content="profile" hidden></div>
-      <div class="settings-content" data-content="settings" hidden></div>
+      <div class="settings-body">
+        <aside class="camp-hero" hidden aria-label="决斗者概览"></aside>
+        <div class="settings-main">
+          <nav class="settings-tabs" role="tablist">
+            <button class="settings-tab is-active" type="button" data-tab="profile" data-i18n="tabs.profile">人物</button>
+            <button class="settings-tab" type="button" data-tab="loadout" data-i18n="tabs.loadout">装备</button>
+            <button class="settings-tab" type="button" data-tab="skills" data-i18n="tabs.skills">技能</button>
+            <button class="settings-tab" type="button" data-tab="upgrade" data-i18n="tabs.upgrade">升级</button>
+            <button class="settings-tab" type="button" data-tab="stash" data-i18n="tabs.stash">收藏</button>
+            <button class="settings-tab" type="button" data-tab="appearance" data-i18n="tabs.appearance">造型</button>
+            <button class="settings-tab" type="button" data-tab="settings" data-i18n="tabs.settings">设置</button>
+          </nav>
+          <div class="settings-content" data-content="loadout"></div>
+          <div class="settings-content" data-content="stash" hidden></div>
+          <div class="settings-content" data-content="skills" hidden></div>
+          <div class="settings-content" data-content="upgrade" hidden></div>
+          <div class="settings-content" data-content="appearance" hidden></div>
+          <div class="settings-content" data-content="profile" hidden></div>
+          <div class="settings-content" data-content="settings" hidden></div>
+        </div>
+      </div>
       <footer class="settings-footer">
-        <span data-i18n="footer.hint">选择后立即生效</span>
-        <button class="secondary-button" type="button" data-action="close" data-i18n="footer.return">返回战斗</button>
+        <span class="settings-footer-hint" data-footer-hint data-i18n="footer.hint">选择后立即生效</span>
+        <div class="settings-footer-actions">
+          <button class="secondary-button camp-only" type="button" data-action="new-run" hidden data-i18n="footer.newRun">新的征程</button>
+          <button class="secondary-button" type="button" data-action="close" data-i18n="footer.return">返回战斗</button>
+          <button class="primary-button camp-only" type="button" data-action="enter-battle" hidden data-i18n="footer.enterBattle">进入战斗</button>
+        </div>
       </footer>
     </div>
   </section>

@@ -2,6 +2,8 @@ import { STAGES } from "../../data.js";
 import { Boss, spawnEnemy as spawnEnemyEntity } from "../../enemies.js";
 import { stageName, uiCopy } from "../../copy.js";
 
+const STAGE_EMBER_REWARD = 20;
+
 export const stageFlowSystem = {
   updateFlow(dt) {
     if (!this.hero.alive) return;
@@ -77,6 +79,7 @@ export const stageFlowSystem = {
     this.audio.play("level");
     this.hero.heal(this, Math.round(this.hero.maxHp * 0.22));
     this.hero.mp = Math.min(this.hero.maxMp, this.hero.mp + 24);
+    this.hero.earnEmbers(STAGE_EMBER_REWARD);
     this.projectiles = [];
     this.spawnQueue = [];
     this.timers = [];

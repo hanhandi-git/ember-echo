@@ -10,7 +10,8 @@ export function installKeyboard(game) {
   const unlock = () => game.audio.unlock();
 
   const handleInventoryKey = (key) =>
-    game.state === "inventory" && (game.domUi?.handleKey(key) || game.ui.handleInventoryKey(key));
+    (game.state === "inventory" || game.state === "camp")
+    && (game.domUi?.handleKey(key) || game.ui.handleInventoryKey(key));
 
   const handleTab = () => {
     if (game.state === "playing" || game.state === "inventory") game.toggleInventory();
@@ -33,7 +34,8 @@ export function installKeyboard(game) {
   };
 
   const handleConfirm = () => {
-    if (game.state === "title" || game.state === "gameover" || game.state === "victory") game.startRun();
+    if (game.state === "camp") game.enterBattle();
+    else if (game.state === "gameover" || game.state === "victory") game.enterCamp();
     else if (game.state === "paused") game.togglePause();
   };
 
@@ -52,7 +54,7 @@ export function installKeyboard(game) {
   };
 
   const castSlotKey = (key) => {
-    if (game.state === "title") return;
+    if (game.state === "camp") return;
     const id = game.hero.skillSlots[SKILL_SLOT_KEYS[key]];
     castSkill(game, id);
   };
@@ -89,12 +91,16 @@ export function installKeyboard(game) {
       return;
     }
     if (key === " " && !e.repeat) {
+      // Let a focused menu button receive Space as its native activation.
+      if (e.target?.closest?.("button, a, input, select, textarea")) return;
       e.preventDefault();
       unlock();
       handleQuickMove();
       return;
     }
     if (key === "enter") {
+      // Focused buttons handle Enter natively (equip, upgrade, enter); don't double-fire.
+      if (e.target?.closest?.("button, a, input, select, textarea")) return;
       e.preventDefault();
       unlock();
       handleConfirm();

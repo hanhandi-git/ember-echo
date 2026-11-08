@@ -15,7 +15,7 @@ export const loopSystem = {
     this.time += dt;
     if (this.state === "paused" || this.state === "inventory") return;
 
-    if (this.state === "title") {
+    if (this.state === "camp") {
       for (const map of this.mapFxTiles) map.update(dt * 0.8);
       this.hero.update(this, dt, this.keys);
       this.updateEffects(dt);

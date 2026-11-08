@@ -13,6 +13,7 @@ installGameViewport(document.querySelector("#stage"));
 const game = boot();
 game.domUi = createSettingsUI(game);
 game.touchUi = createTouchControls(game);
+game.domUi.openCamp?.();
 const canvas = document.querySelector("#game");
 
 installKeyboard(game);
@@ -20,7 +21,7 @@ installPointer(game, canvas);
 installVisibilityPause(game);
 
 game.cast = (id) => castSkill(game, id);
-game.begin = () => game.startRun();
+game.begin = () => game.enterBattle();
 window.__EMBER__ = game;
 
 let last = performance.now();

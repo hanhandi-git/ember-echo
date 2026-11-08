@@ -17,6 +17,12 @@ import * as ghost from "../../../pixelfx/src/fx/critters/ghost.js";
 import * as eyeball from "../../../pixelfx/src/fx/critters/eyeball.js";
 import * as flyingSkull from "../../../pixelfx/src/fx/critters/flying-skull.js";
 
+import * as goblinAgile from "../../../pixelfx/src/fx/mobs/goblin-agile.js";
+import * as goblinArcher from "../../../pixelfx/src/fx/mobs/goblin-archer.js";
+import * as goblinGiant from "../../../pixelfx/src/fx/mobs/goblin-giant.js";
+import * as goblinMage from "../../../pixelfx/src/fx/mobs/goblin-mage.js";
+import * as goblinWarrior from "../../../pixelfx/src/fx/mobs/goblin-warrior.js";
+
 import * as swordSlash from "../../../pixelfx/src/fx/melee/sword-slash.js";
 import * as doubleSlash from "../../../pixelfx/src/fx/melee/double-slash.js";
 import * as heavyCleave from "../../../pixelfx/src/fx/melee/heavy-cleave.js";
@@ -31,9 +37,11 @@ import * as blessing from "../../../pixelfx/src/fx/holy/blessing.js";
 import * as divineShield from "../../../pixelfx/src/fx/holy/divine-shield.js";
 import * as hitSpark from "../../../pixelfx/src/fx/impacts/hit-spark.js";
 import * as critHit from "../../../pixelfx/src/fx/impacts/crit-hit.js";
+import * as goblinHit from "../../../pixelfx/src/fx/impacts/goblin-hit.js";
 import * as smallExplosion from "../../../pixelfx/src/fx/explosions/small-explosion.js";
 import * as poof from "../../../pixelfx/src/fx/spawn/poof.js";
 import * as shatterDeath from "../../../pixelfx/src/fx/spawn/shatter-death.js";
+import * as goblinDeath from "../../../pixelfx/src/fx/spawn/goblin-death.js";
 import * as spawnPortal from "../../../pixelfx/src/fx/spawn/spawn-portal.js";
 import * as levelUp from "../../../pixelfx/src/fx/ui/level-up.js";
 import * as runeCircle from "../../../pixelfx/src/fx/arcane/rune-circle.js";
@@ -51,7 +59,7 @@ import * as stagePortal from "../fx/stage-portal.js";
 export const FX = {
   swordSlash, doubleSlash, heavyCleave, scytheReap, fireball, meteor, frostNova,
   lightningStrike, thunderclap, healAoe, blessing, divineShield,
-  hitSpark, critHit, smallExplosion, poof, shatterDeath, spawnPortal, levelUp,
+  hitSpark, critHit, goblinHit, smallExplosion, poof, shatterDeath, goblinDeath, spawnPortal, levelUp,
   runeCircle, manaBurst, frozen, burning, stunned, plasmaShot,
   heartPickup, potionPickup, xpOrb, collectBurst,
   stagePortal,
@@ -70,6 +78,14 @@ export const MAPS = {
 
 export const CRITTER_MODS = {
   slime, snake, frog, bat, wisp, ghost, eyeball, flyingSkull,
+};
+
+export const MOB_MODS = {
+  goblinAgile,
+  goblinArcher,
+  goblinGiant,
+  goblinMage,
+  goblinWarrior,
 };
 
 export const PICKUP_MODS = { heartPickup, potionPickup, xpOrb, poof, shatterDeath };
