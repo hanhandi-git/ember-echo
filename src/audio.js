@@ -1,11 +1,13 @@
+import { MusicSequencer, STAGE_TRANSPOSE } from "./music.js";
+
 // Procedural WebAudio sound design: every sound is synthesised at runtime, so the demo ships
 // without audio files. Sounds are layered (transient / body / tail), routed through a small
 // mixer with a generated convolution reverb and a limiter, and gently randomised so repeated
 // hits never sound identical. The context only starts after a real gesture, as browsers require.
 
 const PREFS_KEY = "ember-echo-audio";
-const VOLUME_KEYS = ["master", "sfx", "ambience"];
-const DEFAULT_VOLUMES = { master: 0.8, sfx: 0.9, ambience: 0.6 };
+const VOLUME_KEYS = ["master", "sfx", "music", "ambience"];
+const DEFAULT_VOLUMES = { master: 0.8, sfx: 0.9, music: 0.6, ambience: 0.5 };
 const SCENE_ROOTS = [55, 61.74, 73.42, 65.41, 82.41, 49, 92.5]; // A1, B1, D2, C2, E2, G1, F#2
 
 // Minimum gap between two plays of the same cue. Prevents machine-gun stacking when several
@@ -48,7 +50,7 @@ function savePrefs(volume, muted) {
   try {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(PREFS_KEY, JSON.stringify({
-      master: volume.master, sfx: volume.sfx, ambience: volume.ambience, muted,
+      master: volume.master, sfx: volume.sfx, music: volume.music, ambience: volume.ambience, muted,
     }));
   } catch {
     /* quota or private mode */
@@ -65,13 +67,20 @@ export class AudioEngine {
     this.sfxBus = null;
     this.ambBus = null;
     this.ambDuck = null;
+    this.sfxSend = null;
+    this.musicSend = null;
+    this.ambSend = null;
+    this.musicBus = null;
+    this.musicFade = null;
+    this.music = null;
+    this.isOffline = false;
     this.reverb = null;
     this.reverbReturn = null;
     this.noiseBuf = null;
     this.pad = null;
 
     const prefs = loadPrefs();
-    this.volume = { master: prefs.master, sfx: prefs.sfx, ambience: prefs.ambience };
+    this.volume = { master: prefs.master, sfx: prefs.sfx, music: prefs.music, ambience: prefs.ambience };
     this.muted = prefs.muted;
     this.scene = { camp: false, stageIndex: 0, boss: false };
     this._lastPlay = new Map();
@@ -115,6 +124,12 @@ export class AudioEngine {
     this.ambDuck.gain.value = 1;
     this.ambBus.connect(this.ambDuck).connect(this.comp);
 
+    this.musicBus = c.createGain();
+    this.musicBus.gain.value = this.volume.music;
+    this.musicFade = c.createGain();
+    this.musicFade.gain.value = 1;
+    this.musicBus.connect(this.musicFade).connect(this.comp);
+
     // one generated plate-ish impulse shared by every send
     this.reverb = c.createConvolver();
     this.reverb.buffer = this.makeImpulse(1.8, 2.6);
@@ -122,8 +137,33 @@ export class AudioEngine {
     this.reverbReturn.gain.value = 0.42;
     this.reverb.connect(this.reverbReturn).connect(this.comp);
 
+    // reverb sends sit behind their bus volume, so a fader at 0 really is silent
+    this.sfxSend = c.createGain();
+    this.sfxSend.gain.value = this.volume.sfx;
+    this.sfxSend.connect(this.reverb);
+    this.musicSend = c.createGain();
+    this.musicSend.gain.value = this.volume.music;
+    this.musicSend.connect(this.reverb);
+    this.ambSend = c.createGain();
+    this.ambSend.gain.value = this.volume.ambience;
+    this.ambSend.connect(this.reverb);
+
     this.noiseBuf = this.makeNoise(2);
+    this.isOffline = !!context;
     if (this.options.ambience !== false) this.startAmbience();
+    if (this.options.music !== false) {
+      this.music = new MusicSequencer(this);
+      const scene = this.musicScene();
+      this.music.setTheme(scene.name, scene.transpose, true);
+      this.music.startClock();
+    }
+    if (!context && typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (!this.music) return;
+        if (document.hidden) this.music.stopClock();
+        else this.music.resumeClock();
+      });
+    }
     if (!context && c.state === "suspended") c.resume().catch(() => {});
   }
 
@@ -193,8 +233,13 @@ export class AudioEngine {
       this.master.gain.setTargetAtTime(this.muted ? 0 : v, t, 0.03);
     } else if (kind === "sfx" && this.sfxBus) {
       this.sfxBus.gain.setTargetAtTime(v, t, 0.03);
+      this.sfxSend?.gain.setTargetAtTime(v, t, 0.03);
+    } else if (kind === "music" && this.musicBus) {
+      this.musicBus.gain.setTargetAtTime(v, t, 0.04);
+      this.musicSend?.gain.setTargetAtTime(v, t, 0.04);
     } else if (kind === "ambience" && this.ambBus) {
       this.ambBus.gain.setTargetAtTime(v, t, 0.05);
+      this.ambSend?.gain.setTargetAtTime(v, t, 0.05);
     }
     return this.volume;
   }
@@ -203,10 +248,23 @@ export class AudioEngine {
     savePrefs(this.volume, this.muted);
   }
 
-  /** Stage-aware ambient bed. Patches merge, so `setScene({ boss: true })` is enough. */
+  /** Which loop fits the current place: camp, a stage fight, or the warden's duel. */
+  musicScene() {
+    const s = this.scene;
+    const name = s.camp ? "camp" : s.boss ? "boss" : "battle";
+    const stage = Math.max(0, Math.floor(s.stageIndex ?? 0));
+    const transpose = name === "battle" ? STAGE_TRANSPOSE[stage % STAGE_TRANSPOSE.length] : 0;
+    return { name, transpose };
+  }
+
+  /** Stage-aware ambient bed and music. Patches merge, so `setScene({ boss: true })` is enough. */
   setScene(patch = {}) {
     this.scene = { ...this.scene, ...patch };
     this.applyScene();
+    if (this.music) {
+      const scene = this.musicScene();
+      this.music.setTheme(scene.name, scene.transpose);
+    }
   }
 
   get now() { return this.ctx ? this.ctx.currentTime : 0; }
@@ -215,7 +273,8 @@ export class AudioEngine {
     if (!this.pad || !this.ctx) return;
     const { lp, bus, windGain, pulseGain } = this.pad;
     const s = this.scene;
-    const root = s.camp ? 55 : SCENE_ROOTS[Math.max(0, Math.floor(s.stageIndex ?? 0)) % SCENE_ROOTS.length];
+    // Boss music is in D minor: keep the drone on D instead of the stage's F# root.
+    const root = s.camp ? 55 : s.boss ? 73.42 : SCENE_ROOTS[Math.max(0, Math.floor(s.stageIndex ?? 0)) % SCENE_ROOTS.length];
     const t = this.ctx.currentTime;
     for (const { o, ratio } of this.pad.oscs) o.frequency.setTargetAtTime(root * ratio, t, 0.9);
     lp.frequency.setTargetAtTime(s.camp ? 380 : s.boss ? 620 : 300, t, 1.2);
@@ -234,7 +293,7 @@ export class AudioEngine {
     bus.connect(this.ambBus);
     const send = c.createGain();
     send.gain.value = 0.3;
-    bus.connect(send).connect(this.reverb);
+    bus.connect(send).connect(this.ambSend);
 
     const lp = c.createBiquadFilter();
     lp.type = "lowpass";
@@ -320,7 +379,7 @@ export class AudioEngine {
   // ---------------------------------------------------------------------------------------
 
   /** Route a finished voice to the SFX bus and optionally into the reverb. */
-  route(node, { pan = 0, send = 0 } = {}) {
+  route(node, { pan = 0, send = 0, bus = null } = {}) {
     const c = this.ctx;
     let out = node;
     if (pan && c.createStereoPanner) {
@@ -329,11 +388,12 @@ export class AudioEngine {
       out.connect(p);
       out = p;
     }
-    out.connect(this.sfxBus);
+    out.connect(bus ?? this.sfxBus);
     if (send > 0) {
       const s = c.createGain();
       s.gain.value = clamp(send, 0, 1);
-      out.connect(s).connect(this.reverb);
+      const sendBus = bus === this.musicBus ? this.musicSend : bus === this.ambBus ? this.ambSend : this.sfxSend;
+      out.connect(s).connect(sendBus);
     }
   }
 
@@ -341,10 +401,10 @@ export class AudioEngine {
     const c = this.ctx;
     const {
       f = 440, f2 = null, dur = 0.2, type = "sine", vol = 0.1, attack = 0.004,
-      delay = 0, pan = 0, send = 0, pitch = 1, gain = 1, detune = 0, filter = null,
-      sweep = "exp",
+      delay = 0, at = null, bus = null, pan = 0, send = 0, pitch = 1, gain = 1, detune = 0,
+      filter = null, sweep = "exp",
     } = opts;
-    const t0 = c.currentTime + Math.max(0, delay);
+    const t0 = at ?? c.currentTime + Math.max(0, delay);
     const end = t0 + Math.max(0.03, dur);
     const peak = Math.max(0.0002, vol * gain);
     const o = c.createOscillator();
@@ -369,11 +429,13 @@ export class AudioEngine {
     }
     const g = c.createGain();
     const atk = Math.min(Math.max(0.001, attack), Math.max(0.002, dur * 0.6));
+    // Start silent so a future-scheduled note cannot leak its first sample at unity gain.
+    g.gain.value = 0.0001;
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(peak, t0 + atk);
     g.gain.exponentialRampToValueAtTime(0.0001, end);
     node.connect(g);
-    this.route(g, { pan, send });
+    this.route(g, { pan, send, bus });
     o.start(t0);
     o.stop(end + 0.05);
   }
@@ -382,10 +444,10 @@ export class AudioEngine {
     const c = this.ctx;
     const {
       dur = 0.2, vol = 0.12, type = "bandpass", f = 1200, f2 = null, q = 0.8,
-      attack = 0.003, delay = 0, pan = 0, send = 0, pitch = 1, gain = 1,
+      attack = 0.003, delay = 0, at = null, bus = null, pan = 0, send = 0, pitch = 1, gain = 1,
       rate = 1, offset = null,
     } = opts;
-    const t0 = c.currentTime + Math.max(0, delay);
+    const t0 = at ?? c.currentTime + Math.max(0, delay);
     const end = t0 + Math.max(0.03, dur);
     const peak = Math.max(0.0002, vol * gain);
     const src = c.createBufferSource();
@@ -399,11 +461,12 @@ export class AudioEngine {
     bq.Q.value = q;
     const g = c.createGain();
     const atk = Math.min(Math.max(0.001, attack), Math.max(0.002, dur * 0.6));
+    g.gain.value = 0.0001;
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(peak, t0 + atk);
     g.gain.exponentialRampToValueAtTime(0.0001, end);
     src.connect(bq).connect(g);
-    this.route(g, { pan, send });
+    this.route(g, { pan, send, bus });
     src.start(t0, offset ?? Math.random() * 1.4);
     src.stop(end + 0.05);
   }

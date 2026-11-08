@@ -11,6 +11,10 @@ import { installPointer, installVisibilityPause } from "./input/pointer.js";
 installGameViewport(document.querySelector("#stage"));
 
 const game = boot();
+// The camp is a menu: unlock audio on the first click anywhere so its theme starts there too.
+const unlockAudio = () => game.audio.unlock();
+window.addEventListener("pointerdown", unlockAudio, { once: true, capture: true });
+window.addEventListener("keydown", unlockAudio, { once: true, capture: true });
 game.domUi = createSettingsUI(game);
 game.touchUi = createTouchControls(game);
 game.domUi.openCamp?.();

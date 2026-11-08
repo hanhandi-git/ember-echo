@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AudioEngine } from "../src/audio.js";
+import { MUSIC_THEMES } from "../src/music.js";
 import { Game } from "../src/game.js";
 
 const CUES = [
@@ -70,7 +71,7 @@ function bootAudio() {
   const { ctx, created } = fakeContext();
   const previous = globalThis.AudioContext;
   globalThis.AudioContext = function AudioContext() { return ctx; };
-  const engine = new AudioEngine();
+  const engine = new AudioEngine({ music: false });
   engine.unlock();
   return { engine, ctx, created, restore: () => { if (previous === undefined) delete globalThis.AudioContext; else globalThis.AudioContext = previous; } };
 }
@@ -113,6 +114,7 @@ test("mute gates playback and volume changes clamp and persist", () => {
   const store = withStorage();
   const audio = bootAudio();
   try {
+    assert.equal(audio.engine.settings.music, 0.6);
     audio.engine.setVolume("sfx", 0.35);
     assert.equal(audio.engine.sfxBus.gain.value, 0.35);
     assert.equal(audio.engine.setVolume("sfx", 4).sfx, 1);
@@ -156,6 +158,52 @@ test("scene changes retune the drone and gate the boss pulse", () => {
     assert.equal(engine.pad.pulseGain.gain.value, 0.015);
   } finally {
     audio.restore();
+    store.restore();
+  }
+});
+
+test("music themes are eight complete bars written for this game", () => {
+  for (const [name, def] of Object.entries(MUSIC_THEMES)) {
+    assert.equal(def.bars, 8, `${name} has eight bars`);
+    assert.equal(def.chords.length, 8, `${name} has one chord per bar`);
+    assert.equal(def.melody.length, 8, `${name} has one melody phrase per bar`);
+    assert.ok(def.bpm >= 80 && def.bpm <= 180, `${name} tempo is playable`);
+    assert.ok(def.base > 30 && def.base < 80, `${name} sits in a sane register`);
+    for (const bar of def.melody) {
+      for (const note of bar) {
+        assert.ok(note.step >= 0 && note.step < 16, `${name} note starts inside the bar`);
+        assert.ok(note.dur > 0, `${name} note has length`);
+        assert.ok(note.note >= 0 && note.note <= 48, `${name} melody stays in range`);
+      }
+    }
+  }
+});
+
+test("the sequencer schedules music and swaps camp, battle and boss loops", () => {
+  const store = withStorage();
+  const { ctx, created } = fakeContext();
+  const engine = new AudioEngine({ ambience: false, music: true });
+  try {
+    engine.unlock(ctx);
+    assert.ok(engine.music, "music sequencer exists");
+    assert.equal(engine.music.name, "battle", "defaults to the stage loop");
+    const before = created.oscillators;
+    engine.music.tick(2);
+    assert.ok(created.oscillators > before + 10, "ahead scheduling creates notes");
+
+    engine.setScene({ camp: true, stageIndex: 0, boss: false });
+    assert.equal(engine.music.name, "camp");
+    engine.setScene({ camp: false, stageIndex: 2, boss: true });
+    assert.equal(engine.music.name, "boss");
+    engine.setScene({ camp: false, stageIndex: 2, boss: false });
+    assert.equal(engine.music.name, "battle");
+    assert.equal(engine.music.transpose, -2, "stage 2 transposes the battle loop");
+
+    engine.setVolume("music", 0.25);
+    assert.equal(engine.musicBus.gain.value, 0.25);
+    assert.equal(engine.musicSend.gain.value, 0.25);
+    assert.equal(JSON.parse(store.map.get("ember-echo-audio")).music, 0.25);
+  } finally {
     store.restore();
   }
 });
