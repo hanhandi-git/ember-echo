@@ -94,6 +94,7 @@ export class Game {
     this.phase = camp ? "camp" : "intro";
     this.state = camp ? "camp" : "playing";
     this.fade = camp ? 0 : 1;
+    this.audio.setScene({ camp, stageIndex: index, boss: false });
     if (!camp) {
       this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));
       this.audio.play("ui");
@@ -149,6 +150,15 @@ export class Game {
   toggleMute() {
     this.audio.unlock();
     this.audio.setMuted(!this.audio.muted);
+  }
+
+  /** Play a cue anchored at a world x. Keeps off-screen action audible but panned away. */
+  sfxAt(name, x, opts = {}) {
+    if (!Number.isFinite(x)) return this.audio.play(name, opts);
+    const dx = x - (this.hero?.x ?? x);
+    const pan = Math.max(-0.85, Math.min(0.85, dx / 210));
+    const gain = Math.max(0.42, 1 - Math.abs(dx) / 820);
+    return this.audio.play(name, { pan, gain, ...opts });
   }
 
   /** Test/debug: run a skill by id without the keyboard. */

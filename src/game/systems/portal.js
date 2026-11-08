@@ -19,7 +19,7 @@ export const portalSystem = {
     };
     const c = uiCopy(this);
     this.ui.toast(exit ? c.portalEscape : finalGate ? c.portalFinal : c.portalOpen);
-    this.audio.play("portal");
+    this.sfxAt("portal", x);
   },
 
   updatePortal(dt) {
@@ -38,7 +38,7 @@ export const portalSystem = {
     this.phaseT = 0;
     this.keys.clear();
     this.hero.vx = this.hero.vy = this.hero.dashT = 0;
-    this.audio.play("portal");
+    this.sfxAt("portal", this.portal.x);
     this.shake(2, 0.25);
   },
 };

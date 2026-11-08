@@ -66,7 +66,8 @@ export const stageFlowSystem = {
     const e = spawnEnemyEntity(this, type, x, y, opts);
     if (e instanceof Boss) {
       this.bossRef = e;
-      this.audio.play("boss");
+      this.audio.setScene({ boss: true });
+      this.sfxAt("boss", x);
     }
     return e;
   },

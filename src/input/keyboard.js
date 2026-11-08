@@ -46,6 +46,7 @@ export function installKeyboard(game) {
   const handleMute = () => {
     game.toggleMute();
     game.audio.play("ui");
+    game.domUi?.refreshAudio?.();
   };
 
   const handlePauseKey = () => {

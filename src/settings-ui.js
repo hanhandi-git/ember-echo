@@ -16,7 +16,7 @@ const LANG = {
     "loadout.weapons": "武器", "loadout.melee": "近战武器", "loadout.thrown": "投掷武器", "loadout.skills": "技能槽",
     "loadout.weaponHint": "点击卡片立即装备", "loadout.skillHint": "先选择槽位，再选择技能", "loadout.skillPick": "按属性筛选技能", "loadout.skillEmpty": "该属性暂无可用技能", "loadout.slot": "槽位",
     "loadout.equipped": "已装备", "loadout.ready": "可用", "loadout.replace": "替换", "settings.language": "语言",
-    "settings.languageHint": "语言会保存在本机，下次打开仍会保留。", "settings.auto": "自动化", "settings.autoHint": "自动战斗/拾取开关在战斗画面左侧血条下方，点击切换；状态会写入存档。", "settings.autoBattle": "自动战斗", "settings.autoLoot": "自动拾取", "settings.autoBattleHint": "自动寻敌、普攻与技能轮转。", "settings.autoLootHint": "靠近掉落物并拾取生命/法力/经验。",
+    "settings.languageHint": "语言会保存在本机，下次打开仍会保留。", "settings.audio": "声音", "settings.audioHint": "所有音效均由 WebAudio 实时合成，音量与静音会保存在本机。", "settings.master": "总音量", "settings.sfx": "音效", "settings.ambience": "环境音", "settings.soundOn": "声音开启", "settings.soundOff": "已静音", "settings.mute": "静音", "settings.audioKeyHint": "战斗中按 M 也能快速静音；拖动音效滑杆会试听 UI 音效。", "settings.auto": "自动化", "settings.autoHint": "自动战斗/拾取开关在战斗画面左侧血条下方，点击切换；状态会写入存档。", "settings.autoBattle": "自动战斗", "settings.autoLoot": "自动拾取", "settings.autoBattleHint": "自动寻敌、普攻与技能轮转。", "settings.autoLootHint": "靠近掉落物并拾取生命/法力/经验。",
     "footer.hint": "选择后立即生效", "footer.return": "返回战斗", "footer.campHint": "整备完成后即可出发 · Enter 出发", "footer.enterBattle": "进入战斗", "footer.continue": "继续冒险", "footer.newRun": "新的征程",
     "camp.hp": "生命", "camp.mp": "法力", "camp.attack": "攻击", "camp.speed": "移速", "camp.ranked": "强化", "camp.embers": "余烬", "camp.hint": "击败敌人与通关都会获得余烬，可在「升级」中永久强化。",
     "upgrade.title": "余烬强化", "upgrade.hint": "用余烬永久提升属性，死亡后依然保留。", "upgrade.invested": "已投入", "upgrade.max": "已满级", "upgrade.respec": "重置投入", "upgrade.note": "余烬由击败敌人和通关获得；重置投入会返还全部已使用的余烬。",
@@ -30,7 +30,7 @@ const LANG = {
     "loadout.weapons": "Weapons", "loadout.melee": "Melee", "loadout.thrown": "Thrown", "loadout.skills": "Skill slots",
     "loadout.weaponHint": "Click a card to equip", "loadout.skillHint": "Pick a slot, then choose a skill", "loadout.skillPick": "Filter by element", "loadout.skillEmpty": "No skills in this element", "loadout.slot": "Slot",
     "loadout.equipped": "Equipped", "loadout.ready": "Ready", "loadout.replace": "Replace", "settings.language": "Language",
-    "settings.languageHint": "Your language is saved on this device.", "settings.auto": "Automation", "settings.autoHint": "Auto battle and loot toggles are below the HP bars on the left HUD.", "settings.autoBattle": "Auto battle", "settings.autoLoot": "Auto loot", "settings.autoBattleHint": "Chase foes and rotate skills.", "settings.autoLootHint": "Run to useful pickups.",
+    "settings.languageHint": "Your language is saved on this device.", "settings.audio": "Audio", "settings.audioHint": "Every sound is synthesised live with WebAudio. Volumes and mute are saved on this device.", "settings.master": "Master", "settings.sfx": "Effects", "settings.ambience": "Ambience", "settings.soundOn": "Sound on", "settings.soundOff": "Muted", "settings.mute": "Mute", "settings.audioKeyHint": "Press M in battle to mute instantly; dragging the effects slider previews the UI cue.", "settings.auto": "Automation", "settings.autoHint": "Auto battle and loot toggles are below the HP bars on the left HUD.", "settings.autoBattle": "Auto battle", "settings.autoLoot": "Auto loot", "settings.autoBattleHint": "Chase foes and rotate skills.", "settings.autoLootHint": "Run to useful pickups.",
     "footer.hint": "Changes apply immediately", "footer.return": "Return to fight", "footer.campHint": "All set · press Enter to depart", "footer.enterBattle": "Enter battle", "footer.continue": "Continue run", "footer.newRun": "New expedition",
     "camp.hp": "Health", "camp.mp": "Mana", "camp.attack": "Attack", "camp.speed": "Speed", "camp.ranked": "Ranks", "camp.embers": "Embers", "camp.hint": "Embers drop from foes and stage clears. Spend them on permanent upgrades in Upgrade.",
     "upgrade.title": "Ember upgrades", "upgrade.hint": "Permanent stat boosts that survive death.", "upgrade.invested": "Invested", "upgrade.max": "Maxed", "upgrade.respec": "Reset ranks", "upgrade.note": "Embers come from kills and stage clears. Resetting refunds every ember spent.",
@@ -44,7 +44,7 @@ const LANG = {
     "loadout.weapons": "武器", "loadout.melee": "近接武器", "loadout.thrown": "投擲武器", "loadout.skills": "スキルスロット",
     "loadout.weaponHint": "カードをクリックして装備", "loadout.skillHint": "スロットを選んでスキルを選択", "loadout.skillPick": "属性で絞り込み", "loadout.skillEmpty": "この属性のスキルはありません", "loadout.slot": "スロット",
     "loadout.equipped": "装備中", "loadout.ready": "使用可能", "loadout.replace": "変更", "settings.language": "言語",
-    "settings.languageHint": "言語はこの端末に保存されます。", "settings.auto": "自動化", "settings.autoHint": "自動戦闘/拾得は画面左・体力バーの下で切り替えます。", "settings.autoBattle": "自動戦闘", "settings.autoLoot": "自動拾得", "settings.autoBattleHint": "敵を追尾しスキルを使用。", "settings.autoLootHint": "ドロップに近づいて取得。",
+    "settings.languageHint": "言語はこの端末に保存されます。", "settings.audio": "サウンド", "settings.audioHint": "効果音はすべて WebAudio でリアルタイム合成。音量とミュートは端末に保存されます。", "settings.master": "全体音量", "settings.sfx": "効果音", "settings.ambience": "環境音", "settings.soundOn": "サウンド ON", "settings.soundOff": "ミュート中", "settings.mute": "ミュート", "settings.audioKeyHint": "戦闘中は M キーでもミュートできます。効果音スライダーを動かすと UI 音が試聴できます。", "settings.auto": "自動化", "settings.autoHint": "自動戦闘/拾得は画面左・体力バーの下で切り替えます。", "settings.autoBattle": "自動戦闘", "settings.autoLoot": "自動拾得", "settings.autoBattleHint": "敵を追尾しスキルを使用。", "settings.autoLootHint": "ドロップに近づいて取得。",
     "footer.hint": "変更はすぐ反映されます", "footer.return": "戦闘に戻る", "footer.campHint": "準備完了 · Enter で出発", "footer.enterBattle": "戦闘へ", "footer.continue": "冒険を続ける", "footer.newRun": "新しい冒険",
     "camp.hp": "体力", "camp.mp": "マナ", "camp.attack": "攻撃", "camp.speed": "速度", "camp.ranked": "強化", "camp.embers": "余燼", "camp.hint": "敵撃破とステージクリアで余燼を獲得。「強化」で永続的に鍛えられます。",
     "upgrade.title": "余燼強化", "upgrade.hint": "死んでも失われない永続強化。", "upgrade.invested": "投入済み", "upgrade.max": "最大", "upgrade.respec": "投入をリセット", "upgrade.note": "余燼は撃破とクリアで獲得。リセットすると使用した余燼が全て戻ります。",
@@ -295,7 +295,53 @@ export function createSettingsUI(game) {
 
   function renderSettings() {
     if (!settings) return;
-    settings.innerHTML = `<section class="loadout-section"><h2 class="section-title">${t(game.language, "settings.language")}</h2><p class="settings-note">${t(game.language, "settings.languageHint")}</p><p class="settings-note">${t(game.language, "settings.autoHint")}</p><div class="language-grid" style="margin-top:16px">${LANGUAGES.map(([id, flag, name, native]) => `<button class="language-card ${game.language === id ? "is-active" : ""}" data-language="${id}"><span class="language-flag">${flag}</span><span><span class="language-name">${name}</span><span class="language-native">${native}</span></span></button>`).join("")}</div></section>`;
+    const audio = game.audio.settings;
+    const slider = (kind, labelKey) => {
+      const pct = Math.round((audio[kind] ?? 0) * 100);
+      const label = t(game.language, labelKey);
+      return `<label class="audio-row">
+        <span class="audio-label">${escapeHtml(label)}</span>
+        <input type="range" min="0" max="100" step="1" value="${pct}" data-audio-volume="${kind}" style="--fill:${pct}%" aria-label="${escapeHtml(label)}">
+        <output class="audio-value" data-audio-value="${kind}">${pct}%</output>
+      </label>`;
+    };
+    const audioSection = `<section class="loadout-section">
+      <h2 class="section-title">${t(game.language, "settings.audio")}</h2>
+      <div class="audio-panel">
+        ${slider("master", "settings.master")}
+        ${slider("sfx", "settings.sfx")}
+        ${slider("ambience", "settings.ambience")}
+      </div>
+      <button class="settings-toggle audio-mute ${audio.muted ? "" : "is-on"}" type="button" data-audio-mute aria-pressed="${audio.muted}" aria-label="${escapeHtml(t(game.language, audio.muted ? "settings.soundOn" : "settings.mute"))}">
+        <span class="settings-toggle-label">${t(game.language, audio.muted ? "settings.soundOff" : "settings.soundOn")}</span>
+        <span class="settings-toggle-state">${audio.muted ? "MUTE" : "ON"}</span>
+      </button>
+      <p class="settings-note">${t(game.language, "settings.audioHint")}<br>${t(game.language, "settings.audioKeyHint")}</p>
+    </section>`;
+    settings.innerHTML = `${audioSection}<section class="loadout-section"><h2 class="section-title">${t(game.language, "settings.language")}</h2><p class="settings-note">${t(game.language, "settings.languageHint")}</p><p class="settings-note">${t(game.language, "settings.autoHint")}</p><div class="language-grid" style="margin-top:16px">${LANGUAGES.map(([id, flag, name, native]) => `<button class="language-card ${game.language === id ? "is-active" : ""}" data-language="${id}"><span class="language-flag">${flag}</span><span><span class="language-name">${name}</span><span class="language-native">${native}</span></span></button>`).join("")}</div></section>`;
+  }
+
+  /** Keep the sliders and mute switch in sync when M is pressed from the HUD. */
+  function refreshAudio() {
+    if (!settings || panel.hidden) return;
+    const audio = game.audio.settings;
+    settings.querySelectorAll("[data-audio-volume]").forEach((slider) => {
+      const pct = Math.round((audio[slider.dataset.audioVolume] ?? 0) * 100);
+      slider.value = String(pct);
+      slider.style.setProperty("--fill", `${pct}%`);
+      const out = settings.querySelector(`[data-audio-value="${slider.dataset.audioVolume}"]`);
+      if (out) out.textContent = `${pct}%`;
+    });
+    const mute = settings.querySelector("[data-audio-mute]");
+    if (mute) {
+      mute.classList.toggle("is-on", !audio.muted);
+      mute.setAttribute("aria-pressed", String(audio.muted));
+      mute.setAttribute("aria-label", t(game.language, audio.muted ? "settings.soundOn" : "settings.mute"));
+      const label = mute.querySelector(".settings-toggle-label");
+      if (label) label.textContent = t(game.language, audio.muted ? "settings.soundOff" : "settings.soundOn");
+      const state = mute.querySelector(".settings-toggle-state");
+      if (state) state.textContent = audio.muted ? "MUTE" : "ON";
+    }
   }
 
   function renderAppearance() {
@@ -403,7 +449,7 @@ export function createSettingsUI(game) {
     const scroller = panel.querySelector(".settings-content:not([hidden])");
     const scrollTop = scroller?.scrollTop ?? 0;
     const focused = document.activeElement;
-    const focusId = focused?.closest("button")?.getAttributeNames().find(name => ["data-weapon", "data-skill", "data-slot", "data-language", "data-skill-attr", "data-hero-look", "data-upgrade"].includes(name));
+    const focusId = focused?.closest("button, input")?.getAttributeNames().find(name => ["data-weapon", "data-skill", "data-slot", "data-language", "data-skill-attr", "data-hero-look", "data-upgrade", "data-audio-volume", "data-audio-mute"].includes(name));
     const focusValue = focusId ? focused.getAttribute(focusId) : null;
     renderCampHero();
     renderLoadout(); renderStash(); renderSkills();
@@ -475,6 +521,14 @@ export function createSettingsUI(game) {
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   });
   panel.addEventListener("click", (event) => {
+    const muteButton = event.target.closest("[data-audio-mute]");
+    if (muteButton) {
+      game.audio.unlock();
+      const muted = game.audio.toggleMuted();
+      if (!muted) game.audio.play("ui");
+      refreshAudio();
+      return;
+    }
     const actionButton = event.target.closest("[data-action]");
     if (actionButton) {
       const action = actionButton.dataset.action;
@@ -526,5 +580,23 @@ export function createSettingsUI(game) {
       render();
     }
   });
-  return { open, openCamp, close, render, handleKey, setLanguage };
+  panel.addEventListener("input", (event) => {
+    const slider = event.target.closest?.("[data-audio-volume]");
+    if (!slider) return;
+    game.audio.unlock();
+    const kind = slider.dataset.audioVolume;
+    const pct = Number(slider.value);
+    game.audio.setVolume(kind, pct / 100, { persist: false });
+    slider.style.setProperty("--fill", `${pct}%`);
+    const out = panel.querySelector(`[data-audio-value="${kind}"]`);
+    if (out) out.textContent = `${pct}%`;
+  });
+  panel.addEventListener("change", (event) => {
+    const slider = event.target.closest?.("[data-audio-volume]");
+    if (!slider) return;
+    const kind = slider.dataset.audioVolume;
+    game.audio.setVolume(kind, Number(slider.value) / 100);
+    game.audio.play("ui");
+  });
+  return { open, openCamp, close, render, handleKey, setLanguage, refreshAudio };
 }

@@ -63,7 +63,7 @@ export const combatSystem = {
     this.number(p.x, p.y - 16, String(Math.round(p.dmg)), { color: "#fff0d0" });
     this.hitStop = Math.max(this.hitStop, p.pierce ? 0.045 : 0.07);
     this.shake(p.pierce ? 2.2 : 3.4, p.pierce ? 0.16 : 0.25);
-    this.audio.play(p.pierce ? "hit" : "crit");
+    this.sfxAt(p.pierce ? "hit" : "crit", p.x);
     if (p.response === "return" && !p.returning) {
       p.returning = true;
       p.vx = -Math.sign(p.vx || 1) * (p.returnSpeed ?? 220);

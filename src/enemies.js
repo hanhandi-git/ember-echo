@@ -66,7 +66,7 @@ export class Enemy {
     this.castHit = false;
     this.hurtDir = -1;
     this.dying = false;
-    g.audio.play("spawn");
+    g.sfxAt("spawn", x);
   }
 
   get alive() {
@@ -283,7 +283,7 @@ export class Enemy {
     if (this.type.mobReact) {
       if (this.type.ranged) {
         g.enemyShot(this, hero);
-        g.audio.play("cast");
+        g.sfxAt("cast", this.x);
       } else {
         const ddx = hero.x - this.x, ddy = hero.y - this.y;
         if (Math.abs(ddx) < this.reach + size(12) && Math.abs(ddy) < size(19)) {
@@ -303,7 +303,7 @@ export class Enemy {
       this.timer = 0.45;
       this.y = clamp(this.y, 136, 169);
       g.enemyShot(this, hero);
-      g.audio.play("cast");
+      g.sfxAt("cast", this.x);
       return;
     }
     this.setState(g, "recover");
@@ -354,12 +354,12 @@ export class Enemy {
           seed: this.seed + 31,
           light: crit ? 1.05 : 0.9,
         }, { scale: this.renderScale });
-        g.audio.play(crit ? "crit" : "hit");
+        g.sfxAt(crit ? "crit" : "hit", this.x);
       } else {
         g.addFx(crit ? g.fx.critHit : g.fx.hitSpark, {
           x: this.x, y: this.y - size(18), flip: g.hero.x > this.x, light: crit ? 1.2 : 0.9,
         });
-        g.audio.play(crit ? "crit" : "hit");
+        g.sfxAt(crit ? "crit" : "hit", this.x);
       }
     }
     if (this.hp <= 0) {
@@ -400,7 +400,7 @@ export class Enemy {
     g.hero.earnEmbers(emberForXp(this.xp));
     g.dropLoot(this.x, this.y, this.typeId);
     g.tryStashDrop?.(this.x, this.y);
-    g.audio.play("death");
+    g.sfxAt("death", this.x);
     g.shake(1.6, 0.12);
   }
 
@@ -634,7 +634,7 @@ export class Boss {
     const windup = { sweep: 0.7, thunder: 1.05, wide: 1.15, summon: 0.85, meteor: 1.3 }[this.pattern];
     this.timer = windup;
     this.startAnim(this.pattern === "sweep" ? B_TRACKS.sweep : this.pattern === "wide" ? B_TRACKS.wide : this.pattern === "summon" ? B_TRACKS.summon : B_TRACKS.cast);
-    g.audio.play("cast");
+    g.sfxAt("cast", this.x);
     // the floor seal brightens as the blow charges
     this.seal.options.light = 1.4;
   }
@@ -646,7 +646,7 @@ export class Boss {
     this.seal.options.light = 0.7;
     if (this.pattern === "sweep") {
       g.addFx(g.fx.scytheReap, { x: this.x - this.facing * size(6), y: this.y, flip: this.facing < 0, light: 1.1 });
-      g.audio.play("cleave");
+      g.sfxAt("cleave", this.x);
       g.after(0.16, () => {
         const dx = hero.x - this.x, dy = hero.y - this.y;
         if (dx * this.facing > -size(10) && Math.abs(dx) < size(74) && Math.abs(dy) < size(24)) {
@@ -661,7 +661,7 @@ export class Boss {
       const tx = hero.x, ty = clamp(hero.y, 138, 168);
       g.telegraph(tx, ty, 34, 0.9, "#c9a8ff");
       g.addFx(g.fx.lightningStrike, { x: tx, y: ty, light: 1.2 });
-      g.audio.play("thunder");
+      g.sfxAt("thunder", tx);
       g.after(0.76, () => {
         const near = Math.hypot(hero.x - tx, (hero.y - ty) * 1.4);
         if (near < size(38)) hero.hurt(g, this.dmg + 4, { fromX: tx });
@@ -670,7 +670,7 @@ export class Boss {
       });
     } else if (this.pattern === "wide") {
       g.addFx(g.fx.thunderclap, { x: this.x, y: this.y, light: 1.2 });
-      g.audio.play("thunder");
+      g.sfxAt("thunder", this.x);
       g.after(0.12, () => {
         const near = Math.hypot(hero.x - this.x, (hero.y - this.y) * 1.5);
         if (near < size(82)) {
@@ -681,7 +681,7 @@ export class Boss {
         g.flashScreen("#e8d8ff", 0.22);
       });
     } else if (this.pattern === "summon") {
-      g.audio.play("spawn");
+      g.sfxAt("spawn", this.x);
       g.after(0.25, () => {
         const spots = [[g.clampX(this.x - 58, 30), 150], [g.clampX(this.x + 58, 30), 156]];
         for (const [x, y] of spots) if (g.enemies.filter((e) => e.alive && !e.boss).length < 5) g.spawnEnemy("wisp", x, y, { seed: 400 + Math.floor(Math.random() * 99) });
@@ -693,7 +693,7 @@ export class Boss {
         g.telegraph(x, y, 34, 1.0 + i * 0.14, "#ff9a5c");
         g.after(0.18 + i * 0.16, () => {
           g.addFx(g.fx.meteor, { x, y, light: 1.3, seed: 20 + i });
-          g.audio.play("meteor");
+          g.sfxAt("meteor", x);
           g.shake(5, 0.35);
           g.flashScreen("#ffb060", 0.18);
           g.after(0.62, () => {
@@ -719,7 +719,7 @@ export class Boss {
       g.comboAdd();
       g.number(this.x, this.y - size(82), String(dmg), { color: crit ? "#ffd36a" : "#ffe8ff", crit });
       g.addFx(crit ? g.fx.critHit : g.fx.hitSpark, { x: this.x, y: this.y - size(40), flip: g.hero.x > this.x, light: 1 });
-      g.audio.play(crit ? "crit" : "hit");
+      g.sfxAt(crit ? "crit" : "hit", this.x);
     }
     if (this.hp <= 0) {
       this.die(g);
@@ -738,7 +738,7 @@ export class Boss {
     g.banner(phase === 2 ? c.phase2 : c.phase3, c.bossWarden, phase === 2 ? c.bossPhase2 : c.bossPhase3);
     g.flashScreen(phase === 2 ? "#c9a8ff" : "#ff9a5c", 0.3);
     g.shake(6, 0.6);
-    g.audio.play("phase");
+    g.sfxAt("phase", this.x);
     g.addFx(g.fx.manaBurst, { x: this.x, y: this.y - 30, light: 1.2 });
     g.after(0.35, () => {
       g.addFx(g.fx.thunderclap, { x: this.x, y: this.y, light: 1 });
@@ -761,13 +761,14 @@ export class Boss {
     g.flashScreen("#fff2e0", 0.5);
     g.shake(9, 1.0);
     g.hitStop = Math.max(g.hitStop, 0.16);
-    g.audio.play("death");
-    g.audio.play("meteor");
+    g.sfxAt("death", this.x);
+    g.sfxAt("meteor", this.x);
     g.kills++;
     g.hero.gainXp(g, this.xp);
     g.hero.earnEmbers(emberForXp(this.xp));
     g.bossDefeated = true;
     g.bossRef = null;
+    g.audio.setScene({ boss: false });
     g.hold = 2.4;
     const c = uiCopy(g);
     g.banner(c.guardianFallen, c.wardenAsh, "");
