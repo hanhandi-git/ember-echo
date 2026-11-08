@@ -10,7 +10,7 @@ import {
 
 test("fx registry exposes draw/create modules for combat, maps and critters", () => {
   assert.ok(FX.stagePortal?.draw || FX.stagePortal?.create);
-  assert.equal(Object.keys(MAPS).length, 7);
+  assert.equal(Object.keys(MAPS).length, 9);
   for (const key of Object.keys(CRITTER_MODS)) {
     const mod = CRITTER_MODS[key];
     assert.ok(mod?.draw || mod?.create, `critter module ${key} is playable`);

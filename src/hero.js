@@ -450,7 +450,7 @@ export class Hero {
 
     // movement: transient animations only slow the duelist down, never lock him in place
     let ix = 0, iy = 0;
-    if (g.state === "playing" && g.phase !== "travel") {
+    if ((g.state === "playing" || g.state === "camp") && g.phase !== "travel") {
       ix = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0) + (g.touchMove?.x ?? 0) + (g.autoMove?.x ?? 0);
       iy = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0) + (g.touchMove?.y ?? 0) + (g.autoMove?.y ?? 0);
     }

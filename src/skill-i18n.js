@@ -61,7 +61,7 @@ const ZH = {
   crush: "碾碎", crystal: "水晶", curse: "诅咒", cut: "斩", dark: "暗", dash: "冲刺",
   destructo: "斩", devouring: "噬", disc: "盘", divine: "神圣", double: "双", dragon: "龙",
   drill: "钻", drip: "滴落", earth: "大地", eclipse: "蚀", electrified: "带电", encore: "安可",
-  energy: "能量", evil: "辟邪", explosion: "爆裂", feather: "羽", fire: "火", fireball: "火球",
+  energy: "能量", evil: "辟邪", explosion: "爆裂", feather: "羽", fire: "火", flame: "焰", fireball: "火球",
   flames: "焰", flamethrower: "喷火", flare: "信号", flurry: "乱舞", flow: "流", flying: "飞",
   forked: "分叉", fountain: "泉", freeze: "冻结", frost: "霜", geyser: "喷泉", god: "神",
   golden: "金", gold: "金", goemon: "五右卫门", grasping: "攫", ground: "地面", great: "大",

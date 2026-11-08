@@ -21,7 +21,6 @@ document.addEventListener("visibilitychange", () => {
 game.domUi = createSettingsUI(game);
 game.touchUi = createTouchControls(game);
 game.domUi.openCamp?.();
-game.scheduleCampPrewarm?.();
 const canvas = document.querySelector("#game");
 
 installKeyboard(game);
@@ -42,5 +41,9 @@ function frame(now) {
   game.render();
   requestAnimationFrame(frame);
 }
+
+requestAnimationFrame(() => {
+  game.render();
+  game.domUi?.render?.();
+});
 requestAnimationFrame(frame);
-game.render();

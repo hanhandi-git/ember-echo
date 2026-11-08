@@ -1,4 +1,5 @@
 import { STASH_ITEMS } from "../../content/stash-catalog.js";
+import { HUB_SPAWNS } from "../../content/hub-worlds.js";
 import {
   canContinue,
   clearRunSave,
@@ -66,9 +67,10 @@ export const saveSystem = {
   enterCamp(opts = {}) {
     if (!opts.synced) this.persistSave?.();
     this.keys.clear();
-    this.loadStage(this.stageIndex, true);
+    this.loadHub?.();
     this.hero.reset();
     applyHeroProfile(this.hero, loadSave()?.profile);
+    this.hero.spawn(HUB_SPAWNS.camp[0], HUB_SPAWNS.camp[1]);
     this.kills = 0;
     this.runTime = 0;
     this.domUi?.openCamp?.();
@@ -77,6 +79,7 @@ export const saveSystem = {
 
   /** Primary camp action: resume a saved expedition when one exists. */
   enterBattle() {
+    if (this.state !== "camp" || !this.hubActive) return;
     this.domUi?.close?.();
     const begin = () => this.startRun({ uiClosed: true });
     const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (fn) => fn();

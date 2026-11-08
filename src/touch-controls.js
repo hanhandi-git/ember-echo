@@ -38,7 +38,8 @@ export function createTouchControls(game) {
   const actionButtons = [...root.querySelectorAll("[data-touch-action]")];
   const pressed = new Map();
   const active = () => forceTouch || coarsePointer.matches || lastInputWasTouch;
-  const playing = () => game.state === "playing" && game.hero.alive && game.phase !== "travel";
+  const playing = () => (game.state === "playing" || game.state === "camp")
+    && game.hero.alive && game.phase !== "travel";
 
   function resetJoystick() {
     const id = joystickId;

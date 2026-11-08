@@ -17,7 +17,7 @@ const LANG = {
     "loadout.weaponHint": "点击卡片立即装备", "loadout.skillHint": "先选择槽位，再选择技能", "loadout.skillPick": "按属性筛选技能", "loadout.skillEmpty": "该属性暂无可用技能", "loadout.slot": "槽位",
     "loadout.equipped": "已装备", "loadout.ready": "可用", "loadout.replace": "替换", "settings.language": "语言",
     "settings.languageHint": "语言会保存在本机，下次打开仍会保留。", "settings.audio": "声音", "settings.audioHint": "所有音效均由 WebAudio 实时合成，音量与静音会保存在本机。", "settings.master": "总音量", "settings.sfx": "音效", "settings.music": "背景音乐", "settings.ambience": "环境音", "settings.musicHint": "原创芯片音乐会在营地、关卡和 Boss 战之间切换。", "settings.soundOn": "声音开启", "settings.soundOff": "已静音", "settings.mute": "静音", "settings.audioKeyHint": "战斗中按 M 也能快速静音；拖动音效滑杆会试听 UI 音效。", "settings.auto": "自动化", "settings.autoHint": "自动战斗/拾取开关在战斗画面左侧血条下方，点击切换；状态会写入存档。", "settings.autoBattle": "自动战斗", "settings.autoLoot": "自动拾取", "settings.autoBattleHint": "自动寻敌、普攻与技能轮转。", "settings.autoLootHint": "靠近掉落物并拾取生命/法力/经验。",
-    "footer.hint": "选择后立即生效", "footer.return": "返回战斗", "footer.campHint": "整备完成后即可出发 · Enter 出发", "footer.enterBattle": "进入战斗", "footer.continue": "继续冒险", "footer.newRun": "新的征程", "footer.retreatCamp": "返回营地",
+    "footer.hint": "选择后立即生效", "footer.return": "返回战斗", "footer.campHint": "向右进入城镇 · 走到传送门后 Enter 出发", "footer.enterBattle": "进入战斗", "footer.continue": "继续冒险", "footer.newRun": "新的征程", "footer.retreatCamp": "返回营地",
     "camp.hp": "生命", "camp.mp": "法力", "camp.attack": "攻击", "camp.speed": "移速", "camp.ranked": "强化", "camp.embers": "余烬", "camp.hint": "击败敌人与通关都会获得余烬，可在「升级」中永久强化。",
     "upgrade.title": "余烬强化", "upgrade.hint": "用余烬永久提升属性，死亡后依然保留。", "upgrade.invested": "已投入", "upgrade.max": "已满级", "upgrade.respec": "重置投入", "upgrade.note": "余烬由击败敌人和通关获得；重置投入会返还全部已使用的余烬。",
     "close": "关闭", "stats.damage": "伤害", "stats.speed": "移速", "stats.cost": "消耗", "stats.cooldown": "冷却", "profile.level": "等级", "profile.hp": "生命值", "profile.mp": "法力值", "profile.ap": "行动力", "profile.attack": "攻击力", "profile.defense": "防御力", "profile.speed": "速度", "profile.crit": "暴击率", "profile.embers": "余烬", "profile.xp": "经验", "profile.weapon": "武器", "profile.skill": "技能", "profile.title": "人物信息", "profile.appearance": "主角造型", "profile.appearanceHint": "点击立绘切换战斗外观",
@@ -296,7 +296,7 @@ export function createSettingsUI(game) {
         ${row("camp.speed", String(h.speed))}
       </dl>
       <p class="camp-hint">${t(game.language, "camp.hint")}</p>
-      <button class="primary-button camp-enter" type="button" data-action="enter-battle" data-i18n="${canResume ? "footer.continue" : "footer.enterBattle"}">${enterLabel}</button>
+      <button class="primary-button camp-enter" type="button" data-action="enter-battle" ${game.hubActive ? "" : "disabled"} data-i18n="${canResume ? "footer.continue" : "footer.enterBattle"}">${enterLabel}</button>
     </div>`;
     drawHeroPortrait(campHero.querySelector("[data-camp-portrait]"), h.meleeWeapon.rigWeapon, h.look);
   }
@@ -436,13 +436,18 @@ export function createSettingsUI(game) {
     const badge = panel.querySelector("[data-camp-badge]");
     if (badge) badge.hidden = !camp;
     panel.querySelectorAll('[data-action="close"]').forEach((btn) => { btn.hidden = camp; });
+    const hubReady = !!game.hubActive;
     const canResume = !!game.canContinueSave?.();
     panel.querySelectorAll('[data-action="enter-battle"]').forEach((btn) => {
       btn.hidden = !camp;
+      btn.disabled = camp && !hubReady;
       btn.dataset.i18n = canResume ? "footer.continue" : "footer.enterBattle";
     });
     const fresh = panel.querySelector('[data-action="new-run"]');
-    if (fresh) fresh.hidden = !camp || !canResume;
+    if (fresh) {
+      fresh.hidden = !camp || !canResume;
+      fresh.disabled = camp && !hubReady;
+    }
     const canRetreat = !camp && ["playing", "paused", "inventory"].includes(game.state);
     const retreat = panel.querySelector('[data-action="retreat-camp"]');
     if (retreat) retreat.hidden = !canRetreat;
@@ -497,7 +502,7 @@ export function createSettingsUI(game) {
     panel.hidden = false;
     panel.parentElement.classList.add("menu-open");
     const target = mode === "camp"
-      ? panel.querySelector('.settings-footer [data-action="enter-battle"]:not([hidden])')
+      ? panel.querySelector('.settings-tab[data-tab="profile"]')
       : panel.querySelector(".close-settings");
     target?.focus({ preventScroll: true });
   }
@@ -547,8 +552,14 @@ export function createSettingsUI(game) {
     if (actionButton) {
       const action = actionButton.dataset.action;
       if (action === "close") { if (mode === "battle") game.toggleInventory(); return; }
-      if (action === "enter-battle") { game.enterBattle(); return; }
-      if (action === "new-run") { game.startRun({ fresh: true }); return; }
+      if (action === "enter-battle") {
+        if (game.hubActive) game.enterBattle();
+        return;
+      }
+      if (action === "new-run") {
+        if (game.hubActive) game.startRun({ fresh: true });
+        return;
+      }
       if (action === "retreat-camp") { game.retreatToCamp?.(); return; }
       if (action === "respec") {
         if (game.hero.respecUpgrades()) { game.persistSave?.(); game.audio.play("ui"); render(); }

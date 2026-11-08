@@ -34,7 +34,7 @@ export function installKeyboard(game) {
   };
 
   const handleConfirm = () => {
-    if (game.state === "camp") game.enterBattle();
+    if (game.state === "camp" && game.hubActive) game.tryHubDepart?.();
     else if (game.state === "gameover" || game.state === "victory") game.enterCamp();
     else if (game.state === "paused") game.togglePause();
   };

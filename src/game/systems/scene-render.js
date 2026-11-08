@@ -29,6 +29,10 @@ export const sceneRenderSystem = {
       else this.drawScaledFx(ef.inst, ef.inst.options.x ?? 0, ef.inst.options.y ?? 0, ef.scale);
       p = painterFor(f);
     }
+    if (this.state === "camp" && this.hubAdventureFx) {
+      this.hubAdventureFx.draw(f, "back");
+      p = painterFor(f);
+    }
     if (this.portal) { this.portal.fx.draw(f, "back"); p = painterFor(f); }
     for (const ef of this.effects) if (ef.split) {
       this.drawScaledFx(ef.inst, ef.inst.options.x ?? 0, ef.inst.options.y ?? 0, ef.scale, "back");
@@ -67,6 +71,11 @@ export const sceneRenderSystem = {
     const largeSpells = this.effects.filter((ef) => !ef.act && !ef.melee && ef.layer !== "ground" && (ef.inst.meta.size?.[0] ?? 0) >= 128);
     if (largeSpells.length >= 2 && this.hero.alive && !this.hero.actPose) this.hero.drawCombatFocus(p);
 
+    if (this.state === "camp" && this.hubAdventureFx) {
+      this.hubAdventureFx.draw(f, "front");
+      p = painterFor(f);
+      this.drawHubGates?.(p);
+    }
     if (this.portal) {
       this.portal.fx.options.x = this.portal.x;
       this.portal.fx.options.y = this.portal.y;

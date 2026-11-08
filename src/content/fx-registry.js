@@ -7,6 +7,8 @@ import * as mapAurora from "../../../pixelfx/src/fx/world/aurora-pass.js";
 import * as mapCrystal from "../../../pixelfx/src/fx/world/crystal-hollow.js";
 import * as mapInkbound from "../../../pixelfx/src/fx/world/inkbound-shrine.js";
 import * as mapSunscar from "../../../pixelfx/src/fx/world/sunscar-temple.js";
+import * as mapStarterCamp from "../../../pixelfx/src/fx/world/starter-camp.js";
+import * as mapHearthTown from "../../../pixelfx/src/fx/world/hearth-town.js";
 
 import * as slime from "../../../pixelfx/src/fx/critters/slime.js";
 import * as snake from "../../../pixelfx/src/fx/critters/snake.js";
@@ -74,6 +76,8 @@ export const MAPS = {
   mapCrystal,
   mapInkbound,
   mapSunscar,
+  mapStarterCamp,
+  mapHearthTown,
 };
 
 export const CRITTER_MODS = {

@@ -25,6 +25,9 @@ test("a fresh boot opens the camp instead of dropping into battle", () => {
   const g = mockGame();
   assert.equal(g.state, "camp");
   assert.equal(g.phase, "camp");
+  assert.equal(g.hubActive, true);
+  assert.equal(g.worldW, 640);
+  assert.ok(g.mapFxTiles.length === 2);
   assert.equal(g.hero.hp, g.hero.maxHp);
   g.enterBattle();
   assert.equal(g.state, "playing");

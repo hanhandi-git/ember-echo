@@ -10,6 +10,7 @@ import { sceneRenderSystem } from "./systems/scene-render.js";
 import { saveSystem } from "./systems/save-system.js";
 import { prewarmSystem } from "./systems/prewarm-system.js";
 import { autoSystem } from "./systems/auto-system.js";
+import { hubSystem } from "./systems/hub-system.js";
 
 mixin(
   Game,
@@ -23,6 +24,7 @@ mixin(
   autoSystem,
   saveSystem,
   prewarmSystem,
+  hubSystem,
 );
 
 export { Game, boot };

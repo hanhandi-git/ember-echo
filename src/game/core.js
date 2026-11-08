@@ -1,6 +1,7 @@
 // Game facade: session state, stage bootstrap, and pointer routing. Systems live under ./systems/.
 
-import { createFrame, createFx } from "../../../pixelfx/src/core/index.js";
+import { createFrame } from "../../../pixelfx/src/core/index.js";
+import { acquireStageMapTiles } from "./map-tile-pool.js";
 import { STAGES, FX } from "../data.js";
 import { Hero } from "../hero.js";
 import { castSkill } from "../skills.js";
@@ -63,18 +64,26 @@ export class Game {
     this.mapTileFrames = [];
     this.worldW = WORLD_W;
     this.cameraX = 0;
-    this.loadStage(2, true);
+    this.hubActive = false;
+    // Hub loading is synchronous only for a lightweight fallback; authored map art
+    // is decoded asynchronously by the hub tile pool.
+    this.loadHub?.();
     this.loadPersistedProfile?.();
   }
 
   loadStage(index, camp = false) {
+    if (camp) {
+      this.loadHub?.();
+      return;
+    }
+    this.hubActive = false;
     this.stageIndex = index;
     this.stage = STAGES[index];
-    if (camp) this.invalidateStagePrewarm?.();
-    if (camp || !this.adoptStagePrewarm?.(index)) {
-      this.mapFxTiles = [0, 320].map((x) => createFx(this.stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
-      this.mapFx = this.mapFxTiles[0];
-      this.mapTileFrames = this.mapFxTiles.map(() => createFrame(320, 180, 0, 0, RENDER_DENSITY));
+    if (!this.adoptStagePrewarm?.(index)) {
+      const baked = acquireStageMapTiles(index, this.hubActive ? null : this.mapFxTiles);
+      this.mapFxTiles = baked?.mapFxTiles ?? [];
+      this.mapFx = this.mapFxTiles[0] ?? null;
+      this.mapTileFrames = baked?.mapTileFrames ?? [];
     }
     this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
@@ -104,12 +113,11 @@ export class Game {
     this.hold = 0;
     this.deathT = 0;
     this.combo = { count: 0, timer: 0 };
-    this.phase = camp ? "camp" : "intro";
-    this.state = camp ? "camp" : "playing";
-    this.fade = camp ? 0 : 1;
-    this.audio.setScene({ camp, stageIndex: index, boss: false });
-    if (camp) this.seedBattlePrewarmFromBackdrop?.();
-    else {
+    this.phase = "intro";
+    this.state = "playing";
+    this.fade = 1;
+    this.audio.setScene({ camp: false, stageIndex: index, boss: false });
+    {
       this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));
       this.audio.play("ui");
     }

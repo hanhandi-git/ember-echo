@@ -20,6 +20,12 @@ const ARMORY_JA = {
   "binding-silk": "縛仙綾",
   "soul-bell": "鎮魂鈴",
   "pear-needles": "梨花針",
+  "blood-butterfly": "血蝶",
+  "ghost-blade": "幽霊刃",
+  "demon-eye-greatsword": "魔眼大剣",
+  "skyvault-greatsword": "天穹大剣",
+  "aurora-lightblade": "極光剣",
+  "dragon-scale-sabre": "竜鱗刀",
 };
 
 const JA_WORDS = {

@@ -39,30 +39,51 @@ export const worldRenderSystem = {
     this.cameraX += (target - this.cameraX) * 0.12;
   },
 
+  blitMapTile(frame, tile, worldX) {
+    const screenX = Math.round((worldX - frame.ox) * frame.density);
+    const screenY = Math.round(-frame.oy * frame.density);
+    const x0 = Math.max(0, -screenX), x1 = Math.min(tile.w, frame.w - screenX);
+    const y0 = Math.max(0, -screenY), y1 = Math.min(tile.h, frame.h - screenY);
+    for (let y = y0; y < y1; y++) {
+      const dstRow = (screenY + y) * frame.w + screenX;
+      const srcRow = y * tile.w;
+      for (let x = x0; x < x1; x++) {
+        const c = tile.color[srcRow + x];
+        if (c) frame.color[dstRow + x] = c;
+        const l = tile.light[srcRow + x];
+        if (l) frame.light[dstRow + x] = l;
+      }
+    }
+  },
+
+  blitStaticMapTile(frame, tile, worldX) {
+    const screenX = Math.round((worldX - frame.ox) * frame.density);
+    const screenY = Math.round(-frame.oy * frame.density);
+    const x0 = Math.max(0, -screenX), x1 = Math.min(tile.w, frame.w - screenX);
+    const y0 = Math.max(0, -screenY), y1 = Math.min(tile.h, frame.h - screenY);
+    const width = x1 - x0;
+    for (let y = y0; y < y1; y++) {
+      const dst = (screenY + y) * frame.w + screenX + x0;
+      const src = y * tile.w + x0;
+      frame.color.set(tile.color.subarray(src, src + width), dst);
+      frame.light.set(tile.light.subarray(src, src + width), dst);
+    }
+  },
+
   drawMapTiles(frame) {
     for (let i = 0; i < this.mapFxTiles.length; i++) {
       const fx = this.mapFxTiles[i], tile = this.mapTileFrames[i];
+      if (fx.staticLayer) {
+        this.blitStaticMapTile(frame, fx.staticLayer, i * 320);
+        continue;
+      }
       clearFrame(tile);
       tile.ox = 0;
       tile.oy = 0;
       fx.options.x = 0;
       fx.options.y = 0;
       fx.draw(tile);
-      const worldX = i * 320;
-      const screenX = Math.round((worldX - frame.ox) * frame.density);
-      const screenY = Math.round(-frame.oy * frame.density);
-      const x0 = Math.max(0, -screenX), x1 = Math.min(tile.w, frame.w - screenX);
-      const y0 = Math.max(0, -screenY), y1 = Math.min(tile.h, frame.h - screenY);
-      for (let y = y0; y < y1; y++) {
-        const dstRow = (screenY + y) * frame.w + screenX;
-        const srcRow = y * tile.w;
-        for (let x = x0; x < x1; x++) {
-          const c = tile.color[srcRow + x];
-          if (c) frame.color[dstRow + x] = c;
-          const l = tile.light[srcRow + x];
-          if (l) frame.light[dstRow + x] = l;
-        }
-      }
+      this.blitMapTile(frame, tile, i * 320);
     }
   },
 
