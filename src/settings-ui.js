@@ -180,9 +180,7 @@ export function createSettingsUI(game) {
     const h = game.hero;
     const meleeGrid = MELEE_WEAPONS.map((w) => weaponCard(w, h)).join("");
     const thrownGrid = THROWN_WEAPONS.map((w) => weaponCard(w, h)).join("");
-    const equippedArt = artUrl("card", { title: "", type: "", level: "", detail: "", glyph: "none", rarity: "legendary", equipped: false, selected: true });
     loadout.innerHTML = `<div class="loadout-overview loadout-overview--dual">
-      <img class="overview-art" src="${equippedArt}" alt="" aria-hidden="true">
       <div class="overview-weapons">
         <div class="overview-weapon"><img src="${weaponArtUrl(h.meleeWeapon)}" alt="" aria-hidden="true" draggable="false"><span>${t(game.language, "loadout.melee")}</span><strong>${escapeHtml(weaponName(h.meleeWeapon))}</strong></div>
         <div class="overview-weapon"><img src="${weaponArtUrl(h.thrownWeapon)}" alt="" aria-hidden="true" draggable="false"><span>${t(game.language, "loadout.thrown")}</span><strong>${escapeHtml(weaponName(h.thrownWeapon))}</strong></div>
@@ -426,6 +424,7 @@ export function createSettingsUI(game) {
   function syncChrome() {
     const camp = mode === "camp";
     panel.classList.toggle("is-camp", camp);
+    panel.parentElement?.classList.toggle("camp-menu", camp);
     const keys = camp ? ["camp.kicker", "camp.title", "camp.subtitle"] : ["menu.kicker", "menu.title", "menu.subtitle"];
     const header = { kicker: keys[0], title: keys[1], subtitle: keys[2] };
     for (const [slot, key] of Object.entries(header)) {
@@ -502,9 +501,10 @@ export function createSettingsUI(game) {
       : panel.querySelector(".close-settings");
     target?.focus({ preventScroll: true });
   }
-  function openCamp() { open("loadout", "camp"); }
+  function openCamp() { open("profile", "camp"); }
   function close() {
-    panel.hidden = true; panel.parentElement.classList.remove("menu-open");
+    panel.hidden = true;
+    panel.parentElement.classList.remove("menu-open", "camp-menu");
     if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
   }
   function handleKey(key) {
