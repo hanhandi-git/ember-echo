@@ -125,7 +125,7 @@ function castJ(g) {
   const attack = { x: h.x, y: h.y, facing: h.facing, hitTime: beat.hit, landed: false, cancelled: false, art, echoT: 0 };
   h.melee = attack;
   const attackFx = g.addFx(meleeSwing, {
-    x: h.x, y: h.y, flip: h.facing < 0, combo: c, art, beat,
+    x: h.x, y: h.y, flip: h.facing < 0, combo: c, art, beat, weapon: h.meleeWeapon,
     range: scaledProfile.range, seed: 200 + c + Math.floor(g.time * 60),
     light: c === 2 ? 0.62 : 0.5,
   }, { follow: () => attack.landed || attack.cancelled ? attack : h, split: true, melee: true });

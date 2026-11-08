@@ -20,7 +20,7 @@ export function create(o) {
     sparks: ["#fff3ce", "#ffd18a", "#ef9860", "#9d5361"] });
   let time = 0, sourceTime = 0, released = false;
   const prepare = (p) => {
-    if (o.cancelled || time >= beat.duration + 0.09 || meleeSourceTime(art, beat, time) < 0) return false;
+    if (o.cancelled || time >= beat.duration + 0.09 || meleeSourceTime(art, beat, time, o.weapon, o.combo) < 0) return false;
     p.fade *= Math.min(1, (beat.duration + 0.09 - time) / 0.065);
     return true;
   };
@@ -28,7 +28,7 @@ export function create(o) {
     update(dt) {
       time += dt;
       if (o.cancelled) return;
-      const next = Math.max(0, meleeSourceTime(art, beat, time));
+      const next = Math.max(0, meleeSourceTime(art, beat, time, o.weapon, o.combo));
       const delta = next - sourceTime;
       if (delta > 0) {
         const steps = Math.max(1, Math.ceil(delta * 120));

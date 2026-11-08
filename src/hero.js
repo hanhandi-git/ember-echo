@@ -14,7 +14,7 @@ import { createMovementTrail } from "./movement-fx.js";
 import { COMBAT_SCALE, HERO_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
 import { UPGRADE_STATS, emptyUpgrades, spentUpgrades, upgradeById, upgradeCost } from "./upgrades.js";
 import { interruptSpellActs } from "./spell-act.js";
-import { meleeArt, meleePoseTrack } from "./melee-arts.js";
+import { meleeArt, meleePoseTrack, isSheathDrawWeapon, sheathedIdlePose, applySheathCarry } from "./melee-arts.js";
 import { meleeBeat } from "./combat-feel.js";
 
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
@@ -35,12 +35,13 @@ const SLAM = { ...GUARD, crouch: 8, lean: 3, fx: -8, fy: -10, bx: 10, by: -10, s
 const HURT = { turn: 0.9, x: -5, crouch: 4, lean: -6, fx: -6, fy: -30, bx: 5, by: -28, ffx: 6, fbx: -6, weapon: "sword", sa: 0.3 };
 const DOWNED = { turn: 1.25, crouch: 12, lean: 8, fx: -9, fy: -5, bx: 4, by: -6, weapon: "sword", sa: 0.1 };
 
+const WALK_STEP = { ...IDLE, turn: 0.22, weapon: "sword" };
 const WALK = [
-  [0, { ...IDLE, ffx: 10, ffy: -2, fbx: -9, fby: -4, fx: 13, fy: -22, bx: 2, by: -18, crouch: 2, lean: 1 }],
-  [0.16, { ...IDLE, ffx: 3, ffy: -8, fbx: -3, fby: -2, fx: 9, fy: -19, bx: 7, by: -21, crouch: 3, lean: 1.5 }],
-  [0.32, { ...IDLE, ffx: -9, ffy: -4, fbx: 10, fby: -2, fx: 3, fy: -18, bx: 13, by: -22, crouch: 2, lean: 1 }],
-  [0.48, { ...IDLE, ffx: 3, ffy: -8, fbx: -3, fby: -2, fx: 9, fy: -19, bx: 7, by: -21, crouch: 3, lean: 1.5 }],
-  [0.64, { ...IDLE, ffx: 10, ffy: -2, fbx: -9, fby: -4, fx: 13, fy: -22, bx: 2, by: -18, crouch: 2, lean: 1 }],
+  [0, { ...WALK_STEP, crouch: 4, lean: 3, ffx: 11, ffy: -6, fbx: -11, fby: -7, toeB: true, fx: 10, fy: -22, bx: 7, by: -19 }],
+  [0.13, { ...WALK_STEP, crouch: 2, lean: 2, ffx: 4, ffy: -9, fbx: -2, fby: -5, fx: 9, fy: -20, bx: 6, by: -18 }],
+  [0.26, { ...WALK_STEP, crouch: 4, lean: 3, ffx: -11, ffy: -7, fbx: 11, fby: -6, toeF: true, fx: 10, fy: -22, bx: 7, by: -19 }],
+  [0.39, { ...WALK_STEP, crouch: 2, lean: 2, ffx: -2, ffy: -5, fbx: 3, fby: -9, fx: 9, fy: -20, bx: 6, by: -18 }],
+  [0.52, { ...WALK_STEP, crouch: 4, lean: 3, ffx: 11, ffy: -6, fbx: -11, fby: -7, toeB: true, fx: 10, fy: -22, bx: 7, by: -19 }],
 ];
 
 const TRACKS = {
@@ -392,6 +393,15 @@ export class Hero {
     const a = this.anim;
     const pose = poseAt(a.track, a.loop ? a.t % a.dur : Math.min(a.t, a.dur));
     pose.weapon = this.activeRigWeapon();
+    if (isSheathDrawWeapon(this.meleeWeapon)) {
+      if (a.kind === "walk") applySheathCarry(pose, this.meleeWeapon);
+      else if (a.kind === "idle") {
+        const breathe = { crouch: pose.crouch, lean: pose.lean };
+        Object.assign(pose, sheathedIdlePose(this.meleeWeapon));
+        pose.crouch = breathe.crouch;
+        pose.lean = (breathe.lean ?? 0) - 1.5;
+      }
+    }
     return pose;
   }
 
@@ -468,7 +478,7 @@ export class Hero {
       this.dashDir = { x: ix, y: iy };
       this.stepT -= dt;
       if (this.stepT <= 0) {
-        this.stepT = 0.26;
+        this.stepT = 0.13;
         g.dust(this.x - this.facing * 4, this.y + 1, 2, this.facing);
       }
     } else {

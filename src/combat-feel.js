@@ -15,9 +15,18 @@ export const IMPACTS = {
   projectile: { stop: 0.025, shake: 0.9, duration: 0.11, stagger: 0.1, sparks: 4, radius: 7 },
 };
 
+const DRAW_SWORD_IDS = new Set([
+  "sword", "totsuka", "holy-sword", "katana", "kusanagi", "rapier",
+  "ember-greatsword", "frost-lightsword", "shadow-katana", "thunder-claymore", "starlight-rapier",
+]);
+
 export function meleeBeat(hero, combo) {
   const beat = MELEE_BEATS[combo];
-  const speed = hero.meleeWeapon?.speed ?? 64;
+  const weapon = hero.meleeWeapon;
+  const speed = weapon?.speed ?? 64;
   const tempo = speed >= 72 ? 0.86 : speed <= 55 ? 1.13 : 1;
-  return { ...beat, hit: beat.hit * tempo, duration: beat.duration * tempo };
+  const draw = DRAW_SWORD_IDS.has(weapon?.rigWeapon) || DRAW_SWORD_IDS.has(weapon?.meleeArtKey)
+    ? [0.038, 0.012, 0.01][combo]
+    : 0;
+  return { ...beat, hit: beat.hit * tempo + draw, duration: beat.duration * tempo + draw * 0.65 };
 }

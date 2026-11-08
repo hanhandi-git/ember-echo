@@ -5,7 +5,7 @@ import { WEAPONS } from "../src/data.js";
 import { Hero } from "../src/hero.js";
 import { Game } from "../src/game.js";
 import { meleeBeat } from "../src/combat-feel.js";
-import { meleeArt, meleeFamily, meleePoseTrack, meleeSourceTime } from "../src/melee-arts.js";
+import { meleeArt, meleeFamily, meleePoseTrack, meleeSourceTime, drawPhaseBounds } from "../src/melee-arts.js";
 import * as swing from "../src/fx/melee-swing.js";
 
 const weapons = WEAPONS.filter((w) => w.class !== "thrown");
@@ -39,7 +39,7 @@ test("pose and effect clocks reach the authored contact together while preservin
     h.equipWeapon(weapon.id);
     for (let combo = 0; combo < 3; combo++) {
       const art = meleeArt(weapon, combo), beat = meleeBeat(h, combo);
-      assert.ok(Math.abs(meleeSourceTime(art, beat, beat.hit) - art.contact) < 1e-8);
+      assert.ok(Math.abs(meleeSourceTime(art, beat, beat.hit, weapon, combo) - art.contact) < 1e-8);
       const track = meleePoseTrack(art, beat, weapon, combo);
       for (const [t, pose] of track) {
         assert.equal(pose.weapon, weapon.rigWeapon);
@@ -49,6 +49,22 @@ test("pose and effect clocks reach the authored contact together while preservin
       assert.ok(posed(track.find(([time]) => time === beat.hit)[1], h.look).n > 0);
     }
   }
+});
+
+test("sword strings begin behind the shoulder and draw forward before contact", () => {
+  const h = new Hero();
+  const weapon = WEAPONS.find((w) => w.id === "ember-blade");
+  h.equipWeapon(weapon.id);
+  const beat = meleeBeat(h, 0), art = meleeArt(weapon, 0);
+  const track = meleePoseTrack(art, beat, weapon, 0);
+  const first = track[0][1];
+  const phases = drawPhaseBounds(beat, 0);
+  const draw = track.find(([time]) => time > phases.sheathEnd && time < phases.drawEnd)[1];
+  const contact = track.find(([time]) => time === beat.hit)[1];
+  assert.equal(first.two, false);
+  assert.ok(first.sa > 1.5 && first.fx < -6, "the opening pose keeps the hilt behind the shoulder");
+  assert.ok(draw.fy < -28 && draw.sa < -1.5, "the draw pose brings the hilt over the shoulder");
+  assert.ok(contact.fx > 10 && contact.sa > -0.4, "the contact pose has released the blade into the swing");
 });
 
 test("the blade finisher turns the whole body and the thrust keeps a distinct forward lunge", () => {

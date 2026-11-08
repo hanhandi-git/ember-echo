@@ -124,7 +124,7 @@ test("a finisher sweeps a group while a light cut stops at the nearest target", 
   const g = arena();
   const targets = [24, 33, 42].map((dx) => target(g, "slime", dx));
   g.cast("j");
-  advance(g, 0.1);
+  advance(g, 0.12);
   assert.equal(targets.filter((e) => e.hp < e.maxHp).length, 1);
   advance(g, 0.3);
   for (let i = 0; i < targets.length; i++) { targets[i].x = g.hero.x + 20 + i * 9; targets[i].prevX = targets[i].x; targets[i].hp = targets[i].maxHp; }
