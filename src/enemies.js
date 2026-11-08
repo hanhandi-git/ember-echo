@@ -796,15 +796,15 @@ export class Boss {
       return;
     }
 
-    const r = posed(poseAt(this.anim.track, this.anim.loop ? this.anim.t % this.anim.dur : Math.min(this.anim.t, this.anim.dur)), BOSS_LOOK);
+    const r = posed(poseAt(this.anim.track, this.anim.loop ? this.anim.t % this.anim.dur : Math.min(this.anim.t, this.anim.dur)), BOSS_LOOK, { density: 2 });
     const flip = this.facing < 0;
     const tinted = this.hitFlash > 0;
     const scale = this.renderScale;
     for (let i = 0; i < r.n; i++) {
       const dx = r.xs[i] * scale;
-      const sx = x + (flip ? -dx - scale : dx);
+      const sx = x + (flip ? -dx - scale / r.density : dx);
       const sy = y + r.ys[i] * scale;
-      p.rect(sx, sy, scale, scale, tinted ? C.white : r.color[i]);
+      p.rect(sx, sy, scale / r.density, scale / r.density, tinted ? C.white : r.color[i]);
     }
     // a tall dark rim around the warden
     p.glow(x, y - size(40), size(34), this.phase === 3 ? hex("#ff7a3c") : C.boss, 0.22);

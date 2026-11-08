@@ -1,4 +1,4 @@
-import { createFrame, clearFrame, painterFor, clamp, TAU } from "../../../../pixelfx/src/core/index.js";
+import { clearFrame, clamp, TAU } from "../../../../pixelfx/src/core/index.js";
 import { SW, PALETTE as C } from "../constants.js";
 
 export function mergeUI(f, u) {
@@ -49,8 +49,8 @@ export const worldRenderSystem = {
       fx.options.y = 0;
       fx.draw(tile);
       const worldX = i * 320;
-      const screenX = Math.round(worldX - frame.ox);
-      const screenY = -frame.oy;
+      const screenX = Math.round((worldX - frame.ox) * frame.density);
+      const screenY = Math.round(-frame.oy * frame.density);
       const x0 = Math.max(0, -screenX), x1 = Math.min(tile.w, frame.w - screenX);
       const y0 = Math.max(0, -screenY), y1 = Math.min(tile.h, frame.h - screenY);
       for (let y = y0; y < y1; y++) {
@@ -67,47 +67,16 @@ export const worldRenderSystem = {
   },
 
   drawScaledFx(fx, x, y, scale = 1) {
-    if (scale >= 0.999) {
-      fx.options.x = x;
-      fx.options.y = y;
-      fx.draw(this.frame);
-      return;
-    }
-    const [w, h] = fx.meta.size ?? [160, 140];
-    const [anchorX, anchorY] = fx.meta.origin ?? [w / 2, h * 0.75];
-    const ox = Math.ceil(Math.max(anchorX, w - anchorX)) + 8;
-    const oy = Math.ceil(Math.max(anchorY, h - anchorY)) + 8;
-    const cache = this.fxScratchFrames ??= new Map();
-    const key = `${ox}:${oy}`;
-    if (!cache.has(key)) cache.set(key, createFrame(ox * 2, oy * 2));
-    const scratch = cache.get(key);
-    clearFrame(scratch);
-    const oldX = fx.options.x, oldY = fx.options.y;
-    fx.options.x = ox;
-    fx.options.y = oy;
-    fx.draw(scratch);
-    fx.options.x = oldX;
-    fx.options.y = oldY;
-    const dst = this.frame, offsetX = dst.ox, offsetY = dst.oy;
-    const p = painterFor(dst);
-    const x0 = Math.max(0, Math.floor(x - ox * scale - offsetX));
-    const y0 = Math.max(0, Math.floor(y - oy * scale - offsetY));
-    const x1 = Math.min(dst.w, Math.ceil(x + ox * scale - offsetX));
-    const y1 = Math.min(dst.h, Math.ceil(y + oy * scale - offsetY));
-    for (let dy = y0; dy < y1; dy++) {
-      const sy = Math.floor((dy + offsetY + 0.5 - y) / scale + oy);
-      if (sy < 0 || sy >= scratch.h) continue;
-      for (let dx = x0; dx < x1; dx++) {
-        const sx = Math.floor((dx + offsetX + 0.5 - x) / scale + ox);
-        if (sx < 0 || sx >= scratch.w) continue;
-        const si = sy * scratch.w + sx;
-        const di = dy * dst.w + dx;
-        const color = scratch.color[si], alpha = color >>> 24;
-        if (alpha === 255) dst.color[di] = color;
-        else if (alpha) p.blendPx(dx + offsetX, dy + offsetY, color, alpha / 255);
-        const light = scratch.light[si];
-        if (light) p.add(dx + offsetX, dy + offsetY, light);
-      }
+    // Draw geometry directly at the output resolution. A low-resolution scratch image used to
+    // discard eyes, thin blades and spark trails before the final canvas could display them.
+    fx.options.x = x;
+    fx.options.y = y;
+    const previous = fx.options.renderScale;
+    fx.options.renderScale = scale;
+    try { fx.draw(this.frame); }
+    finally {
+      if (previous === undefined) delete fx.options.renderScale;
+      else fx.options.renderScale = previous;
     }
   },
 

@@ -1,4 +1,5 @@
 import { createFrame, createFx } from "../../../../pixelfx/src/core/index.js";
+import { RENDER_DENSITY } from "../constants.js";
 import { STAGES } from "../../data.js";
 import { canContinue, loadSave } from "../../save.js";
 import { warmAudioTemplates } from "../../audio.js";
@@ -7,7 +8,7 @@ function buildMapTiles(index) {
   const stage = STAGES[index];
   if (!stage) return null;
   const mapFxTiles = [0, 320].map((x) => createFx(stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
-  const mapTileFrames = mapFxTiles.map(() => createFrame(320, 180));
+  const mapTileFrames = mapFxTiles.map(() => createFrame(320, 180, 0, 0, RENDER_DENSITY));
   return { index, mapFxTiles, mapTileFrames };
 }
 

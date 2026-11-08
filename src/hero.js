@@ -469,7 +469,7 @@ export class Hero {
     const x = Math.round(this.x), y = Math.round(this.y);
     const scale = this.renderScale;
     const pose = this.pose();
-    const r = posed(pose, this.look);
+    const r = posed(pose, this.look, { density: 2 });
     const flip = this.facing < 0;
     // a soft contact shadow keeps the feet planted on the flagstones
     p.ellipse(x, y - 1, size(8), size(2.5), P.shadow, 0.55);
@@ -486,9 +486,10 @@ export class Hero {
     const a = this.dead ? 0.55 : blink ? 0.45 : 1;
     const white = this.hitFlash > 0;
     for (let i = 0; i < r.n; i++) {
-      const sx = x + (flip ? -r.xs[i] : r.xs[i]) * scale;
+      const cell = 1 / r.density;
+      const sx = x + (flip ? -r.xs[i] - cell : r.xs[i]) * scale;
       const sy = y + r.ys[i] * scale;
-      p.dot(sx, sy, white ? P.white : r.color[i], a);
+      p.rect(sx, sy, scale * cell, scale * cell, white ? P.white : r.color[i], a);
     }
   }
 
@@ -599,15 +600,15 @@ export { TRACKS as HERO_TRACKS };
 
 /** Draw a small standing portrait into a canvas (used by the HUD card). */
 export function drawHeroPortrait(canvas, weapon = "sword", look = loadHeroLook()) {
-  const w = 112, h = 88;
+  const density = 2, w = 112 * density, h = 88 * density;
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   const img = ctx.createImageData(w, h);
   const out = new Uint32Array(img.data.buffer);
-  const r = posed({ ...IDLE, weapon }, look);
+  const r = posed({ ...IDLE, weapon }, look, { density });
   for (let i = 0; i < r.n; i++) {
-    const x = 42 + r.xs[i], y = h - 14 + r.ys[i];
+    const x = Math.round((42 + r.xs[i]) * density), y = Math.round(h - (14 - r.ys[i]) * density);
     if (x < 0 || y < 0 || x >= w || y >= h) continue;
     out[y * w + x] = r.color[i];
   }

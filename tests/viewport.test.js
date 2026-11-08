@@ -104,3 +104,14 @@ test("viewport events are coalesced and disposed without leaving callbacks behin
   assert.equal(f.timers.size, 0);
   assert.ok([...f.doc.listeners.values(), ...f.win.listeners.values(), ...f.viewport.listeners.values()].every((set) => set.size === 0));
 });
+
+test("pointer input stays in world units on a dense canvas", async () => {
+  const { installPointer } = await import("../src/input/pointer.js");
+  let onClick, point;
+  const canvas = { width: 640, height: 360, addEventListener: (_name, fn) => { onClick = fn; },
+    getBoundingClientRect: () => ({ left: 20, top: 30, width: 960, height: 540 }) };
+  const game = { state: "playing", audio: { unlock() {} }, handlePointer: (x, y) => { point = [x, y]; return true; } };
+  installPointer(game, canvas);
+  onClick({ clientX: 500, clientY: 300 });
+  assert.deepEqual(point, [160, 90]);
+});

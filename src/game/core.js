@@ -8,15 +8,18 @@ import { UI } from "../ui.js";
 import { AudioEngine } from "../audio.js";
 import { SKILL_RECTS, RESUME_BUTTON, CAMP_BUTTON, contains } from "../controls.js";
 import { stageAct, stageName, stageSub } from "../copy.js";
-import { SW, SH, WORLD_W, PALETTE } from "./constants.js";
+import { SW, SH, WORLD_W, PALETTE, RENDER_DENSITY } from "./constants.js";
 
 export class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { alpha: false });
-    this.frame = createFrame(SW, SH);
-    this.uiFrame = createFrame(SW, SH);
-    this.img = this.ctx.createImageData(SW, SH);
+    this.canvas.width = SW * RENDER_DENSITY;
+    this.canvas.height = SH * RENDER_DENSITY;
+    this.ctx.imageSmoothingEnabled = false;
+    this.frame = createFrame(SW, SH, 0, 0, RENDER_DENSITY);
+    this.uiFrame = createFrame(SW, SH, 0, 0, RENDER_DENSITY);
+    this.img = this.ctx.createImageData(this.frame.w, this.frame.h);
     this.audio = new AudioEngine();
     this.fx = FX;
     this.ui = new UI(this);
@@ -70,7 +73,7 @@ export class Game {
     if (camp || !this.adoptStagePrewarm?.(index)) {
       this.mapFxTiles = [0, 320].map((x) => createFx(this.stage.map, { x, y: 0, seed: 3 + index + x / 320 }));
       this.mapFx = this.mapFxTiles[0];
-      this.mapTileFrames = this.mapFxTiles.map(() => createFrame(320, 180));
+      this.mapTileFrames = this.mapFxTiles.map(() => createFrame(320, 180, 0, 0, RENDER_DENSITY));
     }
     this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);

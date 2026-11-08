@@ -1,3 +1,4 @@
+import { SH } from "../game/constants.js";
 import { VIEW_W } from "./bindings.js";
 
 /** Canvas click / resume routing (coordinates in game pixels). */
@@ -6,7 +7,7 @@ export function installPointer(game, canvas) {
     game.audio.unlock();
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * VIEW_W / rect.width;
-    const y = (e.clientY - rect.top) * canvas.height / rect.height;
+    const y = (e.clientY - rect.top) * SH / rect.height;
     if (game.state === "camp") return;
     if (game.state === "inventory" || game.state === "playing" || game.state === "paused") {
       if (game.handlePointer(x, y)) return;
