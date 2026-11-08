@@ -4,8 +4,52 @@ import { COMBAT_SCALE } from "../../combat-scale.js";
 import { lootLabel } from "../../copy.js";
 
 import { updateSpellActs } from "../../spell-act.js";
+import { IMPACTS } from "../../combat-feel.js";
 
 export const fxEntitySystem = {
+  impactFeedback(enemy, opts = {}) {
+    const tier = opts.impact ?? "spell", preset = IMPACTS[tier] ?? IMPACTS.spell;
+    const major = opts.crit || opts.killed;
+    const dir = Math.sign(enemy.x - (opts.fromX ?? this.hero.x)) || this.hero.facing;
+    const y = enemy.y - (enemy.boss ? 40 * COMBAT_SCALE : Math.min(32, (enemy.barH ?? 24) * 0.55));
+    this.hitStop = Math.max(this.hitStop, preset.stop + (major ? 0.012 : 0));
+    this.shake(preset.shake + (major ? 0.45 : 0), preset.duration, dir);
+    this.impacts.push({ x: enemy.x, y, dir, t: 0, life: major ? 0.23 : 0.17, radius: preset.radius * (major ? 1.2 : 1), major, heavy: tier === "heavy" });
+    // A few directional chips communicate force better than a cloud covering the target.
+    for (let i = 0; i < preset.sparks + (opts.killed ? 3 : 0); i++) {
+      const angle = -1.05 + Math.random() * 2.1, speed = 35 + Math.random() * (tier === "heavy" ? 100 : 65);
+      this.motes.push({ x: enemy.x, y, vx: Math.cos(angle) * speed * dir, vy: Math.sin(angle) * speed - 12,
+        t: 0, life: 0.16 + Math.random() * 0.16, color: hex(i % 3 === 0 ? "#fff5d5" : opts.crit ? "#ffc65c" : "#e5ac72") });
+    }
+    if (this.impacts.length > 32) this.impacts.splice(0, this.impacts.length - 32);
+    this.sfxAt(tier === "heavy" ? "impactHeavy" : opts.crit ? "crit" : "hit", enemy.x,
+      { pitch: opts.killed ? 0.86 : tier === "medium" ? 0.94 : 1, gain: major ? 1 : 0.85 });
+  },
+
+  updateImpacts(dt) {
+    for (const impact of this.impacts) impact.t += dt;
+    this.impacts = this.impacts.filter((impact) => impact.t < impact.life);
+  },
+
+  drawImpacts(p) {
+    for (const impact of this.impacts) {
+      const u = impact.t / impact.life, a = (1 - u) ** 2;
+      const r = impact.radius * (0.35 + Math.sqrt(u) * 1.1);
+      const color = hex(impact.major || impact.heavy ? "#ffd17e" : "#e0edff");
+      // A very short contact cross, then broken expanding arcs. No fullscreen flash.
+      if (u < 0.32) {
+        p.line(impact.x - r, impact.y - r * 0.45, impact.x + r, impact.y + r * 0.45, 0xffffffff, a);
+        p.line(impact.x - r * 0.4, impact.y + r * 0.7, impact.x + r * 0.4, impact.y - r * 0.7, color, a);
+        p.glow(impact.x, impact.y, r * 1.1, color, a * 0.32);
+      }
+      for (let i = 0; i < 16; i++) {
+        if (i % 4 === 0) continue;
+        const angle = i * Math.PI / 8;
+        p.dot(impact.x + Math.cos(angle) * r, impact.y + Math.sin(angle) * r * 0.6, color, a * 0.8);
+      }
+    }
+  },
+
   updateSpellActs(dt) {
     updateSpellActs(this, dt);
   },
@@ -15,6 +59,7 @@ export const fxEntitySystem = {
       inst, layer: cfg.layer ?? "front", age: 0, life: cfg.life ?? 0,
       follow: cfg.follow ?? null, offsetY: cfg.offsetY ?? 0,
       scale: cfg.scale ?? COMBAT_SCALE,
+      split: !!cfg.split, melee: !!cfg.melee,
     });
     return inst;
   },
@@ -40,6 +85,7 @@ export const fxEntitySystem = {
       x: x + (Math.random() * 8 - 4), y, text,
       t: 0, life: tier === "crit" ? 1.05 : 0.8,
       color: hex(opts.color ?? "#fff0d0"), tier, small: !!opts.small,
+      vx: (Math.random() * 2 - 1) * (opts.crit ? 9 : 5),
       vy: tier === "crit" ? -34 : -24,
     });
   },
@@ -47,6 +93,7 @@ export const fxEntitySystem = {
   updateNumbers(dt) {
     for (const n of this.numbers) {
       n.t += dt;
+      n.x += n.vx * dt;
       n.y += n.vy * dt;
       n.vy += 26 * dt;
     }
@@ -81,9 +128,9 @@ export const fxEntitySystem = {
     this.telegraphs = this.telegraphs.filter((t) => t.t < t.dur + 0.15);
   },
 
-  shake(amp, dur) {
+  shake(amp, dur, dir = 0) {
     if (amp >= this.shakeState.amp * (1 - this.shakeState.t / Math.max(0.01, this.shakeState.dur))) {
-      this.shakeState = { amp, t: 0, dur };
+      this.shakeState = { amp: Math.min(amp, 6), t: 0, dur, dir };
     }
   },
 

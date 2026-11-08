@@ -60,6 +60,7 @@ export const prewarmSystem = {
       this._prewarmIdle = null;
       if (this.state !== "camp") return;
       warmAudioTemplates();
+      this.hero.warmMeleePoses();
       this.prewarmResumeStage();
     };
     if (typeof requestIdleCallback === "function") {

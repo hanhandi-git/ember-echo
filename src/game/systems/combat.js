@@ -4,8 +4,17 @@ import { explodeFireball } from "../../skills.js";
 import { projectileSweep } from "../../collision.js";
 import { COMBAT_SCALE } from "../../combat-scale.js";
 import { BH } from "../constants.js";
+import { SKILL_SLOT_KEYS } from "../../input/bindings.js";
 
 export const combatSystem = {
+  updateCombatInput(dt) {
+    const h = this.hero;
+    if (!h.alive) { h.attackBuffer = 0; return; }
+    const held = this.touchAttackHeld || Object.entries(SKILL_SLOT_KEYS).some(([key, slot]) => this.keys.has(key) && h.skillSlots[slot] === "j");
+    if ((held || h.attackBuffer > 0) && h.cd.j <= 0 && h.dashT <= 0.1 && !h.actPose) this.cast("j");
+    if (h.dashT <= 0.1) h.attackBuffer = Math.max(0, h.attackBuffer - dt);
+  },
+
   updateProjectiles(dt) {
     const hero = this.hero;
     for (const p of this.projectiles) {
@@ -27,7 +36,7 @@ export const combatSystem = {
         }
         if (hit) {
           p.x = hitInfo.point.x; p.y = hitInfo.point.y;
-          if (p.kind === "fireball") explodeFireball(this, p);
+          if (p.kind === "fireball") { explodeFireball(this, p); p.fx.stop(); p.dead = true; }
           else this.resolveWeaponProjectileHit(p, hit);
         }
       } else if (hero.alive && Math.hypot(hero.x - p.x, (hero.y - 22 * COMBAT_SCALE - p.y) * 0.8) < 11 * COMBAT_SCALE) {
@@ -48,22 +57,18 @@ export const combatSystem = {
     p.hitIds ??= new Set();
     p.hitIds.add(first);
     const blast = p.blastRadius ?? 0;
+    // The direct target belongs to the blast too. Registering it first used to skip its damage.
+    const hitOpts = { knock: p.knock ?? 28, status: p.status, statusTime: p.statusTime, crit: p.crit, impact: "projectile", fromX: p.x - p.vx * 0.01, fromY: p.y - p.vy * 0.01 };
+    first.hurt(this, p.dmg, hitOpts);
     if (blast) {
       for (const e of this.enemies) {
         if (!e.alive || p.hitIds.has(e)) continue;
         if (Math.hypot(e.x - p.x, (e.y - p.y) * 1.2) <= blast) {
-          e.hurt(this, p.dmg, { knock: p.knock ?? 28, status: p.status, statusTime: p.statusTime, crit: p.crit });
+          e.hurt(this, p.dmg, hitOpts);
           p.hitIds.add(e);
         }
       }
-    } else {
-      first.hurt(this, p.dmg, { knock: p.knock ?? 28, status: p.status, statusTime: p.statusTime, crit: p.crit });
     }
-    this.addFx(FX.hitSpark, { x: p.x, y: p.y - 4, light: 1, seed: 730 + this.kills });
-    this.number(p.x, p.y - 16, String(Math.round(p.dmg)), { color: "#fff0d0" });
-    this.hitStop = Math.max(this.hitStop, p.pierce ? 0.045 : 0.07);
-    this.shake(p.pierce ? 2.2 : 3.4, p.pierce ? 0.16 : 0.25);
-    this.sfxAt(p.pierce ? "hit" : "crit", p.x);
     if (p.response === "return" && !p.returning) {
       p.returning = true;
       p.vx = -Math.sign(p.vx || 1) * (p.returnSpeed ?? 220);
@@ -95,8 +100,8 @@ export const combatSystem = {
     let hits = 0;
     for (const e of this.enemies) {
       if (!e.alive || !pred(e)) continue;
-      e.hurt(this, opts.dmg, { knock: opts.knock ?? 22, status: opts.status, statusTime: opts.statusTime, crit: opts.crit });
-      hits++;
+      const damage = e.hurt(this, opts.dmg, { ...opts, knock: opts.knock ?? 22 });
+      if (damage > 0) hits++;
       if (opts.maxHits && hits >= opts.maxHits) break;
     }
     return hits;
@@ -150,7 +155,7 @@ export const combatSystem = {
   },
 
   weaponStrike(profile, opts = {}) {
-    const hero = this.hero, points = this.weaponAttackPath(profile, hero), hits = [];
+    const hero = opts.origin ?? this.hero, points = this.weaponAttackPath(profile, hero), hits = [];
     const radius = (profile?.radius ?? 10) * COMBAT_SCALE;
     const pointSegmentDistance = (px, py, ax, ay, bx, by) => {
       const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1;
@@ -175,13 +180,14 @@ export const combatSystem = {
         samples.push({ x: ex0 + (ex1 - ex0) * u, y: ey0 + (ey1 - ey0) * u });
       }
       const d = Math.min(...samples.map((s) => pathDistance(s.x, s.y)));
-      if (d <= radius + Math.max(5 * COMBAT_SCALE, e.w * (e.renderScale ?? COMBAT_SCALE) * 0.55)) candidates.push({ e, d });
+      const forward = (e.x - hero.x) * hero.facing;
+      if (forward >= -4 * COMBAT_SCALE && d <= radius + Math.max(5 * COMBAT_SCALE, e.w * (e.renderScale ?? COMBAT_SCALE) * 0.55)) candidates.push({ e, d, distance: Math.hypot(e.x - hero.x, (e.y - hero.y) * 1.2) });
     }
-    candidates.sort((a, b) => a.d - b.d);
+    candidates.sort((a, b) => a.distance - b.distance);
     const limit = profile?.pierce ? (profile.maxHits ?? 99) : 1;
     for (const { e } of candidates.slice(0, limit)) {
-      e.hurt(this, opts.dmg, { knock: opts.knock ?? 22, status: opts.status, statusTime: opts.statusTime, crit: opts.crit });
-      hits.push(e);
+      const damage = e.hurt(this, opts.dmg, { ...opts, knock: opts.knock ?? 22 });
+      if (damage > 0) hits.push(e);
     }
     return { hits, points, end: hits.length ? { x: hits[0].x, y: hits[0].y } : points.at(-1) };
   },

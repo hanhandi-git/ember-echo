@@ -7,6 +7,7 @@ import { COMBAT_SCALE, BOSS_RENDER_SCALE, combatDistance as size } from "./comba
 import { uiCopy } from "./copy.js";
 import { emberForXp } from "./upgrades.js";
 import { clearMobPoseOptions, mobCastEndAt, mobCastHitAt, syncMobPoseOptions } from "./content/mob-reactions.js";
+import { IMPACTS } from "./combat-feel.js";
 
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, barBack: hex("#1a0d18"), bar: hex("#d8422f"),
@@ -62,6 +63,10 @@ export class Enemy {
     this.burnDmg = 0;
     this.slow = 0;
     this.hitFlash = 0;
+    this.hitStun = 0;
+    this.damageHp = this.hp;
+    this.attackSerial = 0;
+    this.attackFx = null;
     this.dead = false;
     this.spawnT = 0.45;
     this.auras = {};
@@ -76,7 +81,7 @@ export class Enemy {
   }
 
   get alive() {
-    return !this.dead && this.state !== "spawn" && (this.hp > 0 || this.state === "dying");
+    return !this.dead && !this.dying && this.state !== "spawn" && this.hp > 0;
   }
   get boss() { return false; }
 
@@ -119,6 +124,8 @@ export class Enemy {
     this.prevX = this.x;
     this.prevY = this.y;
     this.hitFlash = Math.max(0, this.hitFlash - dt);
+    this.hitStun = Math.max(0, this.hitStun - dt);
+    if (this.hitFlash <= 0) this.damageHp = Math.max(this.hp, this.damageHp - this.maxHp * dt * 2.5);
     this.stun = Math.max(0, this.stun - dt);
     this.freeze = Math.max(0, this.freeze - dt);
     this.slow = Math.max(0, this.slow - dt);
@@ -149,6 +156,8 @@ export class Enemy {
     }
 
     if (this.state === "dying") {
+      this.x = g.clampX(this.x + this.vx * dt, 20);
+      this.vx *= Math.exp(-9 * dt);
       this.poseT += dt;
       syncMobPoseOptions(this);
       if (this.poseT >= (this.type.mobReact?.dieFor ?? 0.9)) this.die(g);
@@ -187,7 +196,7 @@ export class Enemy {
     const dist = Math.hypot(dx, dy * 1.3);
     if (dx) this.facing = dx > 0 ? 1 : -1;
 
-    if (this.freeze > 0 || this.stun > 0) return;
+    if (this.freeze > 0 || this.stun > 0 || this.hitStun > 0) { this.clampPos(g); return; }
 
     if (this.state === "windup" && this.type.mobReact) {
       const react = this.type.mobReact;
@@ -271,7 +280,7 @@ export class Enemy {
       this.poseState = "cast";
       this.poseT = 0;
       this.castHit = false;
-      g.addFx(react.attackFx, {
+      this.attackFx = g.addFx(react.attackFx, {
         x: this.x,
         y: this.y,
         flip: this.facing < 0,
@@ -315,8 +324,9 @@ export class Enemy {
     this.setState(g, "recover");
     this.timer = 0.42;
     this.vx = this.facing * 85;
+    const serial = this.attackSerial;
     g.after(0.07, () => {
-      if (!this.alive) return;
+      if (!this.alive || this.hitStun > 0 || this.attackSerial !== serial) return;
       const ddx = hero.x - this.x, ddy = hero.y - this.y;
       if (Math.abs(ddx) < this.reach + size(12) && Math.abs(ddy) < size(19)) {
         if (hero.hurt(g, this.dmg, { fromX: this.x })) {
@@ -335,9 +345,23 @@ export class Enemy {
     const crit = opts.crit ?? Math.random() < 0.12;
     if (crit) dmg = Math.round(dmg * 1.65);
     this.hp -= dmg;
-    this.hitFlash = this.type.mobReact ? 0 : 0.14;
-    const dir = Math.sign(this.x - g.hero.x) || 1;
-    this.vx += (opts.knock ?? 26) * dir;
+    const dir = Math.sign(this.x - (opts.fromX ?? g.hero.x)) || g.hero.facing;
+    this.hurtDir = dir;
+    if (!opts.dot) {
+      this.hitFlash = 0.085;
+      this.vx = clamp(this.vx + (opts.knock ?? 26) * dir, -160, 160);
+      const dy = this.y - (opts.fromY ?? g.hero.y);
+      this.vy = clamp(dy * 1.8, -26, 26);
+      this.hitStun = Math.max(this.hitStun, (IMPACTS[opts.impact ?? "spell"] ?? IMPACTS.spell).stagger);
+      this.attackSerial++;
+      if (this.attackFx) {
+        this.attackFx.stop();
+        g.effects = g.effects.filter((ef) => ef.inst !== this.attackFx);
+        this.attackFx = null;
+      }
+      this.setState(g, "chase");
+      this.atkCd = Math.max(this.atkCd, this.hitStun + 0.12);
+    }
     if (opts.status) this.addStatus(g, opts.status, opts.statusTime ?? 2);
     if (!opts.silent) {
       g.comboAdd();
@@ -360,13 +384,12 @@ export class Enemy {
           seed: this.seed + 31,
           light: crit ? 1.05 : 0.9,
         }, { scale: this.renderScale });
-        g.sfxAt(crit ? "crit" : "hit", this.x);
       } else {
         g.addFx(crit ? g.fx.critHit : g.fx.hitSpark, {
           x: this.x, y: this.y - size(18), flip: g.hero.x > this.x, light: crit ? 1.2 : 0.9,
         });
-        g.sfxAt(crit ? "crit" : "hit", this.x);
       }
+      if (!opts.dot) g.impactFeedback(this, { ...opts, crit, killed: this.hp <= 0 });
     }
     if (this.hp <= 0) {
       if (this.type.mobReact) this.beginDie(g);
@@ -418,7 +441,8 @@ export class Enemy {
     this.fx.options.flip = g.hero.x < this.x;
     syncMobPoseOptions(this);
     if (this.state !== "spawn" || this.spawnT < 0.32) {
-      g.drawScaledFx(this.fx, this.x, this.y, this.renderScale);
+      const recoil = this.hitFlash / 0.085;
+      g.drawScaledFx(this.fx, this.x + this.hurtDir * recoil * 1.3, this.y, this.renderScale * (1 + recoil * 0.055));
       p = painterFor(g.frame);
     }
     // hit flash: a white die-cut around the body
@@ -444,6 +468,7 @@ export class Enemy {
     if (this.hp < this.maxHp) {
       const top = y - this.barH - 2, w = Math.max(size(12), this.type.w * this.renderScale);
       p.rect(x - w / 2 - 1, top - 1, w + 2, 3, C.ink, 0.85);
+      p.rect(x - w / 2, top, Math.max(0, Math.round(w * (this.damageHp / this.maxHp))), 1, C.warnLit);
       p.rect(x - w / 2, top, Math.max(1, Math.round(w * (this.hp / this.maxHp))), 1, this.hp / this.maxHp > 0.4 ? C.bar : C.barLit);
     }
 
@@ -719,14 +744,17 @@ export class Boss {
     const crit = opts.crit ?? Math.random() < 0.1;
     if (crit) dmg = Math.round(dmg * 1.6);
     this.hp -= dmg;
-    this.hitFlash = 0.12;
-    this.vx += (opts.knock ?? 8) * Math.sign(this.x - g.hero.x || 1);
+    if (!opts.dot) {
+      this.hitFlash = 0.085;
+      // The warden keeps his telegraphed attacks: weight is visible without a stun lock.
+      this.vx += Math.min(12, (opts.knock ?? 8) * 0.15) * Math.sign(this.x - (opts.fromX ?? g.hero.x) || 1);
+    }
     if (opts.status) this.addStatus(g, opts.status, opts.statusTime ?? 2);
     if (!opts.silent) {
       g.comboAdd();
       g.number(this.x, this.y - size(82), String(dmg), { color: crit ? "#ffd36a" : "#ffe8ff", crit });
       g.addFx(crit ? g.fx.critHit : g.fx.hitSpark, { x: this.x, y: this.y - size(40), flip: g.hero.x > this.x, light: 1 });
-      g.sfxAt(crit ? "crit" : "hit", this.x);
+      if (!opts.dot) g.impactFeedback(this, { ...opts, crit, killed: this.hp <= 0 });
     }
     if (this.hp <= 0) {
       this.die(g);

@@ -36,6 +36,7 @@ export class Game {
     this.pickups = [];
     this.numbers = [];
     this.motes = [];
+    this.impacts = [];
     this.dashTrails = [];
     this.telegraphs = [];
     this.timers = [];
@@ -84,6 +85,12 @@ export class Game {
     this.pickups = [];
     this.numbers = [];
     this.motes = [];
+    this.impacts = [];
+    this.hitStop = 0;
+    this.shakeState = { amp: 0, t: 0, dur: 0 };
+    this.flashState.a = 0;
+    this.keys.clear();
+    this.touchAttackHeld = false;
     this.telegraphs = [];
     this.timers = [];
     this.spawnQueue = [];
@@ -112,6 +119,7 @@ export class Game {
     if (this.state === "playing") {
       this.state = "paused";
       this.keys.clear();
+      this.hero.attackBuffer = 0;
       this.shakeState = { amp: 0, t: 0, dur: 0 };
     } else if (this.state === "paused") {
       this.state = "playing";
@@ -122,6 +130,7 @@ export class Game {
     if (this.state === "playing" && this.phase !== "travel" && this.hero.alive) {
       this.state = "inventory";
       this.keys.clear();
+      this.hero.attackBuffer = 0;
       this.ui.inventorySkillPick = null;
       this.domUi?.open("loadout");
       this.audio.play("ui");

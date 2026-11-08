@@ -99,7 +99,7 @@ export class UI {
   }
 
   pulseSkill(id) { this.pulse[id] = 0.26; }
-  deny(id) { this.deny[id] = 0.22; }
+  denySkill(id) { this.deny[id] = 0.22; }
 
   draw(g, p, frame) {
     const t = this.t;
@@ -203,7 +203,7 @@ export class UI {
     h.skillSlots.forEach((id, i) => {
       if (g.touchUi) return;
       const s = SKILL_META.find((skill) => skill.id === id) ?? SKILL_META[0];
-      const left = h.cd[s.id] ?? 0, cd = left / s.cd;
+      const left = h.cd[s.id] ?? 0, cd = left / (s.id === "j" ? h.meleeCooldownMax : s.cd);
       const r = SKILL_RECTS[i];
       const y = r.y + 10, color = s.tint ? hex(s.tint) : C.gold2;
       p.ellipse(294, y, 9, 9, C.ink, 0.92);

@@ -6,6 +6,7 @@ import { CHARACTERS } from "../../pixelfx/src/core/characters.js";
 import { FX } from "./content/fx-registry.js";
 import { STAGES, ENEMY_TYPES, LOOT } from "./content/compose-content.js";
 import { ATTR_FROM_CATEGORY, buildFxSpellMeta, iconOf } from "./content/spell-catalog.js";
+import { CUSTOM_MELEE_FX } from "./fx/custom-melee-arts.js";
 
 import { localizeArmoryWeapon } from "./weapon-i18n.js";
 
@@ -39,7 +40,7 @@ const STARTER_WEAPONS = [
   {
     id: "ember-blade", class: "melee", name: "余烬星刃", nameEn: "EMBER BLADE", nameJa: "エンバーブレード", glyph: "刃",
     dmgMul: 1, speed: 64, dashCdMul: 1, rigWeapon: "sword", attack: { kind: "line", range: 58, radius: 11, pierce: false },
-    desc: "均衡的连斩与法术。", descEn: "Balanced slashes and spells.", descJa: "斬撃と術のバランス型。",
+    desc: "均衡连斩，第三段扫开身前敌人。", descEn: "Balanced cuts; the finisher sweeps foes.", descJa: "連撃の締めで前方の敵を薙ぎ払う。",
   },
   {
     id: "moon-scythe", class: "melee", name: "月蚀镰", nameEn: "MOON SCYTHE", nameJa: "ムーンサイズ", glyph: "镰",
@@ -53,8 +54,44 @@ const STARTER_WEAPONS = [
   },
 ];
 
+// Original DNF-inspired sword archetypes. They share the existing character rig silhouettes,
+// while their timing, reach and authored accent FX make them play as separate weapons.
+const CUSTOM_MELEE_WEAPONS = [
+  {
+    id: "ember-greatsword", class: "melee", name: "炎狱巨剑", nameEn: "INFERNO GREATSWORD", nameJa: "インフェルノ大剣", glyph: "巨",
+    dmgMul: 1.32, speed: 48, dashCdMul: 1.24, rigWeapon: "totsuka", family: "slam", meleeArtKey: "ember-greatsword",
+    attack: { kind: "arc", range: 84, radius: 19, pierce: false }, fxPath: "custom/ember-greatsword", module: CUSTOM_MELEE_FX["ember-greatsword"],
+    desc: "蓄力后斩出燃烧巨弧，第三段会把敌人扫开。", descEn: "A charged ember crescent with a sweeping finisher.", descJa: "溜めた炎の大弧で薙ぎ払い、最後は敵を吹き飛ばす。",
+  },
+  {
+    id: "frost-lightsword", class: "melee", name: "冰魄光剑", nameEn: "FROST LIGHTSWORD", nameJa: "フロスト光剣", glyph: "霜",
+    dmgMul: 1.06, speed: 78, dashCdMul: 0.9, rigWeapon: "holy-sword", family: "sweep", meleeArtKey: "frost-lightsword",
+    attack: { kind: "arc", range: 70, radius: 11, pierce: false }, fxPath: "custom/frost-lightsword", module: CUSTOM_MELEE_FX["frost-lightsword"],
+    desc: "轻快的冰蓝连斩，命中后留下碎晶轨迹。", descEn: "Fast ice-blue cuts that shed crystal shards.", descJa: "軽快な氷青の連斬で、命中後に結晶を散らす。",
+  },
+  {
+    id: "shadow-katana", class: "melee", name: "幽影太刀", nameEn: "UMBRAL KATANA", nameJa: "アンブラル太刀", glyph: "影",
+    dmgMul: 1.02, speed: 86, dashCdMul: 0.82, rigWeapon: "katana", family: "sweep", meleeArtKey: "shadow-katana",
+    attack: { kind: "arc", range: 64, radius: 9, pierce: true, maxHits: 2 }, fxPath: "custom/shadow-katana", module: CUSTOM_MELEE_FX["shadow-katana"],
+    desc: "极快的拔刀斩，残影会延迟划过敌阵。", descEn: "A lightning draw cut with delayed shadow afterimages.", descJa: "稲妻の抜刀斬りと、遅れて走る影の残像。",
+  },
+  {
+    id: "thunder-claymore", class: "melee", name: "雷鸣钝剑", nameEn: "THUNDER CLAYMORE", nameJa: "サンダークレイモア", glyph: "雷",
+    dmgMul: 1.2, speed: 58, dashCdMul: 1.1, rigWeapon: "sword", family: "sweep", meleeArtKey: "thunder-claymore",
+    attack: { kind: "arc", range: 78, radius: 16, pierce: true, maxHits: 2 }, fxPath: "custom/thunder-claymore", module: CUSTOM_MELEE_FX["thunder-claymore"],
+    desc: "厚重剑身卷起电弧，命中多个目标时更有压迫感。", descEn: "A broad storm blade that chains through nearby foes.", descJa: "厚い刃が電弧をまとい、近くの敵を巻き込む。",
+  },
+  {
+    id: "starlight-rapier", class: "melee", name: "星辉短剑", nameEn: "STARLIGHT RAPIER", nameJa: "スターライトレイピア", glyph: "星",
+    dmgMul: 0.98, speed: 84, dashCdMul: 0.78, rigWeapon: "rapier", family: "thrust", meleeArtKey: "starlight-rapier",
+    attack: { kind: "thrust", range: 76, radius: 7, pierce: true, maxHits: 3 }, fxPath: "custom/starlight-rapier", module: CUSTOM_MELEE_FX["starlight-rapier"],
+    desc: "精准突刺贯穿一列敌人，收招化作星芒。", descEn: "A precise piercing thrust that blooms into a star point.", descJa: "一列を貫く精密な突きが、星の閃光に弾ける。",
+  },
+];
+
 export const WEAPONS = [
   ...STARTER_WEAPONS,
+  ...CUSTOM_MELEE_WEAPONS,
   ...PIXELFX_ARMORY.map((w) => {
     const labels = localizeArmoryWeapon(w);
     return {
@@ -86,7 +123,7 @@ export function skillAttr(skill) {
 }
 
 const BASE_SKILL_META = [
-  { id: "j", key: "J", name: "星刃斩", nameEn: "Slash", nameJa: "星刃斬", icon: "slash", glyph: "斩", cost: 0, cd: 0.26, tint: "#ffe0a0", glow: "rgba(255, 190, 90, .55)", note: "三段连斩 · 无消耗", noteEn: "Triple slash · free", noteJa: "三段斬り・無消費" },
+  { id: "j", key: "J", name: "星刃斩", nameEn: "Slash", nameJa: "星刃斬", icon: "slash", glyph: "斩", cost: 0, cd: 0.26, tint: "#ffe0a0", glow: "rgba(255, 190, 90, .55)", note: "按住三连斩 · 闪避接重斩", noteEn: "Hold to combo · slash after dodge", noteJa: "長押しで三連斬・回避から強斬撃" },
   { id: "k", key: "K", name: "烈焰术", nameEn: "Fire", nameJa: "烈焰術", icon: "fire", glyph: "火", cost: 10, cd: 1.1, tint: "#ffb05a", glow: "rgba(255, 120, 40, .6)", note: "火球 · 爆炸灼烧", noteEn: "Fireball · burn", noteJa: "火球・燃焼" },
   { id: "l", key: "L", name: "霜环", nameEn: "Frost", nameJa: "霜環", icon: "frost", glyph: "霜", cost: 18, cd: 5.0, tint: "#b8ecff", glow: "rgba(120, 210, 255, .6)", note: "身周冰环 · 冻结", noteEn: "Frost ring · freeze", noteJa: "氷環・凍結" },
   { id: "u", key: "U", name: "雷罚", nameEn: "Bolt", nameJa: "雷罰", icon: "bolt", glyph: "雷", cost: 22, cd: 6.0, tint: "#d8c8ff", glow: "rgba(170, 140, 255, .65)", note: "落雷 · 眩晕", noteEn: "Lightning · stun", noteJa: "落雷・スタン" },

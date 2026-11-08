@@ -14,6 +14,7 @@ const SCENE_ROOTS = [55, 61.74, 73.42, 65.41, 82.41, 49, 92.5]; // A1, B1, D2, C
 // enemies are hit in one frame, which used to clip the master bus.
 const COOLDOWN = {
   hit: 0.035, crit: 0.06, slash: 0.04, slash2: 0.04, cleave: 0.09, quick: 0.05,
+  impactHeavy: 0.065,
   cast: 0.05, fire: 0.08, ice: 0.08, thunder: 0.11, meteor: 0.13, heal: 0.2, shield: 0.16,
   pickup: 0.05, level: 0.25, death: 0.05, hurt: 0.12, dash: 0.06, ui: 0.03, deny: 0.08,
   portal: 0.35, spawn: 0.07, boss: 0.5, phase: 0.6,
@@ -26,7 +27,7 @@ const VARIATION = {
   death: 0.05, hurt: 0.04, dash: 0.05, ui: 0.012, spawn: 0.05,
 };
 
-const DUCK = { boss: 0.4, meteor: 0.5, phase: 0.45, thunder: 0.35 };
+const DUCK = { hit: 0.9, crit: 0.72, impactHeavy: 0.56, boss: 0.4, meteor: 0.5, phase: 0.45, thunder: 0.6 };
 
 const IMPULSE_SHAPE = { seconds: 1.8, decay: 2.6 };
 const NOISE_SECONDS = 2;
@@ -167,6 +168,9 @@ export class AudioEngine {
     this.ambSend = null;
     this.musicBus = null;
     this.musicFade = null;
+    this.musicDuck = null;
+    this._duckUntil = 0;
+    this._duckDepth = 1;
     this.music = null;
     this.isOffline = false;
     this.reverb = null;
@@ -194,6 +198,9 @@ export class AudioEngine {
     this.ambDuck = null;
     this.musicBus = null;
     this.musicFade = null;
+    this.musicDuck = null;
+    this._duckUntil = 0;
+    this._duckDepth = 1;
     this.music = null;
     this.reverb = null;
     this.reverbReturn = null;
@@ -244,7 +251,9 @@ export class AudioEngine {
     this.musicBus.gain.value = this.volume.music;
     this.musicFade = c.createGain();
     this.musicFade.gain.value = 1;
-    this.musicBus.connect(this.musicFade).connect(this.comp);
+    this.musicDuck = c.createGain();
+    this.musicDuck.gain.value = 1;
+    this.musicBus.connect(this.musicFade).connect(this.musicDuck).connect(this.comp);
 
     // one generated plate-ish impulse shared by every send
     this.reverb = c.createConvolver();
@@ -580,12 +589,16 @@ export class AudioEngine {
     this.osc({ f: f * 1.51, f2: f2 * 1.47, dur: dur * 0.8, vol: vol * 0.5, type: "triangle", delay: delay + 0.004, pan, send, pitch, gain });
   }
 
-  duck(now) {
-    if (!this.ambDuck) return;
-    const g = this.ambDuck.gain;
-    g.cancelScheduledValues(now);
-    g.setTargetAtTime(0.45, now, 0.02);
-    g.setTargetAtTime(1, now + 0.3, 0.25);
+  duck(now, depth = 0.6, hold = 0.08) {
+    this._duckDepth = this._duckUntil > now ? Math.min(this._duckDepth, depth) : depth;
+    this._duckUntil = Math.max(this._duckUntil, now + hold);
+    for (const bus of [this.ambDuck, this.musicDuck]) {
+      if (!bus) continue;
+      const gain = bus.gain;
+      gain.cancelScheduledValues(now);
+      gain.setTargetAtTime(this._duckDepth, now, 0.008);
+      gain.setTargetAtTime(1, this._duckUntil, 0.09);
+    }
   }
 
   // ---------------------------------------------------------------------------------------
@@ -608,7 +621,7 @@ export class AudioEngine {
     const pan = clamp(panBase + (Math.random() * 2 - 1) * (name === "ui" ? 0 : 0.025), -1, 1);
     const mix = { pitch: p, gain, pan };
 
-    if (DUCK[name]) this.duck(now);
+    if (DUCK[name]) this.duck(now, DUCK[name], name === "hit" ? 0.035 : 0.08);
 
     switch (name) {
       // --- weapons -----------------------------------------------------------------------
@@ -640,6 +653,12 @@ export class AudioEngine {
         break;
 
       // --- impacts -----------------------------------------------------------------------
+      case "impactHeavy":
+        this.noise({ ...mix, dur: 0.045, vol: 0.19, type: "highpass", f: 2400, f2: 1000, attack: 0.001 });
+        this.noise({ ...mix, dur: 0.13, vol: 0.16, type: "lowpass", f: 1800, f2: 220, attack: 0.002 });
+        this.thump({ ...mix, f: 138, f2: 40, dur: 0.19, vol: 0.2, send: 0.04 });
+        this.ring({ ...mix, f: 1840, f2: 740, dur: 0.12, vol: 0.018, send: 0.1 });
+        break;
       case "hit":
         this.noise({ ...mix, dur: 0.075, vol: 0.22, type: "lowpass", f: 3200, f2: 420, q: 0.7 });
         this.osc({ ...mix, f: 178, f2: 58, dur: 0.12, type: "triangle", vol: 0.15, send: 0.06 });

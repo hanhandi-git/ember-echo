@@ -7,6 +7,9 @@ import { FX, SKILL_META } from "./data.js";
 import { HERO_TRACKS } from "./hero.js";
 import { COMBAT_SCALE, combatDistance as size } from "./combat-scale.js";
 import { castActSpell, interruptSpellActs } from "./spell-act.js";
+import { ATTACK_BUFFER, meleeBeat } from "./combat-feel.js";
+import * as meleeSwing from "./fx/melee-swing.js";
+import { meleeArt, meleePoseTrack } from "./melee-arts.js";
 
 export const SKILLS = SKILL_META.map((s) => ({ ...s, cast: null }));
 
@@ -94,49 +97,50 @@ function castT(g) {
 function castJ(g) {
   const h = g.hero;
   const c = h.comboIndex;
-  const t = nearest(g, 70);
+  const beat = meleeBeat(h, c);
+  const t = nearest(g, Math.max(70, h.meleeWeapon?.attack?.range ?? 58));
   if (t) faceTo(h, t.x);
-  const mods = [FX.swordSlash, FX.doubleSlash, FX.heavyCleave];
-  const tracks = [HERO_TRACKS.attack1, HERO_TRACKS.attack2, HERO_TRACKS.attack3];
   const profile = h.meleeWeapon?.attack ?? { kind: "line", range: [60, 68, 80][c], radius: 11, pierce: false };
   // Weapon geometry is scaled once by Game.weaponStrike; keep these combo modifiers in art units.
   const scaledProfile = { ...profile, range: (profile.range ?? 60) * [1, 1.04, 1.12][c], radius: (profile.radius ?? 11) + c * 1.5 };
-  const dmg = [11, 14, 24][c];
+  const dashAttack = h.dashAttackT > 0;
+  const dmg = beat.damage * (dashAttack ? 1.15 : 1);
+  h.cd.j = beat.duration;
+  h.meleeCooldownMax = beat.duration;
+  h.attackBuffer = 0;
   if (scaledProfile.kind === "projectile") {
     h.comboIndex = (c + 1) % 3;
     h.comboTimer = 0.95;
     castWeaponProjectile(g, c, scaledProfile);
     return;
   }
-  const knock = [18, 28, 52][c];
-  h.startAnim("attack" + (c + 1), tracks[c], false);
+  h.cancelMelee(true);
+  const art = meleeArt(h.meleeWeapon, c, dashAttack);
+  const track = meleePoseTrack(art, beat, h.meleeWeapon, c);
+  h.startAnim("attack" + (c + 1), track, false);
   h.comboIndex = (c + 1) % 3;
-  h.comboTimer = 0.95;
-  h.vx += h.facing * size([18, 26, 44][c]);
-  const weaponFx = h.meleeWeapon?.module;
-  const attackFx = weaponFx
-    ? g.addFx(weaponFx, { x: h.x, y: h.y, flip: h.facing < 0, seed: 200 + c, light: c === 2 ? 1.15 : 0.95 }, { life: weaponFx.meta?.loop ? 0.9 : 0 })
-    : g.addFx(mods[c], { x: h.x, y: h.y, flip: h.facing < 0, light: c === 2 ? 1.15 : 0.95 });
+  h.comboTimer = 0.9;
+  h.vx = h.facing * size(beat.lunge * (dashAttack ? 1.45 : 1));
+  h.dashAttackT = 0;
+  const attack = { x: h.x, y: h.y, facing: h.facing, hitTime: beat.hit, landed: false, cancelled: false, art, echoT: 0 };
+  h.melee = attack;
+  const attackFx = g.addFx(meleeSwing, {
+    x: h.x, y: h.y, flip: h.facing < 0, combo: c, art, beat,
+    range: scaledProfile.range, seed: 200 + c + Math.floor(g.time * 60),
+    light: c === 2 ? 0.62 : 0.5,
+  }, { follow: () => attack.landed || attack.cancelled ? attack : h, split: true, melee: true });
   h.attackFx = attackFx;
-  g.audio.play(c === 2 ? "cleave" : c === 1 ? "slash2" : "slash");
-  g.after(0.06 + c * 0.02, () => {
-    const result = g.weaponStrike(scaledProfile, { dmg: dmg * h.dmgMul, knock, crit: rollCrit(c === 2 ? 0.05 : 0), maxHits: scaledProfile.maxHits });
-    const hit = result.hits.length;
-    if (hit && !scaledProfile.pierce) {
-      attackFx.stop();
-      // Dynamic move effects use their own local target, so terminating the instance at the hit
-      // frame keeps its visible travel from continuing through the enemy.
-      attackFx.options.x = result.end.x;
-      attackFx.options.y = result.end.y;
-    }
-    if (hit) {
-      g.hitStop = Math.max(g.hitStop, [0.045, 0.06, 0.11][c]);
-      g.shake([1.8, 2.4, 4.6][c], [0.16, 0.2, 0.32][c]);
-      if (c === 2) {
-        g.flashScreen("#ffd36a", 0.1);
-        g.addFx(FX.smallExplosion, { x: result.end.x, y: result.end.y, size: 0.42, light: 0.8 });
-      }
-    }
+  g.audio.play(c === 1 ? "slash2" : "slash", { pitch: c === 2 ? 0.72 : 1, gain: c === 2 ? 0.85 : 0.7 });
+  g.after(beat.hit, () => {
+    if (!h.alive || attack.cancelled || h.melee !== attack) return;
+    attack.x = h.x; attack.y = h.y; attack.landed = true;
+    const finisher = c === 2 || dashAttack;
+    // Finishers sweep a small group; light cuts retain the weapon's contact policy.
+    const contact = finisher ? { ...scaledProfile, pierce: true, maxHits: Math.max(3, scaledProfile.maxHits ?? 1) } : scaledProfile;
+    g.weaponStrike(contact, {
+      origin: attack, dmg: dmg * h.dmgMul, knock: beat.knock, impact: finisher ? "heavy" : beat.tier,
+      crit: rollCrit(c === 2 ? 0.05 : 0), fromX: attack.x, fromY: attack.y,
+    });
   });
 }
 
@@ -171,10 +175,9 @@ export function explodeFireball(g, p) {
     dmg: p.dmg, knock: 34, status: "burn", statusTime: 3.2, crit: rollCrit(),
   });
   if (hit) {
-    g.hitStop = Math.max(g.hitStop, 0.06);
-    g.shake(3.2, 0.28);
+    g.hitStop = Math.max(g.hitStop, 0.04);
+    g.shake(1.8, 0.18);
   }
-  g.flashScreen("#ff9a4a", 0.09);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -190,9 +193,8 @@ function castL(g) {
       dmg: 20 * h.dmgMul, knock: 10, status: "freeze", statusTime: 2.1, crit: rollCrit(),
     });
     if (hit) {
-      g.hitStop = Math.max(g.hitStop, 0.055);
-      g.shake(3.8, 0.35);
-      g.flashScreen("#9ee6ff", 0.12);
+      g.hitStop = Math.max(g.hitStop, 0.045);
+      g.shake(2, 0.19);
     }
   });
 }
@@ -218,9 +220,9 @@ function castU(g) {
       dmg: 34 * h.dmgMul, knock: 30, status: "stun", statusTime: 1.6, crit: rollCrit(0.08),
     });
     if (hit) {
-      g.hitStop = Math.max(g.hitStop, 0.08);
-      g.shake(6.5, 0.45);
-      g.flashScreen("#d8c8ff", 0.2);
+      g.hitStop = Math.max(g.hitStop, 0.065);
+      g.shake(3.1, 0.23);
+      g.flashScreen("#d8c8ff", 0.08);
     }
   });
 }
@@ -268,9 +270,9 @@ function castO(g) {
           dmg: (i === 0 ? 46 : 30) * h.dmgMul, knock: 60, status: "burn", statusTime: 4, crit: rollCrit(0.06),
         });
         if (hit) {
-          g.hitStop = Math.max(g.hitStop, 0.1);
-          g.shake(8, 0.55);
-          g.flashScreen("#ffb060", 0.2);
+          g.hitStop = Math.max(g.hitStop, 0.075);
+          g.shake(3.8, 0.28);
+          g.flashScreen("#ffb060", 0.08);
         }
       });
     });
@@ -289,9 +291,8 @@ function castE(g) {
       dmg: 28 * h.dmgMul, knock: 92, status: "stun", statusTime: 0.8, crit: rollCrit(0.06),
     });
     if (hit) {
-      g.hitStop = Math.max(g.hitStop, 0.07);
-      g.shake(5.2, 0.35);
-      g.flashScreen("#e7b7ff", 0.15);
+      g.hitStop = Math.max(g.hitStop, 0.055);
+      g.shake(2.8, 0.22);
     }
   });
 }
@@ -337,7 +338,7 @@ function castGeneric(g, sk) {
     const hit = g.hitEnemies((e) => target ? Math.hypot(e.x - x, (e.y - y) * 1.35) < range : inFront(g, e, range, 24), {
       dmg: sk.power * h.dmgMul, knock: sk.category === "melee" ? 42 : 24, status, statusTime: 2.2, crit: rollCrit(sk.category === "lightning" ? 0.08 : 0),
     });
-    if (hit) { g.hitStop = Math.max(g.hitStop, sk.category === "melee" ? 0.07 : 0.04); g.shake(sk.category === "moves" ? 4 : 2.4, 0.22); }
+    if (hit) { g.hitStop = Math.max(g.hitStop, sk.category === "melee" ? 0.055 : 0.032); g.shake(sk.category === "moves" ? 2.8 : 1.6, 0.18); }
   });
 }
 
@@ -349,16 +350,23 @@ export function castSkill(g, id) {
   const sk = SKILLS.find((s) => s.id === id);
   if (!sk || g.state !== "playing" || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
   const h = g.hero;
-  interruptSpellActs(g);
+  if (id === "j" && (h.cd.j > 0 || g.hitStop > 0 || h.dashT > 0.1)) {
+    // One queued press, never a backlog of attacks. Hit-stop does not age this buffer.
+    if (h.cd.j <= ATTACK_BUFFER || g.hitStop > 0 || h.dashT > 0) h.attackBuffer = ATTACK_BUFFER;
+    return false;
+  }
   if (h.cd[id] > 0) {
     g.audio.play("deny");
     return false;
   }
   if (h.mp < sk.cost) {
     g.audio.play("deny");
-    g.ui.deny(id);
+    g.ui.denySkill(id);
     return false;
   }
+  // Rejected input must not cancel the action already being performed.
+  interruptSpellActs(g);
+  if (id !== "j") { h.cancelMelee(); h.attackBuffer = 0; }
   h.mp -= sk.cost;
   h.cd[id] = sk.cd;
   sk.cast(g);

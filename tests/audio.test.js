@@ -5,7 +5,7 @@ import { MUSIC_THEMES } from "../src/music.js";
 import { Game } from "../src/game.js";
 
 const CUES = [
-  "slash", "slash2", "cleave", "quick", "dash", "hit", "crit", "hurt", "death", "deny",
+  "slash", "slash2", "cleave", "quick", "dash", "hit", "impactHeavy", "crit", "hurt", "death", "deny",
   "cast", "fire", "ice", "thunder", "meteor", "heal", "shield", "portal", "spawn", "phase",
   "boss", "pickup", "level", "ui",
 ];
@@ -13,10 +13,11 @@ const CUES = [
 function param(value = 0) {
   const p = {
     value,
+    events: [],
     setValueAtTime(v) { p.value = v; return p; },
     linearRampToValueAtTime(v) { p.value = v; return p; },
     exponentialRampToValueAtTime(v) { p.value = v; return p; },
-    setTargetAtTime(v) { p.value = v; return p; },
+    setTargetAtTime(v, time) { p.value = v; p.events.push({ value: v, time }); return p; },
     cancelScheduledValues() { return p; },
   };
   return p;
@@ -93,6 +94,23 @@ test("every cue schedules a layered voice without throwing", () => {
     audio.restore();
     store.restore();
   }
+});
+
+test("heavy impacts duck the music separately from its volume setting and recover", () => {
+  const store = withStorage(), audio = bootAudio();
+  try {
+    const { engine, ctx } = audio;
+    engine.setVolume("music", 0.25);
+    engine.play("impactHeavy");
+    const events = engine.musicDuck.gain.events;
+    assert.ok(events.some((event) => event.value < 0.7 && event.time === ctx.currentTime));
+    assert.ok(events.some((event) => event.value === 1 && event.time > ctx.currentTime));
+    assert.equal(engine.musicBus.gain.value, 0.25);
+    ctx.currentTime += 0.02;
+    engine.play("hit");
+    assert.ok(engine._duckDepth < 0.7, "a light hit cannot release the heavy hit's duck early");
+    assert.equal(engine.settings.music, 0.25);
+  } finally { audio.restore(); store.restore(); }
 });
 
 test("unknown cues are ignored and same-cue hits are rate limited", () => {

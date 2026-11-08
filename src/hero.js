@@ -13,6 +13,9 @@ import { weaponEquipKind } from "./weapons-util.js";
 import { createMovementTrail } from "./movement-fx.js";
 import { COMBAT_SCALE, HERO_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
 import { UPGRADE_STATS, emptyUpgrades, spentUpgrades, upgradeById, upgradeCost } from "./upgrades.js";
+import { interruptSpellActs } from "./spell-act.js";
+import { meleeArt, meleePoseTrack } from "./melee-arts.js";
+import { meleeBeat } from "./combat-feel.js";
 
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
 const IDLE = { ...GUARD, fx: 10, fy: -20, bx: 7, by: -19, crouch: 1 };
@@ -20,7 +23,6 @@ const IDLE_B = { ...IDLE, crouch: 2, fx: 9, fy: -19, lean: -0.5 };
 const WIND = { ...GUARD, x: -8, crouch: 4, lean: -4, fx: -7, fy: -35, sa: -2.65, bx: 9, by: -25, armsFront: true, ffx: 9, fbx: -8 };
 const CUT = { ...GUARD, x: 0, crouch: 2, lean: 3, fx: 16, fy: -37, sa: -1.45, bx: -7, by: -24, ffx: 11, fbx: -10, ghost: 1 };
 const DOWN = { ...GUARD, x: 2, crouch: 5, lean: 5, fx: 20, fy: -21, sa: 0.62, bx: -9, by: -24, ffx: 13, fbx: -10, toeB: true };
-const HIGH = { ...GUARD, x: -7, crouch: 4, lean: -4, fx: -7, fy: -35, sa: -2.65, bx: 9, by: -25, armsFront: true, ffx: 9, fbx: -8 };
 const LOW = { ...GUARD, x: 3, crouch: 6, lean: 6, fx: 22, fy: -20, sa: 0.62, bx: -8, by: -24, ffx: 13, fbx: -10, toeB: true };
 const UP = { ...LOW, x: 5, crouch: 3, lean: 5, fx: 22, fy: -28, sa: 0.1, by: -18, toeB: true };
 const REST = { ...GUARD, x: -4, crouch: 2 };
@@ -44,9 +46,9 @@ const WALK = [
 const TRACKS = {
   idle: [[0, IDLE], [1.4, IDLE_B], [2.8, IDLE]],
   walk: WALK,
-  attack1: [[0, WIND], [0.06, CUT, "snap"], [0.1, DOWN, "snap"], [0.32, DOWN], [0.5, GUARD]],
-  attack2: [[0, HIGH], [0.02, { ...HIGH, crouch: 5 }], [0.08, CUT, "snap"], [0.12, LOW, "snap"], [0.18, UP, "snap"], [0.24, { ...UP, fy: -38 }], [0.5, { ...LOW, crouch: 3, lean: 3, fx: 18, fy: -36, sa: -1.05 }], [0.72, GUARD]],
-  attack3: [[0, REST], [0.14, OVER], [0.2, { ...OVER, crouch: 3 }], [0.28, FLOOR, "snap"], [0.62, FLOOR], [0.95, REST], [1.15, GUARD]],
+  attack1: [[0, WIND], [0.04, CUT, "snap"], [0.065, DOWN, "snap"], [0.11, DOWN], [0.24, GUARD]],
+  attack2: [[0, LOW], [0.05, CUT, "snap"], [0.085, UP, "snap"], [0.14, { ...UP, fy: -38 }], [0.28, GUARD]],
+  attack3: [[0, REST], [0.07, OVER], [0.13, { ...OVER, crouch: 3 }], [0.17, FLOOR, "snap"], [0.25, FLOOR], [0.43, GUARD]],
   castK: [[0, GUARD], [0.09, HOLD], [0.18, THROW, "snap"], [0.38, THROW], [0.55, GUARD]],
   castL: [[0, GUARD], [0.14, HEAVEN], [0.42, SLAM, "snap"], [0.7, SLAM], [1.0, GUARD]],
   castU: [[0, GUARD], [0.16, HEAVEN], [0.5, HEAVEN], [0.78, GUARD]],
@@ -125,6 +127,12 @@ export class Hero {
     this.applyUpgrades();
     this.comboIndex = 0;
     this.comboTimer = 0;
+    this.attackBuffer = 0;
+    this.meleeCooldownMax = 0.24;
+    this.melee = null;
+    this.meleeEchoes = [];
+    this.attackFx = null;
+    this.dashAttackT = 0;
     this.healGlow = 0;
     this.anim = { kind: "idle", t: 0, track: TRACKS.idle, loop: true, dur: 2.8 };
     this.stepT = 0;
@@ -221,6 +229,7 @@ export class Hero {
       this.applyMeleeStats();
     }
     if (g) {
+      if (kind !== "thrown") this.warmMeleePoses();
       g.ui.toast(uiCopy(g).equipped(weaponLabel(g, weapon)), "gold");
       g.persistSave?.();
     }
@@ -259,6 +268,7 @@ export class Hero {
     this.look = look.id;
     if (typeof localStorage !== "undefined") localStorage.setItem("ember-echo-look", look.id);
     for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, look.id);
+    this.warmMeleePoses();
     if (g) {
       const name = g.language === "zh" ? look.label : look.name;
       g.ui.toast(uiCopy(g).equipped(name), "gold");
@@ -279,6 +289,9 @@ export class Hero {
   }
 
   startDash(g, d) {
+    this.cancelMelee();
+    interruptSpellActs(g);
+    this.startAnim("idle", TRACKS.idle, true);
     const len = Math.hypot(d.x, d.y) || 1;
     this.dashDir = { x: d.x / len, y: d.y / len };
     if (this.dashDir.x) this.facing = Math.sign(this.dashDir.x);
@@ -290,11 +303,13 @@ export class Hero {
     this.dashVy = this.dashDir.y * 138;
     this.vx = this.vy = 0;
     this.lunge = 0.22;
+    this.dashAttackT = 0.5;
+    // A dodge releases hit-stop immediately so defensive input always responds.
+    g.hitStop = 0;
     const from = { x: this.x, y: this.y };
     g.dust(this.x - this.dashDir.x * 7, this.y + 1, 6, this.dashDir.x, "#ffd36a");
     g.addDashTrail(createMovementTrail(this, from, "dodge"));
     g.ui.actionPulse = { id: "dodge", t: 0.25 };
-    g.shake(1.4, 0.12);
     g.audio.play("dash");
     return true;
   }
@@ -331,6 +346,8 @@ export class Hero {
   }
 
   spawn(x, y) {
+    this.cancelMelee();
+    this.attackBuffer = this.dashAttackT = 0;
     this.x = x;
     this.y = y;
     this.vx = this.vy = this.dashT = this.dodgeWindow = this.dodgeBuffer = 0;
@@ -340,8 +357,19 @@ export class Hero {
   get alive() { return !this.dead && this.hp > 0; }
 
   startAnim(kind, track, loop = false) {
+    if (!kind.startsWith("attack")) this.cancelMelee(kind === "idle" || kind === "walk");
     if (kind !== "castK") this.clearThrowRig();
     this.anim = { kind, t: 0, track, loop, dur: track[track.length - 1][0] };
+  }
+
+  cancelMelee(keepTail = false) {
+    if (this.melee) this.melee.cancelled = true;
+    const retain = keepTail && this.melee?.landed;
+    this.melee = null;
+    if (this.attackFx) this.attackFx.options.cancelled = !retain;
+    this.attackFx?.stop();
+    this.attackFx = null;
+    if (!retain) this.meleeEchoes = [];
   }
 
   /** While throwing, the rig briefly shows the thrown weapon instead of the melee one. */
@@ -368,6 +396,8 @@ export class Hero {
   }
 
   update(g, dt, keys) {
+    for (const echo of this.meleeEchoes) echo.age += dt;
+    this.meleeEchoes = this.meleeEchoes.filter((echo) => echo.age < 0.12);
     for (const k in this.cd) this.cd[k] = Math.max(0, this.cd[k] - dt);
     this.invuln = Math.max(0, this.invuln - dt);
     this.dashCd = Math.max(0, this.dashCd - dt);
@@ -381,6 +411,7 @@ export class Hero {
     this.hitFlash = Math.max(0, this.hitFlash - dt);
     this.healGlow = Math.max(0, this.healGlow - dt);
     this.comboTimer = Math.max(0, this.comboTimer - dt);
+    this.dashAttackT = Math.max(0, this.dashAttackT - dt);
     if (this.comboTimer <= 0) this.comboIndex = 0;
     if (this.shieldT > 0) {
       this.shieldT -= dt;
@@ -433,7 +464,7 @@ export class Hero {
     if (moving) {
       this.x += ix * sp * dt + this.vx * dt;
       this.y += iy * sp * 0.56 * dt + this.vy * dt;
-      if (ix) this.facing = ix > 0 ? 1 : -1;
+      if (ix && !(this.melee && this.anim.t < this.melee.hitTime + 0.045)) this.facing = ix > 0 ? 1 : -1;
       this.dashDir = { x: ix, y: iy };
       this.stepT -= dt;
       if (this.stepT <= 0) {
@@ -452,6 +483,15 @@ export class Hero {
 
     // animation selection
     this.anim.t += dt;
+    if (this.melee?.art && this.pose().ghost) {
+      this.melee.echoT += dt;
+      if (this.melee.echoT >= 0.025) {
+        this.melee.echoT = 0;
+        this.meleeEchoes.push({ x: this.x, y: this.y, facing: this.melee.facing, age: 0,
+          body: posed(this.pose(), this.look, { density: 2 }), color: hex(this.melee.art.echo) });
+        if (this.meleeEchoes.length > 3) this.meleeEchoes.shift();
+      }
+    }
     if (this.anim.loop) {
       if (this.anim.kind !== "walk" && this.anim.kind !== "idle") this.anim.kind = "idle";
       if (moving) {
@@ -482,6 +522,13 @@ export class Hero {
       p.glow(x, y - size(22), size(26), hex("#8fff7a"), 0.18 + 0.42 * k);
       p.glow(x, y - size(14), size(16), hex("#e8ffe0"), 0.12 + 0.28 * k);
     }
+    for (const echo of this.meleeEchoes) {
+      const b = echo.body, cell = 1 / b.density, alpha = 0.22 * (1 - echo.age / 0.12) ** 2;
+      for (let i = 0; i < b.n; i++) {
+        p.rect(echo.x + (echo.facing < 0 ? -b.xs[i] - cell : b.xs[i]) * scale,
+          echo.y + b.ys[i] * scale, scale * cell, scale * cell, echo.color, alpha);
+      }
+    }
     const blink = this.invuln > 0 && this.hitFlash <= 0 && Math.floor(this.invuln * 22) % 2 === 0;
     const a = this.dead ? 0.55 : blink ? 0.45 : 1;
     const white = this.hitFlash > 0;
@@ -490,6 +537,31 @@ export class Hero {
       const sx = x + (flip ? -r.xs[i] - cell : r.xs[i]) * scale;
       const sy = y + r.ys[i] * scale;
       p.rect(sx, sy, scale * cell, scale * cell, white ? P.white : r.color[i], a);
+    }
+  }
+
+  // Reassert the real rig above overlapping large spell effects, with a thin dark keyline.
+  // The world still owns depth sorting; this pass only protects the player's silhouette.
+  drawCombatFocus(p) {
+    const r = posed(this.pose(), this.look, { density: 2 }), scale = this.renderScale;
+    const cell = scale / r.density, flip = this.facing < 0;
+    for (const outline of [true, false]) {
+      for (let i = 0; i < r.n; i++) {
+        const x = Math.round(this.x) + (flip ? -r.xs[i] - 1 / r.density : r.xs[i]) * scale;
+        const y = Math.round(this.y) + r.ys[i] * scale;
+        const pad = outline ? 0.65 : 0;
+        if (outline) {
+          // pixelfx composites additive light after color. Clear glare only under the rig mask,
+          // otherwise even a redrawn player would still disappear inside a white lightning beam.
+          p.each(x - pad, y - pad, x + cell + pad, y + cell + pad, (lx, ly, sx, sy) => {
+            if (lx >= x - pad && lx < x + cell + pad && ly >= y - pad && ly < y + cell + pad) {
+              p.L[(sy - p.oy) * p.w + sx - p.ox] = 0;
+            }
+          });
+        }
+        p.rect(x - pad, y - pad, cell + pad * 2, cell + pad * 2,
+          outline ? P.shadow : this.hitFlash > 0 ? P.white : r.color[i], outline ? 0.85 : 1);
+      }
     }
   }
 
@@ -517,6 +589,9 @@ export class Hero {
       g.number(this.x, this.y - 46, "护盾 -" + absorb, { color: "#ffe9a0", small: true });
     }
     if (dmg > 0) {
+      this.cancelMelee();
+      this.attackBuffer = 0;
+      interruptSpellActs(g);
       this.hp = Math.max(0, this.hp - dmg);
       this.hitFlash = 0.16;
       g.number(this.x, this.y - 44, "-" + dmg, { color: "#ff6a6a" });
@@ -587,6 +662,13 @@ export class Hero {
   }
 
   /** Warm the pose cache so the first swing does not hitch. */
+  warmMeleePoses() {
+    for (let combo = 0; combo < 3; combo++) {
+      const art = meleeArt(this.meleeWeapon, combo), beat = meleeBeat(this, combo);
+      for (const [, pose] of meleePoseTrack(art, beat, this.meleeWeapon, combo)) posed(pose, this.look, { density: 2 });
+    }
+  }
+
   static prepare() {
     const warm = new Set([HERO_LOOK_DEFAULT, loadHeroLook()]);
     for (const c of HERO_LOOKS) {

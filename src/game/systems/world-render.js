@@ -66,14 +66,14 @@ export const worldRenderSystem = {
     }
   },
 
-  drawScaledFx(fx, x, y, scale = 1) {
+  drawScaledFx(fx, x, y, scale = 1, layer) {
     // Draw geometry directly at the output resolution. A low-resolution scratch image used to
     // discard eyes, thin blades and spark trails before the final canvas could display them.
     fx.options.x = x;
     fx.options.y = y;
     const previous = fx.options.renderScale;
     fx.options.renderScale = scale;
-    try { fx.draw(this.frame); }
+    try { fx.draw(this.frame, layer); }
     finally {
       if (previous === undefined) delete fx.options.renderScale;
       else fx.options.renderScale = previous;

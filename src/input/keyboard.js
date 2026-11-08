@@ -144,13 +144,14 @@ export function installKeyboard(game) {
     if (SKILL_SLOT_KEYS[key] != null && !e.repeat) {
       e.preventDefault();
       unlock();
+      if (game.state === "playing") game.keys.add(key);
       castSlotKey(key);
     }
   });
 
   window.addEventListener("keyup", (e) => {
     const key = e.key.toLowerCase();
-    if (MOVE_KEYS.has(key)) game.keys.delete(key);
+    game.keys.delete(key);
   });
-  window.addEventListener("blur", () => game.keys.clear());
+  window.addEventListener("blur", () => { game.keys.clear(); game.hero.attackBuffer = 0; });
 }

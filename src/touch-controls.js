@@ -51,6 +51,7 @@ export function createTouchControls(game) {
     resetJoystick();
     for (const button of pressed.values()) button.classList.remove("is-pressed");
     pressed.clear();
+    game.touchAttackHeld = false;
   }
   function move(event) {
     const vector = joystickVector(event.clientX, event.clientY, joystick.getBoundingClientRect());
@@ -87,6 +88,7 @@ export function createTouchControls(game) {
     pressed.set(event.pointerId, button);
     button.classList.add("is-pressed");
     button.setPointerCapture(event.pointerId);
+    if (button.hasAttribute("data-touch-slot") && game.hero.skillSlots[Number(button.dataset.touchSlot)] === "j") game.touchAttackHeld = true;
     if (button.hasAttribute("data-touch-slot")) game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
     else if (button.dataset.touchAction === "quick") game.hero.tryQuickMove(game);
     else if (button.dataset.touchAction === "dodge") game.hero.tryDash(game);
@@ -95,6 +97,7 @@ export function createTouchControls(game) {
     root.addEventListener(type, (event) => {
       const button = pressed.get(event.pointerId);
       if (button) { button.classList.remove("is-pressed"); pressed.delete(event.pointerId); }
+      game.touchAttackHeld = [...pressed.values()].some((b) => b.hasAttribute("data-touch-slot") && game.hero.skillSlots[Number(b.dataset.touchSlot)] === "j");
     });
   }
 
@@ -164,7 +167,8 @@ export function createTouchControls(game) {
     slotButtons.forEach((button, index) => {
       const id = game.hero.skillSlots[index], skill = SKILL_META.find((s) => s.id === id);
       const left = game.hero.cd[id] ?? 0;
-      button.disabled = !playing() || left > 0 || game.hero.mp < (skill?.cost ?? 0);
+      // Slash must keep receiving pointerdown during recovery so taps can enter its buffer.
+      button.disabled = !playing() || (id !== "j" && left > 0) || game.hero.mp < (skill?.cost ?? 0);
       button.classList.toggle("is-cooling", left > 0);
       button.querySelector(".touch-cooldown").textContent = left > 0 ? (left >= 1 ? String(Math.ceil(left)) : left.toFixed(1)) : "";
     });
@@ -183,7 +187,7 @@ export function createTouchControls(game) {
       const id = game.hero.skillSlots[index], s = SKILL_META.find(s => s.id === id) ?? SKILL_META[0];
       const left = game.hero.cd[id] ?? 0, lacksMana = game.hero.mp < s.cost;
       paintUiArt(button.querySelector("canvas"), "skill", {
-        icon: s.icon, hud: true, cooldown: Math.round(Math.min(1, left / s.cd) * 20) / 20,
+        icon: s.icon, hud: true, cooldown: Math.round(Math.min(1, left / (id === "j" ? game.hero.meleeCooldownMax : s.cd)) * 20) / 20,
         disabled: lacksMana, mana: lacksMana ? 0 : 1, pressed: button.classList.contains("is-pressed"),
         selected: (game.ui.pulse[id] ?? 0) > 0,
       }, time);

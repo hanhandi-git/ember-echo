@@ -27,6 +27,7 @@ export const loopSystem = {
       for (const map of this.mapFxTiles) map.update(dt * 0.5);
       this.updateMotes(dt);
       this.updateNumbers(dt);
+      this.updateImpacts(dt);
       this.updateDashTrails(dt);
       return;
     }
@@ -45,11 +46,12 @@ export const loopSystem = {
 
     if (this.hitStop > 0) {
       this.updateSpellActs?.(dt);
-      this.hitStop -= dt;
+      this.hitStop = Math.max(0, this.hitStop - dt);
       for (const map of this.mapFxTiles) map.update(dt);
       this.updateShake(dt);
       this.updateFlash(dt);
       this.updateDashTrails(dt);
+      this.updateImpacts(dt);
       return;
     }
 
@@ -67,6 +69,7 @@ export const loopSystem = {
     this.updateSpellActs?.(dt);
     this.updateAuto?.(dt);
     this.hero.update(this, dt, this.keys);
+    this.updateCombatInput(dt);
     this.updateCamera();
     for (const e of this.enemies) e.update(this, dt);
     this.enemies = this.enemies.filter((e) => !e.dead);
@@ -77,6 +80,7 @@ export const loopSystem = {
     this.updatePickups(dt);
     this.updateMotes(dt);
     this.updateNumbers(dt);
+    this.updateImpacts(dt);
     this.updateTelegraphs(dt);
     this.updateShake(dt);
     this.updateFlash(dt);
