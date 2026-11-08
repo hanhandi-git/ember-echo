@@ -59,31 +59,31 @@ const STARTER_WEAPONS = [
 const CUSTOM_MELEE_WEAPONS = [
   {
     id: "ember-greatsword", class: "melee", name: "炎狱巨剑", nameEn: "INFERNO GREATSWORD", nameJa: "インフェルノ大剣", glyph: "巨",
-    dmgMul: 1.32, speed: 48, dashCdMul: 1.24, rigWeapon: "totsuka", family: "slam", meleeArtKey: "ember-greatsword",
+    dmgMul: 1.32, speed: 48, dashCdMul: 1.24, rigWeapon: "ember-greatsword", family: "slam", meleeArtKey: "ember-greatsword",
     attack: { kind: "arc", range: 84, radius: 19, pierce: false }, fxPath: "custom/ember-greatsword", module: CUSTOM_MELEE_FX["ember-greatsword"],
     desc: "蓄力后斩出燃烧巨弧，第三段会把敌人扫开。", descEn: "A charged ember crescent with a sweeping finisher.", descJa: "溜めた炎の大弧で薙ぎ払い、最後は敵を吹き飛ばす。",
   },
   {
     id: "frost-lightsword", class: "melee", name: "冰魄光剑", nameEn: "FROST LIGHTSWORD", nameJa: "フロスト光剣", glyph: "霜",
-    dmgMul: 1.06, speed: 78, dashCdMul: 0.9, rigWeapon: "holy-sword", family: "sweep", meleeArtKey: "frost-lightsword",
+    dmgMul: 1.06, speed: 78, dashCdMul: 0.9, rigWeapon: "frost-lightsword", family: "sweep", meleeArtKey: "frost-lightsword",
     attack: { kind: "arc", range: 70, radius: 11, pierce: false }, fxPath: "custom/frost-lightsword", module: CUSTOM_MELEE_FX["frost-lightsword"],
     desc: "轻快的冰蓝连斩，命中后留下碎晶轨迹。", descEn: "Fast ice-blue cuts that shed crystal shards.", descJa: "軽快な氷青の連斬で、命中後に結晶を散らす。",
   },
   {
     id: "shadow-katana", class: "melee", name: "幽影太刀", nameEn: "UMBRAL KATANA", nameJa: "アンブラル太刀", glyph: "影",
-    dmgMul: 1.02, speed: 86, dashCdMul: 0.82, rigWeapon: "katana", family: "sweep", meleeArtKey: "shadow-katana",
+    dmgMul: 1.02, speed: 86, dashCdMul: 0.82, rigWeapon: "shadow-katana", family: "sweep", meleeArtKey: "shadow-katana",
     attack: { kind: "arc", range: 64, radius: 9, pierce: true, maxHits: 2 }, fxPath: "custom/shadow-katana", module: CUSTOM_MELEE_FX["shadow-katana"],
     desc: "极快的拔刀斩，残影会延迟划过敌阵。", descEn: "A lightning draw cut with delayed shadow afterimages.", descJa: "稲妻の抜刀斬りと、遅れて走る影の残像。",
   },
   {
     id: "thunder-claymore", class: "melee", name: "雷鸣钝剑", nameEn: "THUNDER CLAYMORE", nameJa: "サンダークレイモア", glyph: "雷",
-    dmgMul: 1.2, speed: 58, dashCdMul: 1.1, rigWeapon: "sword", family: "sweep", meleeArtKey: "thunder-claymore",
+    dmgMul: 1.2, speed: 58, dashCdMul: 1.1, rigWeapon: "thunder-claymore", family: "sweep", meleeArtKey: "thunder-claymore",
     attack: { kind: "arc", range: 78, radius: 16, pierce: true, maxHits: 2 }, fxPath: "custom/thunder-claymore", module: CUSTOM_MELEE_FX["thunder-claymore"],
     desc: "厚重剑身卷起电弧，命中多个目标时更有压迫感。", descEn: "A broad storm blade that chains through nearby foes.", descJa: "厚い刃が電弧をまとい、近くの敵を巻き込む。",
   },
   {
     id: "starlight-rapier", class: "melee", name: "星辉短剑", nameEn: "STARLIGHT RAPIER", nameJa: "スターライトレイピア", glyph: "星",
-    dmgMul: 0.98, speed: 84, dashCdMul: 0.78, rigWeapon: "rapier", family: "thrust", meleeArtKey: "starlight-rapier",
+    dmgMul: 0.98, speed: 84, dashCdMul: 0.78, rigWeapon: "starlight-rapier", family: "thrust", meleeArtKey: "starlight-rapier",
     attack: { kind: "thrust", range: 76, radius: 7, pierce: true, maxHits: 3 }, fxPath: "custom/starlight-rapier", module: CUSTOM_MELEE_FX["starlight-rapier"],
     desc: "精准突刺贯穿一列敌人，收招化作星芒。", descEn: "A precise piercing thrust that blooms into a star point.", descJa: "一列を貫く精密な突きが、星の閃光に弾ける。",
   },

@@ -12,6 +12,7 @@ test("new sword archetypes expose authored pose and effect modules", () => {
   for (const id of IDS) {
     const weapon = MELEE_WEAPONS.find((w) => w.id === id);
     assert.ok(weapon, `${id} is in the melee catalogue`);
+    assert.equal(weapon.rigWeapon, id, `${id} uses its own silhouette`);
     assert.equal(weapon.fxPath, `custom/${id}`);
     assert.equal(weapon.module, CUSTOM_MELEE_FX[id]);
     assert.ok(weapon.module.act?.poses?.length, `${id} has a synchronized attack pose`);
