@@ -25,5 +25,8 @@
     "health_url": "https://hanhandi.cn/ember_echo/healthz",
     "proxy_file": "/opt/1panel/www/sites/hanhandi/proxy/ember_echo.conf"
   },
-  "checks": [{ "cwd": ".", "argv": ["npm", "test"] }]
+  "checks": [
+    { "cwd": ".", "argv": ["npm", "run", "lint"] },
+    { "cwd": ".", "argv": ["npm", "test"] }
+  ]
 }

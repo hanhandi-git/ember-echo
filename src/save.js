@@ -172,7 +172,7 @@ export function resumeRun(game, data) {
 }
 
 export function clearRunSave(game) {
-  const data = loadSave();
+  loadSave();
   const profile = heroProfile(game.hero);
   saveToStorage({ v: SAVE_VERSION, profile, run: { active: false } });
 }

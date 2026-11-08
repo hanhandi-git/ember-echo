@@ -284,7 +284,7 @@ export class Enemy {
     }
   }
 
-  strike(g, dx, dy, dist) {
+  strike(g, _dx, _dy, _dist) {
     const hero = g.hero;
     if (this.type.mobReact) {
       if (this.type.ranged) {
@@ -375,7 +375,7 @@ export class Enemy {
     return dmg;
   }
 
-  beginDie(g) {
+  beginDie(_g) {
     if (this.dying || this.dead) return;
     this.dying = true;
     this.state = "dying";

@@ -6,7 +6,6 @@ import { createFx, painterFor, hex } from "../../pixelfx/src/core/index.js";
 import { UI_GOLD } from "../../pixelfx/src/fx/ui/_lib.js";
 import * as panelFx from "../../pixelfx/src/fx/ui/panel.js";
 import * as statusFx from "../../pixelfx/src/fx/ui/status-bar.js";
-import * as slotFx from "../../pixelfx/src/fx/ui/skill-slot.js";
 import * as dialogFx from "../../pixelfx/src/fx/ui/dialog.js";
 import * as bannerFx from "../../pixelfx/src/fx/ui/banner.js";
 import * as toastFx from "../../pixelfx/src/fx/ui/toast.js";
@@ -14,7 +13,7 @@ import * as questFx from "../../pixelfx/src/fx/ui/quest-complete.js";
 import * as comboFx from "../../pixelfx/src/fx/ui/combo-counter.js";
 import * as hudToggleFx from "../../pixelfx/src/fx/ui/hud-toggle.js";
 import { SKILL_META, STAGES, MELEE_WEAPONS, THROWN_WEAPONS } from "./data.js";
-import { gameLang, skillLabel, stageAct, stageName, uiCopy, weaponLabel } from "./copy.js";
+import { skillLabel, stageAct, stageName, uiCopy, weaponLabel } from "./copy.js";
 import {
   RESUME_BUTTON, CAMP_BUTTON, SKILL_RECTS, SKILL_KEYS, AUTO_TOGGLE_RECTS, AUTO_TOGGLE_SIZE, AUTO_TOGGLE_X, contains,
 } from "./controls.js";
@@ -44,9 +43,6 @@ function plate(p, t, x, y, w, h, opts = {}) {
 }
 function meter(p, t, x, y, opts) {
   withPlace(p, x, y, () => statusFx.draw(p, t, opts));
-}
-function slot(p, t, x, y, opts) {
-  withPlace(p, x, y, () => slotFx.draw(p, t, opts));
 }
 function card(p, t, x, y, opts) {
   withPlace(p, x, y, () => dialogFx.draw(p, t, opts));
@@ -200,7 +196,7 @@ export class UI {
     return false;
   }
 
-  drawCommand(g, p, t) {
+  drawCommand(g, p, _t) {
     const h = g.hero;
     // A vertical right-hand skill rail follows the reference layout: each skill is a compact
     // round node with a colored school, key label and cooldown veil.

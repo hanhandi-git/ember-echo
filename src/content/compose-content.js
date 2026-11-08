@@ -62,13 +62,29 @@ function buildCritterType(id, def) {
   const mod = CRITTER_MODS[def.critter];
   if (!mod) throw new Error(`enemies.config: unknown critter "${def.critter}" for ${id}`);
   const deathFx = DEATH_FX[def.deathFx] ?? PICKUP_MODS.poof;
-  const { critter, deathFx: _df, mob, boss, look, overrides, ...stats } = def;
+  const {
+    critter: _critter,
+    deathFx: _df,
+    mob: _mob,
+    boss: _boss,
+    look: _look,
+    overrides: _overrides,
+    ...stats
+  } = def;
   return finalizeCombatStats({ mod, deathFx, ...stats });
 }
 
 function buildBossType(def) {
   const deathFx = DEATH_FX[def.deathFx] ?? PICKUP_MODS.shatterDeath;
-  const { critter, deathFx: _df, mob, boss, look, overrides, ...stats } = def;
+  const {
+    critter: _critter,
+    deathFx: _df,
+    mob: _mob,
+    boss: _boss,
+    look: _look,
+    overrides: _overrides,
+    ...stats
+  } = def;
   return finalizeCombatStats({ mod: null, deathFx, boss: true, look: def.look, ...stats });
 }
 
@@ -89,7 +105,7 @@ export function buildEnemyTypes() {
     if (def.mob) {
       const base = goblins[id];
       if (!base) throw new Error(`enemies.config: unknown mob id "${def.mob}"`);
-      const { mob: _m, overrides, name, nameEn, scale } = def;
+      const { mob: _m, overrides: _overrides, name, nameEn, scale } = def;
       const merged = applyOverrides(
         {
           ...base,
@@ -118,12 +134,10 @@ export function buildEnemyTypes() {
 export const ENEMY_TYPES = buildEnemyTypes();
 
 function buildLootTable() {
-  let sum = 0;
   const rows = [];
   for (const raw of pickupsConfig.drops ?? []) {
     const mod = PICKUP_BY_KEY[raw.pickup];
     if (!mod) throw new Error(`pickups.config: unknown pickup "${raw.pickup}"`);
-    sum += raw.p;
     rows.push({
       p: raw.p,
       kind: raw.kind,

@@ -32,7 +32,7 @@ test("every armory weapon has a non-English ja name when en title is Latin", () 
   for (const row of ARMORY) {
     const w = WEAPONS.find((item) => item.id === `armory:${row.id}`);
     assert.ok(w, `catalog includes armory:${row.id}`);
-    if (/^[A-Za-z\s\-]+$/.test(w.nameEn)) {
+    if (/^[A-Za-z\s-]+$/.test(w.nameEn)) {
       assert.notEqual(w.nameJa, w.nameEn, `${row.id} should localize ja`);
     }
   }

@@ -1,7 +1,7 @@
 // The player's duelist. The body is drawn from the pixelfx character rig (a real little skeleton, not a
 // bitmap), so walking, sword swings and spell casts all read as one person holding one sword.
 
-import { posed, poseAt, painterFor, STAND, READY, hex, clamp } from "../../pixelfx/src/core/index.js";
+import { posed, poseAt, READY, hex, clamp } from "../../pixelfx/src/core/index.js";
 import {
   HERO_LOOK_DEFAULT, HERO_LOOKS, loadHeroLook, WEAPONS, DEFAULT_SKILL_SLOTS,
   DEFAULT_MELEE_WEAPON_ID, DEFAULT_THROWN_WEAPON_ID,

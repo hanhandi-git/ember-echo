@@ -1,4 +1,4 @@
-import { createFrame, clearFrame, painterFor, clamp, hex, TAU } from "../../../../pixelfx/src/core/index.js";
+import { createFrame, clearFrame, painterFor, clamp, TAU } from "../../../../pixelfx/src/core/index.js";
 import { SW, PALETTE as C } from "../constants.js";
 
 export function mergeUI(f, u) {

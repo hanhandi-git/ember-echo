@@ -322,7 +322,7 @@ function castGeneric(g, sk) {
   if (mod.meta.loop) cfg.life = Math.min(2.1, Math.max(0.85, Number(mod.meta.duration ?? 1)));
   try {
     g.addFx(mod, options, cfg);
-  } catch (err) {
+  } catch (_err) {
     // A catalog effect with a specialized optional parameter still gets a fallback burst,
     // so browsing the full library never breaks the run.
     g.addFx(FX.manaBurst, { x: options.x, y: options.y - size(12), light: 1, seed: options.seed });

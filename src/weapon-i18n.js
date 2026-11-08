@@ -32,7 +32,7 @@ function tokenize(nameEn) {
   return String(nameEn)
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .toLowerCase()
-    .split(/[\s\-]+/)
+    .split(/[\s-]+/)
     .filter(Boolean);
 }
 
