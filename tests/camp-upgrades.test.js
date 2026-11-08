@@ -29,6 +29,8 @@ test("a fresh boot opens the camp instead of dropping into battle", () => {
   assert.equal(g.worldW, 640);
   assert.ok(g.mapFxTiles.length === 2);
   assert.equal(g.hero.hp, g.hero.maxHp);
+  g.tryHubDepart();
+  assert.equal(g.state, "camp", "the camp action waits at the gate");
   g.enterBattle();
   assert.equal(g.state, "playing");
   assert.equal(g.phase, "intro");
