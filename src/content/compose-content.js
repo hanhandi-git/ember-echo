@@ -53,7 +53,7 @@ function resolveStage(raw) {
   const map = MAP_BY_KEY[raw.map];
   if (!map) throw new Error(`stages.config: unknown map key "${raw.map}" in ${raw.id ?? raw.name}`);
   const { map: _mapKey, id: _id, ...rest } = raw;
-  return { ...rest, map };
+  return { ...rest, map, mapKey: raw.map };
 }
 
 export const STAGES = stagesConfig.stages.map(resolveStage);

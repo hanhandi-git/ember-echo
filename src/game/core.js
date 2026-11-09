@@ -10,6 +10,7 @@ import { AudioEngine } from "../audio.js";
 import { SKILL_RECTS, RESUME_BUTTON, CAMP_BUTTON, contains } from "../controls.js";
 import { stageAct, stageName, stageSub } from "../copy.js";
 import { SW, SH, WORLD_W, PALETTE, RENDER_DENSITY } from "./constants.js";
+import { createBattleMapWorkers } from "./battle-map-workers.js";
 
 export class Game {
   constructor(canvas) {
@@ -67,12 +68,14 @@ export class Game {
     this.hubActive = false;
     // Hub loading is synchronous only for a lightweight fallback; authored map art
     // is decoded asynchronously by the hub tile pool.
+    this.battleMapWorkers = createBattleMapWorkers(this);
     this.loadHub?.();
     this.loadPersistedProfile?.();
   }
 
   loadStage(index, camp = false) {
     if (camp) {
+      this.battleMapWorkers?.unmount();
       this.loadHub?.();
       return;
     }
@@ -116,6 +119,7 @@ export class Game {
     this.phase = "intro";
     this.state = "playing";
     this.fade = 1;
+    this.battleMapWorkers?.mountStage(index, this.stage.mapKey);
     this.audio.setScene({ camp: false, stageIndex: index, boss: false });
     {
       this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));

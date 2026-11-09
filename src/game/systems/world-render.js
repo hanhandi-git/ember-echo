@@ -44,6 +44,7 @@ export const worldRenderSystem = {
     const screenY = Math.round(-frame.oy * frame.density);
     const x0 = Math.max(0, -screenX), x1 = Math.min(tile.w, frame.w - screenX);
     const y0 = Math.max(0, -screenY), y1 = Math.min(tile.h, frame.h - screenY);
+    if (x1 <= x0 || y1 <= y0) return;
     for (let y = y0; y < y1; y++) {
       const dstRow = (screenY + y) * frame.w + screenX;
       const srcRow = y * tile.w;
@@ -62,6 +63,7 @@ export const worldRenderSystem = {
     const x0 = Math.max(0, -screenX), x1 = Math.min(tile.w, frame.w - screenX);
     const y0 = Math.max(0, -screenY), y1 = Math.min(tile.h, frame.h - screenY);
     const width = x1 - x0;
+    if (width <= 0 || y1 <= y0) return;
     for (let y = y0; y < y1; y++) {
       const dst = (screenY + y) * frame.w + screenX + x0;
       const src = y * tile.w + x0;
@@ -71,6 +73,7 @@ export const worldRenderSystem = {
   },
 
   drawMapTiles(frame) {
+    if (this.battleMapWorkers?.drawMap(frame)) return;
     for (let i = 0; i < this.mapFxTiles.length; i++) {
       const fx = this.mapFxTiles[i], tile = this.mapTileFrames[i];
       if (fx.staticLayer) {
