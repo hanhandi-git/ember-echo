@@ -101,6 +101,7 @@ export const WEAPONS = [
       rigWeapon: w.id,
       attack: { kind: w.family === "thrust" ? "line" : w.family === "sweep" ? "arc" : w.family === "slam" ? "line" : "projectile", range: w.tip > 45 ? 86 : w.tip > 32 ? 70 : 54, radius: w.family === "slam" ? 18 : w.family === "thrust" ? 7 : 11, pierce: ["spear", "lance", "totsuka", "flying-sword", "pear-needles"].includes(w.id), maxHits: ["spear", "lance", "totsuka", "flying-sword", "pear-needles"].includes(w.id) ? 4 : 1 },
       fxPath: w.fx, module: PIXELFX_EFFECTS[w.fx], class: w.class, family: w.family,
+      ...(w.theme ? { theme: w.theme, tags: w.tags, meleeArtKey: w.class === "melee" ? w.id : undefined } : {}),
       desc: labels.name, descEn: labels.nameEn, descJa: labels.nameJa,
     };
   }),

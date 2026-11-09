@@ -15,7 +15,10 @@ const DRAW_SWORD_IDS = new Set([
   "ember-greatsword", "frost-lightsword", "shadow-katana", "thunder-claymore", "starlight-rapier",
 ]);
 
-const art = (id, contact, extra = {}) => ({ id: `melee/${id}`, module: effects[`melee/${id}`], contact, ...extra });
+const art = (id, contact, extra = {}) => {
+  const path = id.includes("/") ? id : `melee/${id}`;
+  return { id: path, module: effects[path], contact, ...extra };
+};
 const singleStaff = weaponAttack({ weapon: "staff", name: "Staff opening sweep", windup: 0.25,
   hits: [4 / 30], width: 5, seed: 32, palette: JADE });
 
@@ -39,6 +42,11 @@ const CUSTOM_STRINGS = {
   "starlight-rapier": [customArt("starlight-rapier", 0.05), customArt("starlight-rapier", 0.1), customArt("starlight-rapier", 0.13)],
 };
 
+const DNF_STRINGS = {
+  "blood-cleaver": [art("dnf/overdrive-slash", 0.24), art("dnf/overdrive-slash", 0.58, { from: 0.34 }), art("dnf/overdrive-slash", 0.58, { from: 0.34 })],
+  "chain-blade": [art("dnf/chain-cut", 0.1), art("dnf/chain-cut", 0.42, { from: 0.22 }), art("dnf/chain-cut", 0.42, { from: 0.22 })],
+};
+
 export function meleeFamily(weapon) {
   const id = weapon?.rigWeapon;
   if (weapon?.meleeArtKey === "ember-greatsword") return "slam";
@@ -46,6 +54,8 @@ export function meleeFamily(weapon) {
   if (weapon?.meleeArtKey === "shadow-katana") return "katana";
   if (weapon?.meleeArtKey === "thunder-claymore") return "slam";
   if (weapon?.meleeArtKey === "starlight-rapier") return "thrust";
+  if (weapon?.meleeArtKey === "blood-cleaver") return "slam";
+  if (weapon?.meleeArtKey === "chain-blade") return "blade";
   if (id === "scythe") return "scythe";
   if (id === "staff") return "staff";
   if (id === "claw") return "claw";
@@ -58,7 +68,7 @@ export function meleeFamily(weapon) {
 
 export function meleeArt(weapon, combo, dash = false) {
   const family = meleeFamily(weapon);
-  const custom = CUSTOM_STRINGS[weapon?.meleeArtKey]?.[combo];
+  const custom = CUSTOM_STRINGS[weapon?.meleeArtKey]?.[combo] ?? DNF_STRINGS[weapon?.meleeArtKey]?.[combo];
   const source = custom ?? (dash && family !== "slam" && family !== "scythe" && family !== "claw"
     ? art("rapier-lunge", 2 / 30, { palette: family === "staff" ? JADE : EMBER }) : STRINGS[family][combo]);
   return { ...source, family, from: source.from ?? -0.12, palette: source.palette ?? source.module.meta.options.palette,

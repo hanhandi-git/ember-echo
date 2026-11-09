@@ -151,13 +151,16 @@ export function createSettingsUI(game) {
   const settings = panel.querySelector('[data-content="settings"]');
   const tablist = panel.querySelector(".settings-tabs");
   const campHero = panel.querySelector(".camp-hero");
-  let mode = "battle", tab = "loadout", skillAttrTab = "slash", returnFocus = null;
+  let mode = "battle", tab = "loadout", skillAttrTab = "slash", returnFocus = null, contentTheme = "all";
+  const inTheme = item => contentTheme === "all" || item.theme === contentTheme;
+  const themePicker = () => `<div class="skill-attr-tabs content-themes" aria-label="${game.language === "zh" ? "主题" : "Theme"}">
+    ${["all", "dnf"].map(id => `<button type="button" class="skill-attr-tab ${contentTheme === id ? "is-active" : ""}" data-content-theme="${id}" aria-pressed="${contentTheme === id}">${id === "dnf" ? "DNF" : game.language === "zh" ? "全部主题" : game.language === "ja" ? "すべて" : "All themes"}</button>`).join("")}</div>`;
   const attrLabel = (id) => {
     const labels = SKILL_ATTR_LABELS[id];
     if (!labels) return id;
     return game.language === "zh" ? labels.zh : game.language === "ja" ? labels.ja : labels.en;
   };
-  const attrsWithSkills = () => SKILL_ATTR_ORDER.filter((id) => SKILL_META.some((s) => skillAttr(s) === id));
+  const attrsWithSkills = () => SKILL_ATTR_ORDER.filter((id) => SKILL_META.some((s) => inTheme(s) && skillAttr(s) === id));
   const localized = (value) => value?.[game.language] ?? value?.en ?? "";
   installUiFrames(panel.parentElement);
   document.documentElement.lang = game.language === "zh" ? "zh-CN" : game.language;
@@ -178,8 +181,8 @@ export function createSettingsUI(game) {
   function renderLoadout() {
     if (!loadout) return;
     const h = game.hero;
-    const meleeGrid = MELEE_WEAPONS.map((w) => weaponCard(w, h)).join("");
-    const thrownGrid = THROWN_WEAPONS.map((w) => weaponCard(w, h)).join("");
+    const meleeGrid = MELEE_WEAPONS.filter(inTheme).map((w) => weaponCard(w, h)).join("");
+    const thrownGrid = THROWN_WEAPONS.filter(inTheme).map((w) => weaponCard(w, h)).join("");
     loadout.innerHTML = `<div class="loadout-overview loadout-overview--dual">
       <div class="overview-weapons">
         <div class="overview-weapon"><img src="${weaponArtUrl(h.meleeWeapon)}" alt="" aria-hidden="true" draggable="false"><span>${t(game.language, "loadout.melee")}</span><strong>${escapeHtml(weaponName(h.meleeWeapon))}</strong></div>
@@ -187,7 +190,7 @@ export function createSettingsUI(game) {
       </div>
       <div class="overview-copy"><small>${t(game.language, "stats.damage")} ${Math.round(h.dmgMul * 100)}% · ${t(game.language, "stats.speed")} ${h.speed}</small></div>
     </div>
-    <section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.melee")}</h2><div class="item-grid">${meleeGrid}</div></section>
+    ${themePicker()}<section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.melee")}</h2><div class="item-grid">${meleeGrid}</div></section>
     <section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.thrown")}</h2><div class="item-grid">${thrownGrid}</div></section>`;
   }
 
@@ -220,7 +223,7 @@ export function createSettingsUI(game) {
       const active = skillAttrTab === id;
       return `<button type="button" class="skill-attr-tab ${active ? "is-active" : ""}" data-skill-attr="${id}" role="tab" aria-selected="${active}">${escapeHtml(attrLabel(id))}</button>`;
     }).join("");
-    const pool = SKILL_META.filter((s) => skillAttr(s) === skillAttrTab);
+    const pool = SKILL_META.filter((s) => inTheme(s) && skillAttr(s) === skillAttrTab);
     const skills = pool.map((s) => {
       const selected = activeSlot != null && h.skillSlots[activeSlot] === s.id;
       const equipped = h.skillSlots.includes(s.id);
@@ -237,7 +240,7 @@ export function createSettingsUI(game) {
     }).join("");
     skillsPanel.innerHTML = `<section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.skills")} <span class="section-caption">${t(game.language, "loadout.skillHint")}</span></h2><div class="skill-grid">${slots}</div></section>
       <section class="loadout-section"><h2 class="section-title">${escapeHtml(attrLabel(skillAttrTab))} <span class="section-caption">${t(game.language, "loadout.skillPick")}</span></h2>
-      <div class="skill-attr-tabs" role="tablist">${attrTabs}</div><div class="skill-grid">${skills || `<p class="settings-note">${t(game.language, "loadout.skillEmpty")}</p>`}</div></section>`;
+      ${themePicker()}<div class="skill-attr-tabs" role="tablist">${attrTabs}</div><div class="skill-grid">${skills || `<p class="settings-note">${t(game.language, "loadout.skillEmpty")}</p>`}</div></section>`;
   }
 
   function renderUpgrade() {
@@ -358,7 +361,7 @@ export function createSettingsUI(game) {
     const h = game.hero;
     const weapon = h.meleeWeapon;
     const current = HERO_LOOKS.find((look) => look.id === h.look) ?? HERO_LOOKS[0];
-    const looks = HERO_LOOKS.map((look) => {
+    const looks = HERO_LOOKS.filter(inTheme).map((look) => {
       const equipped = h.look === look.id;
       return `<button type="button" class="item-card hero-look-card ${equipped ? "is-equipped" : ""}" data-hero-look="${look.id}" data-kind="look-${look.id}" aria-pressed="${equipped}" aria-label="${escapeHtml(lookName(look))}">
         <span class="item-icon"><canvas class="hero-look-preview" width="112" height="88" aria-hidden="true"></canvas></span>
@@ -370,7 +373,7 @@ export function createSettingsUI(game) {
       <canvas class="appearance-portrait" data-hero-portrait role="img" aria-label="${escapeHtml(lookName(current))}"></canvas>
       <div class="appearance-copy"><span>${t(game.language, "loadout.equipped")}</span><strong>${escapeHtml(lookName(current))}</strong><small>${escapeHtml(current.role)}</small></div>
     </section>
-    <section class="loadout-section"><h2 class="section-title">${t(game.language, "profile.appearance")} <span class="section-caption">${t(game.language, "profile.appearanceHint")}</span></h2><div class="item-grid hero-look-grid">${looks}</div></section>`;
+    <section class="loadout-section"><h2 class="section-title">${t(game.language, "profile.appearance")} <span class="section-caption">${t(game.language, "profile.appearanceHint")}</span></h2>${themePicker()}<div class="item-grid hero-look-grid">${looks}</div></section>`;
     drawHeroPortrait(appearance.querySelector("[data-hero-portrait]"), weapon.rigWeapon, h.look);
     appearance.querySelectorAll(".hero-look-card").forEach((card) => {
       drawHeroPortrait(card.querySelector("canvas"), weapon.rigWeapon, card.dataset.heroLook);
@@ -469,7 +472,7 @@ export function createSettingsUI(game) {
     const scroller = panel.querySelector(".settings-content:not([hidden])");
     const scrollTop = scroller?.scrollTop ?? 0;
     const focused = document.activeElement;
-    const focusId = focused?.closest("button, input")?.getAttributeNames().find(name => ["data-weapon", "data-skill", "data-slot", "data-language", "data-skill-attr", "data-hero-look", "data-upgrade", "data-audio-volume", "data-audio-mute"].includes(name));
+    const focusId = focused?.closest("button, input")?.getAttributeNames().find(name => ["data-weapon", "data-skill", "data-slot", "data-language", "data-skill-attr", "data-content-theme", "data-hero-look", "data-upgrade", "data-audio-volume", "data-audio-mute"].includes(name));
     const focusValue = focusId ? focused.getAttribute(focusId) : null;
     renderCampHero();
     renderLoadout(); renderStash(); renderSkills();
@@ -586,6 +589,8 @@ export function createSettingsUI(game) {
     }
     const tabButton = event.target.closest("[data-tab]");
     if (tabButton) { tab = tabButton.dataset.tab; render(); return; }
+    const themeButton = event.target.closest("[data-content-theme]");
+    if (themeButton) { contentTheme = themeButton.dataset.contentTheme; render(); return; }
     const attrButton = event.target.closest("[data-skill-attr]");
     if (attrButton) { skillAttrTab = attrButton.dataset.skillAttr; render(); return; }
     const languageButton = event.target.closest("[data-language]");

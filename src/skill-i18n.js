@@ -1,6 +1,17 @@
 /** Localized display names for pixelfx-derived skills (zh / en / ja). */
 
 const FX_OVERRIDES = {
+  "dnf/awakening-burst": { zh: "觉醒爆发", ja: "覚醒バースト" },
+  "dnf/blood-cleaver": { zh: "血焰斩铁剑", ja: "血焔大鉈" },
+  "dnf/chain-blade": { zh: "锁影刃", ja: "鎖影ブレード" },
+  "dnf/chain-cut": { zh: "锁影交叉斩", ja: "鎖影交差斬り" },
+  "dnf/chain-pull": { zh: "锁链牵引", ja: "チェインプル" },
+  "dnf/dust-gunner": { zh: "荒野枪手", ja: "荒野ガンナー" },
+  "dnf/ghost-slayer": { zh: "鬼手剑士", ja: "鬼手の剣士" },
+  "dnf/hell-cannon": { zh: "赤铜重炮", ja: "ヘルキャノン" },
+  "dnf/launcher-volley": { zh: "重炮齐射", ja: "ランチャー斉射" },
+  "dnf/overdrive-slash": { zh: "超载觉醒斩", ja: "オーバードライブ斬り" },
+  "dnf/rage-aura": { zh: "狂战光环", ja: "バーサーカーオーラ" },
   "ninjutsu/amaterasu": { zh: "天照", ja: "天照" },
   "ninjutsu/chidori-rush": { zh: "千鸟突", ja: "千鳥突" },
   "ninjutsu/earth-wall": { zh: "土流壁", ja: "土流壁" },

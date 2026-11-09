@@ -26,6 +26,9 @@ const ARMORY_JA = {
   "skyvault-greatsword": "天穹大剣",
   "aurora-lightblade": "極光剣",
   "dragon-scale-sabre": "竜鱗刀",
+  "blood-cleaver": "血焔大鉈",
+  "chain-blade": "鎖影刃",
+  "hell-cannon": "ヘルキャノン",
 };
 
 const JA_WORDS = {
