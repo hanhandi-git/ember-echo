@@ -126,16 +126,6 @@ export const worldRenderSystem = {
     // discard eyes, thin blades and spark trails before the final canvas could display them.
     const meta = fx.meta;
     const cacheable = meta?.size?.length === 2 && (meta.fps ?? 60) <= 30;
-    if (cacheable) {
-      const frameId = this._fxCacheFrameId ?? 0;
-      if (fx.__emberDrawFrame !== frameId) {
-        if (fx.__emberFxPhase == null) fx.__emberFxPhase = (this._fxPhaseCounter = (this._fxPhaseCounter ?? 0) + 1) % 4;
-        const forced = fx.__emberFxPhase === (frameId & 3);
-        if ((this._fxDrawBudget ?? 0) <= 0 && !forced) return;
-        this._fxDrawBudget = (this._fxDrawBudget ?? 0) - 1;
-        fx.__emberDrawFrame = frameId;
-      }
-    }
     if (!cacheable) {
       fx.options.x = x;
       fx.options.y = y;
@@ -150,20 +140,12 @@ export const worldRenderSystem = {
     }
 
     const t = fx.t ?? 0, flip = !!fx.options.flip, angle = fx.options.angle ?? 0;
-    const density = Math.min(this.frame.density, 2);
+    const density = this.frame.density;
     let cache = fx.__emberRenderCache;
     const interval = 1 / Math.max(1, meta.fps ?? 30);
     const unchanged = cache && cache.layer === layer && cache.scale === scale && cache.x === x && cache.y === y
       && cache.flip === flip && cache.angle === angle && cache.density === density && t >= cache.t && t - cache.t < interval;
-    const budget = this._fxCacheRefreshBudget ?? Infinity;
-    if (cache && cache.phase == null) cache.phase = (this._fxCachePhaseCounter = (this._fxCachePhaseCounter ?? 0) + 1) % 4;
-    const forced = cache && cache.phase === ((this._fxCacheFrameId ?? 0) & 3);
-    if (!unchanged && cache && budget <= 0 && !forced) {
-      this.blitCachedFx(this.frame, cache.frame);
-      return;
-    }
     if (!unchanged) {
-      if (Number.isFinite(this._fxCacheRefreshBudget)) this._fxCacheRefreshBudget--;
       const [w, h] = meta.size;
       const [ox, oy] = meta.origin ?? [w / 2, h / 2];
       const scratch = createFrame(Math.max(1, Math.ceil(w * scale)), Math.max(1, Math.ceil(h * scale)),
@@ -179,7 +161,6 @@ export const worldRenderSystem = {
       }
       cache = fx.__emberRenderCache = {
         frame: scratch, layer, scale, x, y, flip, angle, density, t,
-        phase: cache?.phase ?? ((this._fxCachePhaseCounter = (this._fxCachePhaseCounter ?? 0) + 1) % 4),
       };
     }
     this.blitCachedFx(this.frame, cache.frame);
