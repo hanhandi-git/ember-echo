@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Game } from "../src/game.js";
+import { HUB_ADVENTURE_GATE, HUB_SPAWNS } from "../src/content/hub-worlds.js";
 import { persistSave, loadSave, canContinue, applyHeroProfile } from "../src/save.js";
 import { UPGRADE_STATS, upgradeCost, spentUpgrades, emberForXp } from "../src/upgrades.js";
 
@@ -9,6 +10,11 @@ function mockGame() {
     createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
     putImageData() {},
   }) });
+}
+
+function reachGate(g) {
+  g.hero.spawn(HUB_ADVENTURE_GATE.x, HUB_ADVENTURE_GATE.y);
+  g.tick(1 / 60);
 }
 
 const store = new Map();
@@ -21,7 +27,7 @@ test.beforeEach(() => {
   };
 });
 
-test("a fresh boot opens the camp instead of dropping into battle", () => {
+test("a fresh boot starts in the walkable camp and departure requires portal preparation", () => {
   const g = mockGame();
   assert.equal(g.state, "camp");
   assert.equal(g.phase, "camp");
@@ -29,12 +35,50 @@ test("a fresh boot opens the camp instead of dropping into battle", () => {
   assert.equal(g.worldW, 640);
   assert.ok(g.mapFxTiles.length === 2);
   assert.equal(g.hero.hp, g.hero.maxHp);
+  assert.equal(g.campMenuOpen, false);
+  assert.equal(g.hero.x, HUB_SPAWNS.camp[0]);
   g.tryHubDepart();
   assert.equal(g.state, "camp", "the camp action waits at the gate");
+  g.enterBattle();
+  assert.equal(g.state, "camp", "departure cannot bypass the portal");
+  reachGate(g);
+  assert.equal(g.campMenuOpen, true);
+  assert.equal(g.state, "camp", "entering the portal opens preparation, not battle");
   g.enterBattle();
   assert.equal(g.state, "playing");
   assert.equal(g.phase, "intro");
   assert.equal(g.stageIndex, 0);
+});
+
+test("portal preparation freezes movement, can be cancelled and reopens after leaving the gate", () => {
+  const g = mockGame();
+  let opened = 0;
+  g.domUi = {
+    openCamp() { opened++; },
+    close() { g.campMenuOpen = false; },
+  };
+  g.keys.add("d");
+  g.tick(0.25);
+  assert.ok(g.hero.x > HUB_SPAWNS.camp[0], "the initial camp accepts movement");
+  reachGate(g);
+  assert.equal(opened, 1);
+  const x = g.hero.x;
+  g.keys.add("d");
+  g.touchMove = { x: 1, y: 0 };
+  g.tick(0.25);
+  assert.equal(g.hero.x, x, "world input cannot move the hero behind the modal");
+
+  g.domUi.close();
+  g.keys.clear();
+  g.touchMove = { x: 0, y: 0 };
+  g.tick(0.1);
+  assert.equal(opened, 1, "cancelling does not immediately reopen preparation");
+  g.hero.x = HUB_ADVENTURE_GATE.x - HUB_ADVENTURE_GATE.r - 10;
+  g.tick(0.1);
+  reachGate(g);
+  assert.equal(opened, 2);
+  g.enterBattle();
+  assert.equal(g.state, "playing");
 });
 
 test("kills and stage clears award embers", () => {
@@ -141,6 +185,7 @@ test("equipping gear in camp keeps an expedition resumable", () => {
   g.hero.equipWeapon("moon-scythe", g);
   assert.ok(canContinue(loadSave()), "gearing up at camp keeps the run");
 
+  reachGate(g);
   g.enterBattle();
   assert.equal(g.state, "playing");
   assert.equal(g.hero.hp, 73);
@@ -155,6 +200,7 @@ test("defeat and victory can return to camp with progression intact", () => {
   g.enterCamp();
   assert.equal(g.state, "camp");
   assert.equal(g.phase, "camp");
+  assert.equal(g.campMenuOpen, false);
   assert.equal(g.hero.embers, 44);
   assert.equal(g.hero.alive, true);
   assert.equal(g.hero.hp, g.hero.maxHp);
@@ -172,6 +218,7 @@ test("upgrades bought before resuming a saved run carry into that run", () => {
   persistSave(g);
 
   const g2 = mockGame();
+  reachGate(g2);
   g2.enterBattle();
   assert.equal(g2.state, "playing");
   assert.equal(g2.hero.maxHp, 124);

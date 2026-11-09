@@ -38,8 +38,10 @@ export function createTouchControls(game) {
   const actionButtons = [...root.querySelectorAll("[data-touch-action]")];
   const pressed = new Map();
   const active = () => forceTouch || coarsePointer.matches || lastInputWasTouch;
-  const playing = () => (game.state === "playing" || game.state === "camp")
+  const playing = () => game.state === "playing"
     && game.hero.alive && game.phase !== "travel";
+  const walking = () => playing() || (game.state === "camp" && game.hubActive
+    && !game.campMenuOpen && !game._hubDepartPending);
 
   function resetJoystick() {
     const id = joystickId;
@@ -60,7 +62,7 @@ export function createTouchControls(game) {
     knob.style.transform = `translate(calc(-50% + ${vector.x * 28}px), calc(-50% + ${vector.y * 28}px))`;
   }
   joystick.addEventListener("pointerdown", (event) => {
-    if (!playing() || joystickId != null || event.button !== 0) return;
+    if (!walking() || joystickId != null || event.button !== 0) return;
     event.preventDefault();
     game.audio.unlock();
     joystickId = event.pointerId;
@@ -68,7 +70,7 @@ export function createTouchControls(game) {
     move(event);
   });
   joystick.addEventListener("pointermove", (event) => {
-    if (event.pointerId === joystickId && playing()) { event.preventDefault(); move(event); }
+    if (event.pointerId === joystickId && walking()) { event.preventDefault(); move(event); }
   });
   for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
     joystick.addEventListener(type, (event) => { if (event.pointerId === joystickId) resetJoystick(); });
@@ -134,10 +136,12 @@ export function createTouchControls(game) {
 
   function sync() {
     const language = game.language ?? "zh", copy = COPY[language] ?? COPY.zh;
-    root.hidden = !playing();
+    root.hidden = !walking();
+    skills.hidden = game.state === "camp";
+    for (const button of actionButtons) button.hidden = game.state === "camp";
     root.classList.toggle("is-touch", active());
     tools?.classList.toggle("is-touch", active());
-    if (!playing() || !active()) reset();
+    if (!walking() || !active()) reset();
     if (tools) {
       tools.hidden = !["playing", "paused"].includes(game.state);
       const pause = tools.querySelector('[data-game-action="pause"]');
@@ -183,7 +187,7 @@ export function createTouchControls(game) {
       const icon = button.dataset.gameAction === "pause" && game.state === "paused" ? "resume" : button.dataset.gameAction;
       paintUiArt(button.querySelector("canvas"), "action", { icon, disabled: button.disabled, hud: true }, time);
     }
-    if (root.hidden) return;
+    if (root.hidden || game.state === "camp") return;
     slotButtons.forEach((button, index) => {
       const id = game.hero.skillSlots[index], s = SKILL_META.find(s => s.id === id) ?? SKILL_META[0];
       const left = game.hero.cd[id] ?? 0, lacksMana = game.hero.mp < s.cost;

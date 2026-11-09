@@ -17,7 +17,7 @@ export const loopSystem = {
 
     if (this.state === "camp") {
       for (const map of this.mapFxTiles) map.update(dt * 0.8);
-      this.hero.update(this, dt, this.keys);
+      if (!this.campMenuOpen && !this._hubDepartPending) this.hero.update(this, dt, this.keys);
       this.updateHub?.(dt);
       this.updateEffects(dt);
       this.updateDashTrails(dt);

@@ -63,7 +63,7 @@ export function installKeyboard(game) {
   window.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
     if (MOVE_KEYS.has(key)) {
-      game.keys.add(key);
+      if (!game.campMenuOpen && !game._hubDepartPending) game.keys.add(key);
       e.preventDefault();
       return;
     }

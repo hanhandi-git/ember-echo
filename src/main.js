@@ -20,7 +20,6 @@ document.addEventListener("visibilitychange", () => {
 });
 game.domUi = createSettingsUI(game);
 game.touchUi = createTouchControls(game);
-game.domUi.openCamp?.();
 const canvas = document.querySelector("#game");
 
 installKeyboard(game);
@@ -42,8 +41,4 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-requestAnimationFrame(() => {
-  game.render();
-  game.domUi?.render?.();
-});
 requestAnimationFrame(frame);

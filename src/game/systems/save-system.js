@@ -73,15 +73,23 @@ export const saveSystem = {
     this.hero.spawn(HUB_SPAWNS.camp[0], HUB_SPAWNS.camp[1]);
     this.kills = 0;
     this.runTime = 0;
-    this.domUi?.openCamp?.();
     this.scheduleCampPrewarm?.();
   },
 
-  /** Primary camp action: resume a saved expedition when one exists. */
-  enterBattle() {
-    if (this.state !== "camp" || !this.hubActive) return;
+  /** Confirm departure from the portal's loadout screen. */
+  enterBattle(opts = {}) {
+    if (this.state !== "camp" || !this.hubActive || !this.campMenuOpen
+      || !this.nearHubAdventureGate() || this._hubDepartPending) return;
+    this._hubDepartPending = true;
+    this.keys.clear();
+    this.touchUi?.reset?.();
     this.domUi?.close?.();
-    const begin = () => this.startRun({ uiClosed: true });
+    this.campMenuOpen = false;
+    const begin = () => {
+      if (this.state !== "camp" || !this.hubActive || !this._hubDepartPending) return;
+      this._hubDepartPending = false;
+      this.startRun({ uiClosed: true, fresh: !!opts.fresh });
+    };
     const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (fn) => fn();
     frame(() => frame(begin));
   },

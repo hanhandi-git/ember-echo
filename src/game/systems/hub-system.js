@@ -10,7 +10,11 @@ export const hubSystem = {
   hubDepartHintT: 0,
 
   loadHub(opts = {}) {
+    this.domUi?.close?.();
     this.hubActive = true;
+    this.campMenuOpen = false;
+    this.hubGateArmed = true;
+    this._hubDepartPending = false;
     this.invalidateStagePrewarm?.();
     const built = acquireHubMapTiles(this.mapFxTiles);
     this.mapFxTiles = built.mapFxTiles;
@@ -80,10 +84,23 @@ export const hubSystem = {
     return this.hubAdventureDistance() < HUB_ADVENTURE_GATE.r;
   },
 
+  openHubDeparture() {
+    if (this.state !== "camp" || !this.hubActive || this.campMenuOpen
+      || this._hubDepartPending || !this.nearHubAdventureGate()) return false;
+    this.hubGateArmed = false;
+    this.keys.clear();
+    this.touchUi?.reset?.();
+    this.hero.vx = this.hero.vy = 0;
+    this.campMenuOpen = true;
+    this.domUi?.openCamp?.();
+    this.audio.play("ui");
+    return true;
+  },
+
   tryHubDepart() {
     if (this.state !== "camp" || !this.hubActive) return false;
     if (this.nearHubAdventureGate()) {
-      this.enterBattle();
+      this.openHubDeparture();
       return true;
     }
     const c = uiCopy(this);
@@ -96,6 +113,10 @@ export const hubSystem = {
   updateHub(dt) {
     if (this.state !== "camp" || !this.hubActive) return;
     this.hubAdventureFx?.update(dt);
+    if (!this.campMenuOpen && !this._hubDepartPending) {
+      if (this.hubAdventureDistance() > HUB_ADVENTURE_GATE.r + 4) this.hubGateArmed = true;
+      if (this.hubGateArmed && this.nearHubAdventureGate()) this.openHubDeparture();
+    }
     const nextZone = this.hero.x < 300 ? "camp" : "town";
     if (nextZone !== this.hubZone) {
       this.hubZone = nextZone;
@@ -114,6 +135,9 @@ export const hubSystem = {
     this.hubAdventureFx.options.x = gate.x;
     this.hubAdventureFx.options.y = gate.y;
     const ink = "#07060d", gold = "#ffd36a", dim = "#a8a0b0";
+    if (!this.campMenuOpen) {
+      p.text(c.hubExploreHint, this.cameraX + 160, 173, gold, { align: "center", outline: ink, font: "mini" });
+    }
     if (this.nearHubAdventureGate()) {
       p.text(c.hubDepartReady, gate.x, gate.y - 62, gold, { align: "center", outline: ink, font: "mini" });
     } else if (this.hubZone === "camp") {
