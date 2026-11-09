@@ -73,7 +73,27 @@ export function weaponArtUrl(weapon) {
   const base = artSprite("skill", { icon: "none", mana: 1, hud: true });
   ctx.drawImage(base, 7, 7, 78, 78, 0, 0, 78, 78);
   const shape = MELEE_SHAPES[weapon.rigWeapon] ?? THROWN_SHAPES[weapon.rigWeapon];
-  if (shape) {
+  if (shape?.pixels) {
+    // Sample the composed engraving directly at two output pixels per UI unit.
+    // Painting one rectangle per source texel would cover neighboring inlay pixels.
+    const density = 2, size = 78 * density, root = Math.SQRT1_2;
+    canvas.width = canvas.height = size;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(base, 7, 7, 78, 78, 0, 0, size, size);
+    const points = shape.pixels.map(({ x, y }) => [(x + y) * root, (y - x) * root]);
+    const minX = Math.min(...points.map(p => p[0])), maxX = Math.max(...points.map(p => p[0]));
+    const minY = Math.min(...points.map(p => p[1])), maxY = Math.max(...points.map(p => p[1]));
+    const scale = 58 / Math.max(maxX - minX, maxY - minY), cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const source = new Map(shape.pixels.map(({x,y,c}) => [`${Math.round(x * shape.density)},${Math.round(y * shape.density)}`, c]));
+    const layer = document.createElement("canvas"); layer.width = layer.height = size;
+    const lctx = layer.getContext("2d"), img = lctx.createImageData(size, size), pixels = new Uint32Array(img.data.buffer);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const tx = (x / density - 39) / scale + cx, ty = (y / density - 36) / scale + cy;
+      const sx = Math.round((tx - ty) * root * shape.density), sy = Math.round((tx + ty) * root * shape.density);
+      pixels[y * size + x] = source.get(`${sx},${sy}`) ?? 0;
+    }
+    lctx.putImageData(img, 0, 0); ctx.drawImage(layer, 0, 0);
+  } else if (shape) {
     const points = [];
     shape.draw((x, y, c) => points.push([x * 0.71 + y * 0.71, -x * 0.71 + y * 0.71, c]));
     const minX = Math.min(...points.map(p => p[0])), maxX = Math.max(...points.map(p => p[0]));
