@@ -75,10 +75,14 @@ async function decodeHubAsset(url) {
   if (!response.ok) throw new Error(`hub tile ${response.status}: ${url}`);
   const bitmap = await createImageBitmap(await response.blob());
   const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
+  // Hub PNGs were authored at x2 (640×360). Upscale them into the active frame
+  // density so a x4 canvas receives a full 1280×720 tile instead of a quarter
+  // sized image in the upper-left corner.
+  canvas.width = MAP_TILE_W * MAP_TILE_DENSITY;
+  canvas.height = MAP_TILE_H * MAP_TILE_DENSITY;
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  ctx.drawImage(bitmap, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close?.();
   const image = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   const bytes = image.buffer.slice(image.byteOffset, image.byteOffset + image.byteLength);
