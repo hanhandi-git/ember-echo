@@ -20,8 +20,11 @@ export class BattleMapTileSim {
   raster(dt) {
     if (dt > 0) this.inst.update(dt);
     clearFrame(this.frame);
-    this.inst.options.x = this.opts.x;
-    this.inst.options.y = this.opts.y;
+    // Each worker owns a local 320×180 tile. Its world position is applied by the
+    // main thread when the tile is blitted into the camera frame; drawing at x=320
+    // here would place the second tile entirely outside its own buffer.
+    this.inst.options.x = 0;
+    this.inst.options.y = 0;
     this.inst.draw(this.frame, "back");
     this.inst.draw(this.frame, "front");
     return this.detachBuffers();
