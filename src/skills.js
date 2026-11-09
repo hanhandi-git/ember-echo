@@ -233,13 +233,13 @@ function castU(g) {
 function castI(g) {
   const h = g.hero;
   h.startAnim("castI", HERO_TRACKS.castI, false);
-  g.addFx(FX.healAoe, { x: h.x, y: h.y, light: 0.9, seed: 61 }, { layer: "ground" });
-  g.addFx(FX.blessing, { x: h.x, y: h.y - size(12), seed: 62, light: 0.8 }, { life: 3.4, follow: () => h });
+  g.addFx(FX.healAoe, { x: h.x, y: h.y, light: 0.9, seed: 61 }, { layer: "ground", cache: false });
+  g.addFx(FX.blessing, { x: h.x, y: h.y - size(12), seed: 62, light: 0.8 }, { life: 3.4, follow: () => h, cache: false });
   g.audio.play("heal");
   g.after(0.18, () => {
     h.heal(g, Math.min(48, h.maxHp * 0.32), { linger: 4 });
     h.addShield(g, 30, 6.5);
-    g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 1, seed: 63 }, { life: 6.5, follow: () => h });
+    g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 1, seed: 63 }, { life: 6.5, follow: () => h, cache: false });
     g.audio.play("shield");
     g.flashScreen("#c8ffb0", 0.1);
   });

@@ -125,7 +125,7 @@ export const worldRenderSystem = {
     // Draw geometry directly at the output resolution. A low-resolution scratch image used to
     // discard eyes, thin blades and spark trails before the final canvas could display them.
     const meta = fx.meta;
-    const cacheable = meta?.size?.length === 2 && (meta.fps ?? 60) <= 30;
+    const cacheable = !fx.__emberNoCache && meta?.size?.length === 2 && (meta.fps ?? 60) <= 30;
     if (!cacheable) {
       fx.options.x = x;
       fx.options.y = y;
