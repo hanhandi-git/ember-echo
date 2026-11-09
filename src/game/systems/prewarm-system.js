@@ -27,6 +27,7 @@ export const prewarmSystem = {
     this.mapFxTiles = prewarm.mapFxTiles;
     this.mapTileFrames = prewarm.mapTileFrames;
     this.mapFx = prewarm.mapFxTiles[0];
+    this.mapStageIndex = index;
     return true;
   },
 

@@ -74,6 +74,10 @@ export const worldRenderSystem = {
 
   drawMapTiles(frame) {
     if (this.battleMapWorkers?.drawMap(frame)) return;
+    // A worker-backed stage may still be waiting for its first raster. Never
+    // fall back to a hub map that happens to be left in mapFxTiles; preserve a
+    // previous battle map when available, otherwise leave the frame dark briefly.
+    if (this.battleMapWorkers?.active && this.mapStageIndex == null) return;
     for (let i = 0; i < this.mapFxTiles.length; i++) {
       const fx = this.mapFxTiles[i], tile = this.mapTileFrames[i];
       if (fx.staticLayer) {

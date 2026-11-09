@@ -20,6 +20,7 @@ export const hubSystem = {
     this.mapFxTiles = built.mapFxTiles;
     this.mapTileFrames = built.mapTileFrames;
     this.mapFx = this.mapFxTiles[0];
+    this.mapStageIndex = null;
     this.worldW = HUB_WORLD_W;
     this.hubZone = opts.zone ?? "camp";
     const spawn = HUB_SPAWNS[this.hubZone] ?? HUB_SPAWNS.camp;

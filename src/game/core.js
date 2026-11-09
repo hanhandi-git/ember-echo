@@ -63,6 +63,7 @@ export class Game {
     this.mapFx = null;
     this.mapFxTiles = [];
     this.mapTileFrames = [];
+    this.mapStageIndex = null;
     this.worldW = WORLD_W;
     this.cameraX = 0;
     this.hubActive = false;
@@ -79,6 +80,7 @@ export class Game {
       this.loadHub?.();
       return;
     }
+    const previousHub = this.hubActive;
     this.hubActive = false;
     this.stageIndex = index;
     this.stage = STAGES[index];
@@ -86,11 +88,22 @@ export class Game {
     // is already covered by the travel fade, so keeping the previous map until the worker's
     // first raster arrives avoids blocking the main thread or exposing a blank frame.
     const workerMounted = this.battleMapWorkers?.mountStage(index, this.stage.mapKey) === true;
-    if (!workerMounted && !this.adoptStagePrewarm?.(index)) {
+    if (workerMounted && previousHub) {
+      // Do not let the hub PNG remain as the stage's temporary fallback while the
+      // worker produces its first raster. Keep the canvas dark until the right map
+      // arrives; consecutive battle stages may retain their previous battle map.
+      this.mapFx = null;
+      this.mapFxTiles = [];
+      this.mapTileFrames = [];
+      this.mapStageIndex = null;
+    } else if (!workerMounted && !this.adoptStagePrewarm?.(index)) {
       const baked = acquireStageMapTiles(index, this.hubActive ? null : this.mapFxTiles);
       this.mapFxTiles = baked?.mapFxTiles ?? [];
       this.mapFx = this.mapFxTiles[0] ?? null;
       this.mapTileFrames = baked?.mapTileFrames ?? [];
+      this.mapStageIndex = baked?.index ?? index;
+    } else if (!workerMounted) {
+      this.mapStageIndex = index;
     }
     this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
