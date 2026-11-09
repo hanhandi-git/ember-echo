@@ -95,6 +95,7 @@ function applyRaster(slot, data) {
 export function createBattleMapWorkers(game) {
   const idle = {
     mountStage() { return false; },
+    prepareStage() {},
     unmount() {},
     tick() {},
     tickMap() { return false; },
@@ -108,6 +109,8 @@ export function createBattleMapWorkers(game) {
 
   let pool = null;
   let slots = [];
+  let activeStageIndex = -1;
+  const prepared = new Map();
   let active = false;
   let disabled = false;
 
@@ -127,41 +130,73 @@ export function createBattleMapWorkers(game) {
     return pool;
   }
 
+  function disposeSlots(list) {
+    if (!pool) return;
+    for (const s of list) pool.dispose(s.id).catch(() => {});
+  }
+
+  function createSlots(stageIndex) {
+    return [0, MAP_TILE_W].map((x, tileIndex) => ({
+      id: stageIndex * 2 + tileIndex + 1,
+      tileIndex,
+      ready: false,
+      started: false,
+      busy: false,
+      tile: null,
+    }));
+  }
+
+  function initSlots(list, mapKey, stageIndex) {
+    for (const slot of list) {
+      if (slot.started) continue;
+      slot.started = true;
+      const x = slot.tileIndex * MAP_TILE_W;
+      const seed = 3 + stageIndex + x / MAP_TILE_W;
+      pool.init(slot.id, mapKey, seed, x)
+        .then((res) => applyRaster(slot, res))
+        .catch(() => { slot.ready = false; slot.started = false; });
+    }
+  }
+
   function unmount() {
     active = false;
-    if (pool) {
-      for (const s of slots) pool.dispose(s.id).catch(() => {});
-    }
+    activeStageIndex = -1;
+    disposeSlots(slots);
     slots = [];
+    for (const list of prepared.values()) disposeSlots(list);
+    prepared.clear();
   }
 
   return {
     get active() { return active; },
     get ownsMapAnimation() { return active && slots.length > 0 && slots.every((s) => s.ready && s.tile); },
 
+    prepareStage(stageIndex, mapKey) {
+      if (stageIndex < 0 || !mapKey || disabled || activeStageIndex === stageIndex || prepared.has(stageIndex)) return;
+      const p = ensurePool();
+      if (!p) return;
+      for (const [index, list] of prepared) {
+        if (index === stageIndex) continue;
+        disposeSlots(list);
+        prepared.delete(index);
+      }
+      const next = createSlots(stageIndex);
+      prepared.set(stageIndex, next);
+      initSlots(next, mapKey, stageIndex);
+    },
+
     mountStage(stageIndex, mapKey) {
-      unmount();
       if (stageIndex < 0 || !mapKey) return false;
       const p = ensurePool();
       if (!p) return false;
 
-      const xs = [0, MAP_TILE_W];
-      const seeds = xs.map((x) => 3 + stageIndex + x / MAP_TILE_W);
-      slots = xs.map((x, tileIndex) => ({
-        id: stageIndex * 2 + tileIndex + 1,
-        tileIndex,
-        ready: false,
-        busy: false,
-        tile: null,
-      }));
+      if (activeStageIndex === stageIndex && active) return true;
+      disposeSlots(slots);
+      slots = prepared.get(stageIndex) ?? createSlots(stageIndex);
+      prepared.delete(stageIndex);
+      activeStageIndex = stageIndex;
       active = true;
-
-      for (let i = 0; i < slots.length; i++) {
-        const slot = slots[i];
-        p.init(slot.id, mapKey, seeds[i], xs[i])
-          .then((res) => applyRaster(slot, res))
-          .catch(() => { slot.ready = false; });
-      }
+      if (!slots.every((slot) => slot.ready && slot.tile)) initSlots(slots, mapKey, stageIndex);
       return true;
     },
 

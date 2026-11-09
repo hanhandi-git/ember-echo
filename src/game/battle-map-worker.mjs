@@ -58,7 +58,12 @@ function handle(msg) {
       self.postMessage({ type: "idle", slot: msg.slot, gen: msg.gen });
       return;
     }
-    emit("frame", { slot: msg.slot, gen: msg.gen }, sim.raster(msg.dt ?? 0));
+    const out = sim.tick(msg.dt ?? 0);
+    if (!out) {
+      self.postMessage({ type: "idle", slot: msg.slot, gen: msg.gen });
+      return;
+    }
+    emit("frame", { slot: msg.slot, gen: msg.gen }, out);
     return;
   }
 }

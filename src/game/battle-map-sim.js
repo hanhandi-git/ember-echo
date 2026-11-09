@@ -11,14 +11,29 @@ export class BattleMapTileSim {
     this.opts = { x, y, seed };
     this.frame = createFrame(MAP_TILE_W, MAP_TILE_H, 0, 0, RENDER_DENSITY);
     this.inst = createFx(fxMod, this.opts);
+    this.renderInterval = 1 / Math.max(1, fxMod.meta?.fps ?? 30);
+    this.renderClock = this.renderInterval;
   }
 
   rewind() {
     this.inst.rewind?.();
+    this.renderClock = this.renderInterval;
+  }
+
+  advance(dt) {
+    if (dt > 0) this.inst.update(dt);
+  }
+
+  tick(dt) {
+    this.advance(dt);
+    this.renderClock += dt;
+    if (this.renderClock < this.renderInterval) return null;
+    this.renderClock %= this.renderInterval;
+    return this.raster(0);
   }
 
   raster(dt) {
-    if (dt > 0) this.inst.update(dt);
+    this.advance(dt);
     clearFrame(this.frame);
     // Each worker owns a local 320×180 tile. Its world position is applied by the
     // main thread when the tile is blitted into the camera frame; drawing at x=320

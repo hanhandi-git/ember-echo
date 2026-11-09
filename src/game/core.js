@@ -88,6 +88,8 @@ export class Game {
     // is already covered by the travel fade, so keeping the previous map until the worker's
     // first raster arrives avoids blocking the main thread or exposing a blank frame.
     const workerMounted = this.battleMapWorkers?.mountStage(index, this.stage.mapKey) === true;
+    const nextStage = STAGES[index + 1];
+    if (workerMounted && nextStage) this.battleMapWorkers?.prepareStage(index + 1, nextStage.mapKey);
     if (workerMounted && previousHub) {
       // Do not let the hub PNG remain as the stage's temporary fallback while the
       // worker produces its first raster. Keep the canvas dark until the right map
