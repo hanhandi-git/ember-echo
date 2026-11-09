@@ -16,6 +16,7 @@ import { UPGRADE_STATS, emptyUpgrades, spentUpgrades, upgradeById, upgradeCost }
 import { interruptSpellActs } from "./spell-act.js";
 import { meleeArt, meleePoseTrack, isSheathDrawWeapon, sheathedIdlePose, applySheathCarry } from "./melee-arts.js";
 import { meleeBeat } from "./combat-feel.js";
+import { RENDER_DENSITY } from "./game/constants.js";
 
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
 const IDLE = { ...GUARD, fx: 10, fy: -20, bx: 7, by: -19, crouch: 1 };
@@ -498,7 +499,7 @@ export class Hero {
       if (this.melee.echoT >= 0.025) {
         this.melee.echoT = 0;
         this.meleeEchoes.push({ x: this.x, y: this.y, facing: this.melee.facing, age: 0,
-          body: posed(this.pose(), this.look, { density: 2 }), color: hex(this.melee.art.echo) });
+          body: posed(this.pose(), this.look, { density: RENDER_DENSITY }), color: hex(this.melee.art.echo) });
         if (this.meleeEchoes.length > 3) this.meleeEchoes.shift();
       }
     }
@@ -519,7 +520,7 @@ export class Hero {
     const x = Math.round(this.x), y = Math.round(this.y);
     const scale = this.renderScale;
     const pose = this.pose();
-    const r = posed(pose, this.look, { density: 2 });
+    const r = posed(pose, this.look, { density: RENDER_DENSITY });
     const flip = this.facing < 0;
     // a soft contact shadow keeps the feet planted on the flagstones
     p.ellipse(x, y - 1, size(8), size(2.5), P.shadow, 0.55);
@@ -553,7 +554,7 @@ export class Hero {
   // Reassert the real rig above overlapping large spell effects, with a thin dark keyline.
   // The world still owns depth sorting; this pass only protects the player's silhouette.
   drawCombatFocus(p) {
-    const r = posed(this.pose(), this.look, { density: 2 }), scale = this.renderScale;
+    const r = posed(this.pose(), this.look, { density: RENDER_DENSITY }), scale = this.renderScale;
     const cell = scale / r.density, flip = this.facing < 0;
     for (const outline of [true, false]) {
       for (let i = 0; i < r.n; i++) {
@@ -675,7 +676,7 @@ export class Hero {
   warmMeleePoses() {
     for (let combo = 0; combo < 3; combo++) {
       const art = meleeArt(this.meleeWeapon, combo), beat = meleeBeat(this, combo);
-      for (const [, pose] of meleePoseTrack(art, beat, this.meleeWeapon, combo)) posed(pose, this.look, { density: 2 });
+      for (const [, pose] of meleePoseTrack(art, beat, this.meleeWeapon, combo)) posed(pose, this.look, { density: RENDER_DENSITY });
     }
   }
 
@@ -692,7 +693,7 @@ export { TRACKS as HERO_TRACKS };
 
 /** Draw a small standing portrait into a canvas (used by the HUD card). */
 export function drawHeroPortrait(canvas, weapon = "sword", look = loadHeroLook()) {
-  const density = 2, w = 112 * density, h = 88 * density;
+  const density = RENDER_DENSITY, w = 112 * density, h = 88 * density;
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");

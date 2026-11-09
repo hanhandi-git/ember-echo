@@ -1,4 +1,4 @@
-// One battle map tile: 320×180 world units at 4× density (shared by main-thread fallback and workers).
+// One battle map tile: 320×180 world units at the configured render density.
 
 import { createFrame, clearFrame, createFx } from "../../../pixelfx/src/core/index.js";
 import { RENDER_DENSITY } from "./constants.js";

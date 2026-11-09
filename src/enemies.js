@@ -8,6 +8,7 @@ import { uiCopy } from "./copy.js";
 import { emberForXp } from "./upgrades.js";
 import { clearMobPoseOptions, mobCastEndAt, mobCastHitAt, syncMobPoseOptions } from "./content/mob-reactions.js";
 import { IMPACTS } from "./combat-feel.js";
+import { RENDER_DENSITY } from "./game/constants.js";
 
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, barBack: hex("#1a0d18"), bar: hex("#d8422f"),
@@ -824,7 +825,7 @@ export class Boss {
       return;
     }
 
-    const r = posed(poseAt(this.anim.track, this.anim.loop ? this.anim.t % this.anim.dur : Math.min(this.anim.t, this.anim.dur)), BOSS_LOOK, { density: 2 });
+    const r = posed(poseAt(this.anim.track, this.anim.loop ? this.anim.t % this.anim.dur : Math.min(this.anim.t, this.anim.dur)), BOSS_LOOK, { density: RENDER_DENSITY });
     const flip = this.facing < 0;
     const tinted = this.hitFlash > 0;
     const scale = this.renderScale;

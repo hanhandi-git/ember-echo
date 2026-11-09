@@ -3,8 +3,8 @@ import { hex } from "../../../pixelfx/src/core/index.js";
 
 export const SW = 320;
 export const SH = 180;
-/** Two physical pixels per world unit; gameplay and HUD coordinates remain 320×180. */
-export const RENDER_DENSITY = 2;
+/** Four physical pixels per world unit; gameplay and HUD coordinates remain 320×180. */
+export const RENDER_DENSITY = 4;
 export const BH = 180;
 export const WORLD_W = 480;
 

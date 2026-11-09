@@ -8,6 +8,7 @@ import * as panel from "../../pixelfx/src/fx/ui/loadout-panel.js";
 import { cutPlate, tone, GOLD, SILVER } from "../../pixelfx/src/fx/ui/_ember.js";
 import { MELEE_SHAPES, THROWN_SHAPES } from "../../pixelfx/src/core/weapons.js";
 import { STASH_FX } from "./content/stash-catalog.js";
+import { RENDER_DENSITY } from "./game/constants.js";
 
 const modules = { action, skill, card, panel }, sprites = new Map(), images = new Map();
 const views = new WeakMap();
@@ -74,9 +75,9 @@ export function weaponArtUrl(weapon) {
   ctx.drawImage(base, 7, 7, 78, 78, 0, 0, 78, 78);
   const shape = MELEE_SHAPES[weapon.rigWeapon] ?? THROWN_SHAPES[weapon.rigWeapon];
   if (shape?.pixels) {
-    // Sample the composed engraving directly at two output pixels per UI unit.
+    // Sample the composed engraving directly at the configured output density.
     // Painting one rectangle per source texel would cover neighboring inlay pixels.
-    const density = 2, size = 78 * density, root = Math.SQRT1_2;
+    const density = RENDER_DENSITY, size = 78 * density, root = Math.SQRT1_2;
     canvas.width = canvas.height = size;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(base, 7, 7, 78, 78, 0, 0, size, size);
