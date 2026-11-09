@@ -19,7 +19,7 @@ import { meleeBeat } from "./combat-feel.js";
 
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
 const IDLE = { ...GUARD, fx: 10, fy: -20, bx: 7, by: -19, crouch: 1 };
-const IDLE_B = { ...IDLE, crouch: 2, fx: 9, fy: -19, lean: -0.5 };
+const IDLE_B = { ...IDLE, crouch: 2, fx: 9, fy: -19, lean: -0.15 };
 const WIND = { ...GUARD, x: -8, crouch: 4, lean: -4, fx: -7, fy: -35, sa: -2.65, bx: 9, by: -25, armsFront: true, ffx: 9, fbx: -8 };
 const CUT = { ...GUARD, x: 0, crouch: 2, lean: 3, fx: 16, fy: -37, sa: -1.45, bx: -7, by: -24, ffx: 11, fbx: -10, ghost: 1 };
 const DOWN = { ...GUARD, x: 2, crouch: 5, lean: 5, fx: 20, fy: -21, sa: 0.62, bx: -9, by: -24, ffx: 13, fbx: -10, toeB: true };
@@ -399,7 +399,7 @@ export class Hero {
         const breathe = { crouch: pose.crouch, lean: pose.lean };
         Object.assign(pose, sheathedIdlePose(this.meleeWeapon));
         pose.crouch = breathe.crouch;
-        pose.lean = (breathe.lean ?? 0) - 1.5;
+        pose.lean = (breathe.lean ?? 0) - 0.45;
       }
     }
     return pose;

@@ -101,7 +101,7 @@ function sheathPose(weapon, family) {
     weapon: weapon.rigWeapon,
     x: katana ? -7 : -6,
     crouch: 2,
-    lean: -2,
+    lean: -0.85,
     fx: katana ? -10 : -9,
     fy: katana ? -17 : -20,
     bx: 6,
