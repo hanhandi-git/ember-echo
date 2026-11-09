@@ -94,7 +94,7 @@ function applyRaster(slot, data) {
 
 export function createBattleMapWorkers(game) {
   const idle = {
-    mountStage() {},
+    mountStage() { return false; },
     unmount() {},
     tick() {},
     tickMap() { return false; },
@@ -141,9 +141,9 @@ export function createBattleMapWorkers(game) {
 
     mountStage(stageIndex, mapKey) {
       unmount();
-      if (stageIndex < 0 || !mapKey) return;
+      if (stageIndex < 0 || !mapKey) return false;
       const p = ensurePool();
-      if (!p) return;
+      if (!p) return false;
 
       const xs = [0, MAP_TILE_W];
       const seeds = xs.map((x) => 3 + stageIndex + x / MAP_TILE_W);
@@ -162,6 +162,7 @@ export function createBattleMapWorkers(game) {
           .then((res) => applyRaster(slot, res))
           .catch(() => { slot.ready = false; });
       }
+      return true;
     },
 
     unmount,

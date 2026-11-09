@@ -82,7 +82,11 @@ export class Game {
     this.hubActive = false;
     this.stageIndex = index;
     this.stage = STAGES[index];
-    if (!this.adoptStagePrewarm?.(index)) {
+    // Start the worker before touching the synchronous fallback map bake. A stage transition
+    // is already covered by the travel fade, so keeping the previous map until the worker's
+    // first raster arrives avoids blocking the main thread or exposing a blank frame.
+    const workerMounted = this.battleMapWorkers?.mountStage(index, this.stage.mapKey) === true;
+    if (!workerMounted && !this.adoptStagePrewarm?.(index)) {
       const baked = acquireStageMapTiles(index, this.hubActive ? null : this.mapFxTiles);
       this.mapFxTiles = baked?.mapFxTiles ?? [];
       this.mapFx = this.mapFxTiles[0] ?? null;
@@ -119,7 +123,6 @@ export class Game {
     this.phase = "intro";
     this.state = "playing";
     this.fade = 1;
-    this.battleMapWorkers?.mountStage(index, this.stage.mapKey);
     this.audio.setScene({ camp: false, stageIndex: index, boss: false });
     {
       this.banner(stageAct(this, this.stage), stageName(this, this.stage), stageSub(this, this.stage));
