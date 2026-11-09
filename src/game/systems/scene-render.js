@@ -8,6 +8,14 @@ import { drawSpellActFx } from "../../spell-act.js";
 export const sceneRenderSystem = {
   render() {
     const f = this.frame;
+    // Complex x4 spell rasters are refreshed in a small rotating budget. Their
+    // simulation still advances every tick; staggering redraws prevents a burst
+    // of meteors/lightning/runes from monopolizing one frame.
+    this._fxCacheRefreshBudget = 2;
+    this._largeFxDrawBudget = 1;
+    this._fxDrawBudget = 3;
+    this._fxCacheFrameId = (this._fxCacheFrameId ?? 0) + 1;
+    this._fxCachePhaseCounter = 0;
     const sh = this.shakeState;
     let sx = 0, sy = 0;
     if (sh.amp > 0 && sh.t < sh.dur) {
