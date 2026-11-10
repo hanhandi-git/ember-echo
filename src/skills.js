@@ -11,6 +11,7 @@ import { meleeArt, meleePoseTrack } from "./melee-arts.js";
 import { canUseSkill } from "./classes.js";
 import * as heroProjectile from "./fx/hero-projectile.js";
 import { clampDepth } from "./game/depth.js";
+import { pointFootprintDistance } from "./collision.js";
 
 export const SKILLS = SKILL_META.map((s) => ({ ...s, cast: null }));
 
@@ -214,7 +215,7 @@ function castK(g) {
 export function explodeFireball(g, p) {
   g.addFx(FX.smallExplosion, { x: p.x, y: p.y + size(8), size: 0.6, light: 1.1, seed: 12 });
   g.addFx(FX.hitSpark, { x: p.x, y: p.y, light: 1 });
-  const hit = g.hitEnemies((e) => Math.hypot(e.x - p.x, (e.y - p.y) * 1.2) < size(30), {
+  const hit = g.hitEnemies((e) => pointFootprintDistance(p.x, p.y, e, 1.2) < size(30), {
     dmg: p.dmg, knock: 34, status: "burn", statusTime: 3.2, crit: rollCrit(),
   });
   if (hit) {
@@ -232,7 +233,7 @@ function castL(g) {
   g.addFx(FX.frostNova, { x: h.x, y: h.y, light: 1, seed: 44 + Math.floor(Math.random() * 7) }, { layer: "ground" });
   g.audio.play("ice");
   afterHero(g, 0.45, () => {
-    const hit = g.hitEnemies((e) => Math.hypot(e.x - h.x, (e.y - h.y) * 1.4) < size(74), {
+    const hit = g.hitEnemies((e) => pointFootprintDistance(h.x, h.y, e, 1.4) < size(74), {
       dmg: 20 * h.dmgMul, knock: 10, status: "freeze", statusTime: 2.1, crit: rollCrit(),
     });
     if (hit) {
@@ -259,7 +260,7 @@ function castU(g) {
     g.audio.play("thunder");
   });
   afterHero(g, 0.18 + 0.76, () => {
-    const hit = g.hitEnemies((e) => Math.hypot(e.x - tx, (e.y - ty) * 1.4) < size(43), {
+    const hit = g.hitEnemies((e) => pointFootprintDistance(tx, ty, e, 1.4) < size(43), {
       dmg: 34 * h.dmgMul, knock: 30, status: "stun", statusTime: 1.6, crit: rollCrit(0.08),
     });
     if (hit) {
@@ -309,7 +310,7 @@ function castO(g) {
       g.addFx(FX.meteor, { x, y, light: 1.35, seed: 70 + i });
       g.audio.play("meteor");
       afterHero(g, 0.62, () => {
-        const hit = g.hitEnemies((e) => Math.hypot(e.x - x, (e.y - y) * 1.3) < size(52), {
+        const hit = g.hitEnemies((e) => pointFootprintDistance(x, y, e, 1.3) < size(52), {
           dmg: (i === 0 ? 46 : 30) * h.dmgMul, knock: 60, status: "burn", statusTime: 4, crit: rollCrit(0.06),
         });
         if (hit) {
@@ -330,7 +331,7 @@ function castE(g) {
   g.addFx(FX.thunderclap, { x: h.x, y: h.y, light: 0.85, seed: 89 }, { layer: "ground" });
   g.audio.play("thunder");
   afterHero(g, 0.16, () => {
-    const hit = g.hitEnemies((e) => Math.hypot(e.x - h.x, (e.y - h.y) * 1.35) < size(62), {
+    const hit = g.hitEnemies((e) => pointFootprintDistance(h.x, h.y, e, 1.35) < size(62), {
       dmg: 28 * h.dmgMul, knock: 92, status: "stun", statusTime: 0.8, crit: rollCrit(0.06),
     });
     if (hit) {
@@ -378,7 +379,7 @@ function castGeneric(g, sk) {
     if (!h.alive) return;
     const range = size(sk.category === "melee" || sk.category === "thrown" || sk.category === "moves" ? 76 : 66);
     const status = sk.category === "fire" ? "burn" : sk.category === "ice" ? "freeze" : sk.category === "lightning" ? "stun" : sk.category === "nature" ? "slow" : undefined;
-    const hit = g.hitEnemies((e) => target ? Math.hypot(e.x - x, (e.y - y) * 1.35) < range : inFront(g, e, range, 24), {
+    const hit = g.hitEnemies((e) => target ? pointFootprintDistance(x, y, e, 1.35) < range : inFront(g, e, range, 24), {
       dmg: sk.power * h.dmgMul, knock: sk.category === "melee" ? 42 : 24, status, statusTime: 2.2, crit: rollCrit(sk.category === "lightning" ? 0.08 : 0),
     });
     if (hit) { g.hitStop = Math.max(g.hitStop, sk.category === "melee" ? 0.055 : 0.032); g.shake(sk.category === "moves" ? 2.8 : 1.6, 0.18); }

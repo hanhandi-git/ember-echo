@@ -4,6 +4,10 @@ import {
   lerp,
   mixPoint,
   hurtbox,
+  groundBox,
+  segmentFootprintDistance,
+  pathFootprintDistance,
+  pointFootprintDistance,
   sweepBox,
   sweepEntity,
   projectileSweep,
@@ -90,4 +94,35 @@ test("sweepBlade chooses the earliest contact along the blade capsule", () => {
   assert.ok(typeof hit.along === "number");
   const lateEnemy = { ...enemy, x: 200, prevX: 200 };
   assert.equal(sweepEntity(blade0.root, blade1.tip, lateEnemy, 4), null);
+});
+
+test("groundBox interpolates the foot position and reuses hurtbox extents", () => {
+  const enemy = { x: 110, y: 120, prevX: 100, prevY: 118, w: 16, barH: 30, combatScale: COMBAT_SCALE };
+  const box = groundBox(enemy, 0.5);
+  const hb = hurtbox(enemy, 0.5);
+  assert.equal(box.x, hb.x);
+  assert.equal(box.y, hb.depth);
+  assert.equal(box.hx, hb.hx);
+  assert.equal(box.hy, hb.hd);
+});
+
+test("segmentFootprintDistance is zero on overlap and grows past the edges", () => {
+  const fp = { x: 100, y: 100, hx: 8, hy: 5 };
+  assert.equal(segmentFootprintDistance(80, 100, 140, 100, fp), 0);
+  // depth axis is weighted 1.2 on both sides: gap = 1.2 * (30 - 5) = 30
+  const beside = segmentFootprintDistance(80, 130, 140, 130, fp);
+  assert.ok(Math.abs(beside - 30) < 1e-9);
+  const corner = segmentFootprintDistance(130, 130, 160, 130, fp);
+  assert.ok(corner > beside);
+});
+
+test("pathFootprintDistance measures to the body, not the centre point", () => {
+  const enemy = { x: 160, y: 100, prevX: 160, prevY: 100, w: 16, barH: 30, combatScale: COMBAT_SCALE };
+  const path = [{ x: 100, y: 100 }, { x: 140, y: 100 }];
+  const centreGap = 160 - 140;
+  const d = pathFootprintDistance(path, groundBox(enemy));
+  assert.ok(d < centreGap, "the footprint edge is closer than the centre");
+  assert.ok(d > 0);
+  assert.equal(pointFootprintDistance(160, 100, enemy), 0);
+  assert.ok(pointFootprintDistance(170, 100, enemy) > 0);
 });

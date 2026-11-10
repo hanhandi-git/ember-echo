@@ -3,6 +3,7 @@
 import { createAct, characterOf } from "../../pixelfx/src/core/index.js";
 import { COMBAT_SCALE, combatDistance as size } from "./combat-scale.js";
 import { clampDepth } from "./game/depth.js";
+import { groundBox, pointFootprintDistance } from "./collision.js";
 
 export const ACT_POS_SCALE = COMBAT_SCALE;
 const ACT_POSE_Y_SCALE = 0.52;
@@ -60,8 +61,9 @@ function sweepAlongActPath(g, ef, x0, x1) {
   const struck = ef.struck;
   g.hitEnemies((e) => {
     if (struck.has(e)) return false;
-    if (Math.abs(e.y - aimY) > size(36)) return false;
-    if (e.x < lo - margin || e.x > hi + margin) return false;
+    const fp = groundBox(e);
+    if (Math.abs(e.y - aimY) - fp.hy > size(36)) return false;
+    if (e.x - fp.hx < lo - margin || e.x + fp.hx > hi + margin) return false;
     struck.add(e);
     return true;
   }, { ...actHitOpts(ef, h, { push: 18 }), maxHits: 99 });
@@ -125,8 +127,8 @@ function resolveActHit(g, ef, hit) {
     if (struck?.has(e)) return false;
     const along = (e.x - h.x) * h.facing;
     if (along < -size(24)) return false;
-    if (Math.abs(e.y - aimY) > size(34)) return false;
-    if (Math.hypot(e.x - h.x, (e.y - aimY) * 1.35) >= reach) return false;
+    if (Math.abs(e.y - aimY) - groundBox(e).hy > size(34)) return false;
+    if (pointFootprintDistance(h.x, aimY, e, 1.35) >= reach) return false;
     struck?.add(e);
     return true;
   }, actHitOpts(ef, h, hit));

@@ -60,3 +60,70 @@ export function sweepBlade(blade0, blade1, entity, radius, u0, u1) {
   }
   return best;
 }
+
+// --- Ground-plane footprints -------------------------------------------------
+// Melee and area attacks resolve on the floor plane (x = screen x, y = depth), so the
+// 3-axis hurtbox collapses to a rectangle: the same half-width and depth extent the
+// projectile sweep uses, centred on the interpolated foot position.
+
+export function groundBox(entity, u = 1) {
+  const box = hurtbox(entity, u);
+  return { x: box.x, y: box.depth, hx: box.hx, hy: box.hd };
+}
+
+function pointRectDistance(px, py, cx, cy, hx, hy) {
+  const dx = Math.max(0, Math.abs(px - cx) - hx);
+  const dy = Math.max(0, Math.abs(py - cy) - hy);
+  return Math.hypot(dx, dy);
+}
+
+function pointSegmentDistance(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1;
+  const u = Math.min(1, Math.max(0, ((px - ax) * dx + (py - ay) * dy) / l2));
+  return Math.hypot(px - (ax + dx * u), py - (ay + dy * u));
+}
+
+function segmentMeetsRect(ax, ay, bx, by, cx, cy, hx, hy) {
+  let t0 = 0, t1 = 1;
+  const dx = bx - ax, dy = by - ay;
+  for (const [p, d, lo, hi] of [[ax, dx, cx - hx, cx + hx], [ay, dy, cy - hy, cy + hy]]) {
+    if (Math.abs(d) < 1e-9) { if (p < lo || p > hi) return false; continue; }
+    let ta = (lo - p) / d, tb = (hi - p) / d;
+    if (ta > tb) [ta, tb] = [tb, ta];
+    t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
+    if (t0 > t1) return false;
+  }
+  return true;
+}
+
+// Distance between a ground-plane segment and a footprint. `depthWeight` reproduces the
+// side-view squash (≈1.2–1.4) the reach checks already used, applied to both sides.
+export function segmentFootprintDistance(ax, ay, bx, by, fp, depthWeight = 1.2) {
+  const say = ay * depthWeight, sby = by * depthWeight;
+  const cy = fp.y * depthWeight, hy = fp.hy * depthWeight;
+  if (segmentMeetsRect(ax, say, bx, sby, fp.x, cy, fp.hx, hy)) return 0;
+  let best = Math.min(
+    pointRectDistance(ax, say, fp.x, cy, fp.hx, hy),
+    pointRectDistance(bx, sby, fp.x, cy, fp.hx, hy),
+  );
+  for (const [px, py] of [[fp.x - fp.hx, cy - hy], [fp.x + fp.hx, cy - hy], [fp.x - fp.hx, cy + hy], [fp.x + fp.hx, cy + hy]]) {
+    best = Math.min(best, pointSegmentDistance(px, py, ax, say, bx, sby));
+  }
+  return best;
+}
+
+// Shortest distance from a polyline (a swing path or swept lane) to an entity footprint.
+export function pathFootprintDistance(points, fp, depthWeight = 1.2) {
+  let best = Infinity;
+  for (let i = 1; i < points.length; i++) {
+    best = Math.min(best, segmentFootprintDistance(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y, fp, depthWeight));
+  }
+  return best;
+}
+
+// Distance from a world point to an entity's footprint — radius checks for blasts and
+// rings should measure to the body, not just the centre pixel.
+export function pointFootprintDistance(x, y, entity, depthWeight = 1.2) {
+  const fp = groundBox(entity);
+  return pointRectDistance(x, y * depthWeight, fp.x, fp.y * depthWeight, fp.hx, fp.hy * depthWeight);
+}

@@ -292,6 +292,20 @@ test("a target outside the shortened sword range is missed while a closer one is
   assert.deepEqual(result.points, g.weaponAttackPath(g.hero.weapon.attack));
 });
 
+test("melee strikes reach the enemy footprint edge, not just its centre point", () => {
+  const g = game();
+  g.hero.x = 100; g.hero.y = 150; g.hero.facing = 1;
+  // Centre sits past the old centre-point reach, but the slime's body still overlaps the blade.
+  const edge = g.spawnEnemy("slime", 163, 150); edge.state = "chase"; edge.prevX = 163; edge.prevY = 150;
+  const result = g.weaponStrike(g.hero.weapon.attack, { dmg: 10, knock: 0, crit: false });
+  assert.deepEqual(result.hits, [edge]);
+  const g2 = game();
+  g2.hero.x = 100; g2.hero.y = 150; g2.hero.facing = 1;
+  const far = g2.spawnEnemy("slime", 176, 150); far.state = "chase"; far.prevX = 176; far.prevY = 150;
+  assert.equal(g2.weaponStrike(g2.hero.weapon.attack, { dmg: 10, knock: 0, crit: false }).hits.length, 0);
+  assert.equal(far.hp, far.maxHp);
+});
+
 test("frost damage radius and lightning telegraph shrink with their combat effects", () => {
   const g = game();
   g.hero.setClass("mage");

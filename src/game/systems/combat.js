@@ -1,7 +1,7 @@
-import { createFx, clamp } from "../../../../pixelfx/src/core/index.js";
+import { createFx } from "../../../../pixelfx/src/core/index.js";
 import { FX } from "../../data.js";
 import { explodeFireball } from "../../skills.js";
-import { projectileSweep } from "../../collision.js";
+import { projectileSweep, groundBox, pathFootprintDistance } from "../../collision.js";
 import { COMBAT_SCALE } from "../../combat-scale.js";
 import { BH } from "../constants.js";
 import { SKILL_SLOT_KEYS } from "../../input/bindings.js";
@@ -108,39 +108,6 @@ export const combatSystem = {
     return hits;
   },
 
-  enemyPathHit(e, shape) {
-    const x0 = e.prevX ?? e.x, y0 = e.prevY ?? e.y, x1 = e.x, y1 = e.y;
-    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 3));
-    for (let i = 0; i <= n; i++) {
-      const u = i / n, x = x0 + (x1 - x0) * u, y = y0 + (y1 - y0) * u;
-      if (shape(x, y, e)) return true;
-    }
-    return false;
-  },
-
-  weaponHitTest(e, attack, hero = this.hero) {
-    const raw = attack ?? { kind: "line", range: 60, radius: 12, pierce: false, maxHits: 1 };
-    const cfg = { ...raw, range: (raw.range ?? 60) * COMBAT_SCALE, radius: (raw.radius ?? 10) * COMBAT_SCALE };
-    const dx = e.x - hero.x, dy = (e.y - hero.y) * 1.2;
-    const facingDx = dx * hero.facing;
-    const radius = cfg.radius;
-    if (cfg.kind === "arc") {
-      const dist = Math.hypot(dx, dy);
-      const angle = Math.atan2(dy, facingDx);
-      return dist <= (cfg.range ?? 70) && angle > -0.95 && angle < 0.95 && this.enemyPathHit(e, (x, y) => Math.hypot(x - hero.x, (y - hero.y) * 1.2) <= radius);
-    }
-    if (cfg.kind === "projectile") {
-      return facingDx > -4 && facingDx <= (cfg.range ?? 100) && Math.abs(dy) <= radius * 1.4 && this.enemyPathHit(e, (x, y) => {
-        const pdx = (x - hero.x) * hero.facing, pdy = (y - hero.y) * 1.2;
-        return pdx > -4 && pdx <= (cfg.range ?? 100) && Math.abs(pdy) <= radius;
-      });
-    }
-    return facingDx > -8 && facingDx <= (cfg.range ?? 60) && Math.abs(dy) <= radius && this.enemyPathHit(e, (x, y) => {
-      const pdx = (x - hero.x) * hero.facing, pdy = (y - hero.y) * 1.2;
-      return pdx > -8 && pdx <= (cfg.range ?? 60) && Math.abs(pdy) <= radius;
-    });
-  },
-
   weaponAttackPath(profile, hero = this.hero) {
     const facing = hero.facing || 1, range = (profile?.range ?? 60) * COMBAT_SCALE;
     if (profile?.kind === "arc") {
@@ -157,32 +124,18 @@ export const combatSystem = {
 
   weaponStrike(profile, opts = {}) {
     const hero = opts.origin ?? this.hero, points = this.weaponAttackPath(profile, hero), hits = [];
-    const radius = (profile?.radius ?? 10) * COMBAT_SCALE;
-    const pointSegmentDistance = (px, py, ax, ay, bx, by) => {
-      const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1;
-      const u = clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1);
-      return Math.hypot(px - (ax + dx * u), (py - (ay + dy * u)) * 1.2);
-    };
-    const pathDistance = (x, y) => {
-      let best = Infinity;
-      for (let i = 1; i < points.length; i++) {
-        const a = points[i - 1], b = points[i];
-        best = Math.min(best, pointSegmentDistance(x, y, a.x, a.y, b.x, b.y));
-      }
-      return best;
-    };
+    // The blade's half-width plus a small forgiveness pad; enemy size comes from the
+    // hurtbox footprint, not a separate radius estimate.
+    const radius = (profile?.radius ?? 10) * COMBAT_SCALE + 2 * COMBAT_SCALE;
     const candidates = [];
     for (const e of this.enemies) {
       if (!e.alive) continue;
-      const samples = [];
-      const ex0 = e.prevX ?? e.x, ey0 = e.prevY ?? e.y, ex1 = e.x, ey1 = e.y;
+      if ((e.x - hero.x) * hero.facing < -4 * COMBAT_SCALE) continue;
+      let d = Infinity;
       for (let i = 0; i <= 5; i++) {
-        const u = i / 5;
-        samples.push({ x: ex0 + (ex1 - ex0) * u, y: ey0 + (ey1 - ey0) * u });
+        d = Math.min(d, pathFootprintDistance(points, groundBox(e, i / 5)));
       }
-      const d = Math.min(...samples.map((s) => pathDistance(s.x, s.y)));
-      const forward = (e.x - hero.x) * hero.facing;
-      if (forward >= -4 * COMBAT_SCALE && d <= radius + Math.max(5 * COMBAT_SCALE, e.w * (e.renderScale ?? COMBAT_SCALE) * 0.55)) candidates.push({ e, d, distance: Math.hypot(e.x - hero.x, (e.y - hero.y) * 1.2) });
+      if (d <= radius) candidates.push({ e, d, distance: Math.hypot(e.x - hero.x, (e.y - hero.y) * 1.2) });
     }
     candidates.sort((a, b) => a.distance - b.distance);
     const limit = profile?.pierce ? (profile.maxHits ?? 99) : 1;
