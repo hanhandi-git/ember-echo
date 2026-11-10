@@ -45,7 +45,7 @@ export const stageFlowSystem = {
     this.phaseT = 0;
     this.clearT = 0;
     const wave = this.stage.waves[i] ?? [];
-    wave.forEach((spec, n) => this.spawnQueue.push({ ...spec, delay: n * 0.28 }));
+    wave.forEach((spec, n) => this.spawnQueue.push({ ...spec, y: this.depthY(spec.y), delay: n * 0.28 }));
     if (i > 0) {
       const boss = wave.some((s) => s.type === "boss");
       const c = uiCopy(this);

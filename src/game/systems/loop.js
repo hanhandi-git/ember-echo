@@ -16,16 +16,35 @@ export const loopSystem = {
     if (this.state === "paused" || this.state === "inventory") return;
 
     if (this.state === "camp") {
-      for (const map of this.mapFxTiles) map.update(dt * 0.8);
+      if (!this.battleMapWorkers?.tickMap(dt, 0.8)) {
+        for (const map of this.mapFxTiles) map.update(dt * 0.8);
+      }
       if (!this.campMenuOpen && !this._hubDepartPending) this.hero.update(this, dt, this.keys);
       this.updateHub?.(dt);
+      if (this.hubZone === "arena" && !this.campMenuOpen && !this._hubDepartPending) {
+        if (this.timers.length) {
+          const due = [];
+          for (const timer of this.timers) { timer.t -= dt; if (timer.t <= 0) due.push(timer); }
+          this.timers = this.timers.filter((timer) => timer.t > 0);
+          for (const timer of due) timer.fn();
+        }
+        this.updateSpellActs?.(dt);
+        this.updateCombatInput(dt);
+        for (const enemy of this.enemies) enemy.update?.(this, dt);
+        this.updateProjectiles(dt);
+        this.updateMotes(dt);
+        this.updateNumbers(dt);
+        this.updateImpacts(dt);
+      }
       this.updateEffects(dt);
       this.updateDashTrails(dt);
       return;
     }
 
     if (this.state === "gameover" || this.state === "victory") {
-      for (const map of this.mapFxTiles) map.update(dt * 0.5);
+      if (!this.battleMapWorkers?.tickMap(dt, 0.5)) {
+        for (const map of this.mapFxTiles) map.update(dt * 0.5);
+      }
       this.updateMotes(dt);
       this.updateNumbers(dt);
       this.updateImpacts(dt);
@@ -36,7 +55,9 @@ export const loopSystem = {
     this.runTime += dt;
 
     if (this.phase === "travel") {
-      for (const map of this.mapFxTiles) map.update(dt);
+      if (!this.battleMapWorkers?.tickMap(dt)) {
+        for (const map of this.mapFxTiles) map.update(dt);
+      }
       this.updatePortal(dt);
       this.updateEffects(dt);
       this.updateDashTrails(dt);
@@ -48,7 +69,9 @@ export const loopSystem = {
     if (this.hitStop > 0) {
       this.updateSpellActs?.(dt);
       this.hitStop = Math.max(0, this.hitStop - dt);
-      for (const map of this.mapFxTiles) map.update(dt);
+      if (!this.battleMapWorkers?.tickMap(dt)) {
+        for (const map of this.mapFxTiles) map.update(dt);
+      }
       this.updateShake(dt);
       this.updateFlash(dt);
       this.updateDashTrails(dt);
@@ -66,7 +89,9 @@ export const loopSystem = {
       for (const t of due) t.fn();
     }
 
-    for (const map of this.mapFxTiles) map.update(dt);
+    if (!this.battleMapWorkers?.tickMap(dt)) {
+      for (const map of this.mapFxTiles) map.update(dt);
+    }
     this.updateSpellActs?.(dt);
     this.updateAuto?.(dt);
     this.hero.update(this, dt, this.keys);

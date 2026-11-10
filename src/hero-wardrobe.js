@@ -1,14 +1,5 @@
-// Hand-editable overrides for the lossless pixel source in hero-pixel-data.js.
-// Palette keys are two-digit hex indices. Frame layers use native pixel coordinates.
-// `..` keeps pixels below; `!!` erases them. Later layers appear in front.
-// A replacement hairstyle needs its own pixels for the affected animation frames.
-export const HERO_PIXEL_EDITS = {
-  "dnf-blade-master": { palette: {}, frames: {} },
-  "dnf-berserker": { palette: {}, frames: {} },
-  "dnf-sword-master": { palette: {}, frames: {} },
-  "dnf-elementalist": { palette: {}, frames: {} },
-  "dnf-elemental-bomber": { palette: {}, frames: {} },
-};
+// Optional palette overrides for the 64 editable swatches exposed by heroPalette().
+export const HERO_PIXEL_EDITS = {};
 
 export const HERO_COLOR_PRESETS = [
   { id: "original", name: { zh: "原色", en: "Original", ja: "元の色" }, hue: null },

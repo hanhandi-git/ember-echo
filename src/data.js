@@ -2,12 +2,11 @@
 
 import { effects as PIXELFX_EFFECTS } from "../../pixelfx/src/fx/index.js";
 import { ARMORY as PIXELFX_ARMORY } from "../../pixelfx/src/core/weapons.js";
-import { CHARACTERS } from "../../pixelfx/src/core/characters.js";
 import { FX } from "./content/fx-registry.js";
 import { STAGES, ENEMY_TYPES, LOOT } from "./content/compose-content.js";
 import { ATTR_FROM_CATEGORY, buildFxSpellMeta, iconOf } from "./content/spell-catalog.js";
 import { CUSTOM_MELEE_FX } from "./fx/custom-melee-arts.js";
-import { DNF_HERO_LOOKS } from "./hero-sprites.js";
+import { SPRITE_HERO_LOOKS } from "./hero-sprites.js";
 import { DEFAULT_CLASS_SLOTS, skillClass } from "./classes.js";
 
 import { localizeArmoryWeapon } from "./weapon-i18n.js";
@@ -17,17 +16,11 @@ export { STASH_ITEMS, STASH_FX, stashItem, stashLabel } from "./content/stash-ca
 
 export { FX };
 
-export const HERO_LOOK_DEFAULT = "dnf-blade-master";
+export const HERO_LOOK_DEFAULT = "lu-mingfei";
 export const HERO_LOOK = HERO_LOOK_DEFAULT;
 export const BOSS_LOOK = "styx-warden";
 
-const HERO_LOOK_BLOCK = new Set(["dummy", "styx-warden", ...DNF_HERO_LOOKS.map((look) => look.id)]);
-const HERO_LOOK_PRIORITY = ["ember-duelist", "naruto", "sasuke", "moon-oracle", "laurel-ranger"];
-export const HERO_LOOKS = [...DNF_HERO_LOOKS, ...[...CHARACTERS.filter((c) => !HERO_LOOK_BLOCK.has(c.id))].sort((a, b) => {
-  const pa = HERO_LOOK_PRIORITY.indexOf(a.id), pb = HERO_LOOK_PRIORITY.indexOf(b.id);
-  const ra = pa === -1 ? 99 : pa, rb = pb === -1 ? 99 : pb;
-  return ra - rb || a.label.localeCompare(b.label, "zh");
-})];
+export const HERO_LOOKS = SPRITE_HERO_LOOKS;
 
 export function loadHeroLook() {
   if (typeof localStorage === "undefined") return HERO_LOOK_DEFAULT;
@@ -35,8 +28,7 @@ export function loadHeroLook() {
   return HERO_LOOKS.some((c) => c.id === saved) ? saved : HERO_LOOK_DEFAULT;
 }
 
-export const DEFAULT_MELEE_WEAPON_ID = "ember-blade";
-export const DEFAULT_THROWN_WEAPON_ID = "armory:kunai";
+export const DEFAULT_MELEE_WEAPON_ID = "hero:lu-mingfei";
 
 const STARTER_WEAPONS = [
   {
@@ -91,7 +83,7 @@ const CUSTOM_MELEE_WEAPONS = [
   },
 ];
 
-export const WEAPONS = [
+export const LEGACY_WEAPONS = [
   ...STARTER_WEAPONS,
   ...CUSTOM_MELEE_WEAPONS,
   ...PIXELFX_ARMORY.map((w) => {
@@ -108,6 +100,9 @@ export const WEAPONS = [
     };
   }),
 ];
+
+// Equipment belongs to the character and cannot be exchanged.
+export const WEAPONS = HERO_LOOKS.map((look) => ({ ...look.weapon, class: "melee", glyph: "✦", owner: look.id, bound: true }));
 
 export const SKILL_ATTR_ORDER = ["slash", "fire", "frost", "bolt", "mend", "meteor", "burst"];
 
@@ -133,7 +128,7 @@ const BASE_SKILL_META = [
   { id: "i", key: "I", name: "圣愈", nameEn: "Mend", nameJa: "聖癒", icon: "mend", glyph: "愈", cost: 26, cd: 11.0, tint: "#c8ffb0", glow: "rgba(150, 240, 120, .55)", note: "治疗 · 护盾", noteEn: "Heal · shield", noteJa: "回復・盾" },
   { id: "o", key: "O", name: "陨星", nameEn: "Meteor", nameJa: "隕星", icon: "meteor", glyph: "陨", cost: 40, cd: 15.0, tint: "#ffcf6a", glow: "rgba(255, 160, 50, .8)", note: "三重陨石 · 大范围", noteEn: "Triple meteor · AoE", noteJa: "三連隕石・広範囲" },
   { id: "e", key: "E", name: "魂爆", nameEn: "Soul burst", nameJa: "魂爆", icon: "burst", glyph: "爆", cost: 16, cd: 4.5, tint: "#f0a8ff", glow: "rgba(220, 130, 255, .65)", note: "近身爆裂 · 击退", noteEn: "Point-blank burst", noteJa: "近距離爆発" },
-  { id: "t", key: "T", name: "投掷", nameEn: "Throw", nameJa: "投擲", icon: "meteor", glyph: "投", cost: 4, cd: 0.95, tint: "#9fd4ff", glow: "rgba(120, 180, 255, .55)", note: "使用已装备的投掷武器", noteEn: "Uses equipped thrown weapon", noteJa: "装備した投擲武器を使う", attr: "meteor" },
+  { id: "t", key: "T", name: "强化普攻", nameEn: "Empowered Attack", nameJa: "強化攻撃", icon: "slash", glyph: "强", cost: 4, cd: 0.95, tint: "#9fd4ff", glow: "rgba(120, 180, 255, .55)", note: "使用人物自带武器发动强化攻击", noteEn: "Empowered strike with your character’s weapon", noteJa: "固有武器による強化攻撃", attr: "slash" },
 ];
 
 const spellMeta = buildFxSpellMeta();

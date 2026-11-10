@@ -1,0 +1,859 @@
+{
+  "laurel-ranger": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "attack2": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "attack3": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "enhanced": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "cleave": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "rush": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "rise": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        5,
+        5,
+        6,
+        7,
+        5,
+        6,
+        7
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        17
+      ],
+      "recover": [
+        10,
+        2,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 3,
+      "attack2": 2,
+      "attack3": 2,
+      "enhanced": 3,
+      "cleave": 3,
+      "rush": 3,
+      "rise": 2,
+      "awakening": 3,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  },
+  "moon-priestess": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "attack2": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "attack3": [
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "enhanced": [
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "cleave": [
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "rush": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "rise": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        16
+      ],
+      "recover": [
+        12,
+        10,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 2,
+      "attack2": 2,
+      "attack3": 2,
+      "enhanced": 2,
+      "cleave": 2,
+      "rush": 2,
+      "rise": 2,
+      "awakening": 2,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  },
+  "lu-mingfei": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4
+      ],
+      "attack2": [
+        4,
+        5,
+        6
+      ],
+      "attack3": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "enhanced": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "cleave": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "rush": [
+        2,
+        3,
+        4
+      ],
+      "rise": [
+        4,
+        5,
+        6
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        6,
+        7,
+        8
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        18
+      ],
+      "recover": [
+        8,
+        5,
+        2,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 1,
+      "attack2": 2,
+      "attack3": 2,
+      "enhanced": 3,
+      "cleave": 3,
+      "rush": 1,
+      "rise": 2,
+      "awakening": 1,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  },
+  "erii": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "attack2": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "attack3": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "enhanced": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "cleave": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "rush": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "rise": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        6,
+        7,
+        8,
+        7,
+        8,
+        9
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        19
+      ],
+      "recover": [
+        8,
+        5,
+        2,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 3,
+      "attack2": 2,
+      "attack3": 3,
+      "enhanced": 5,
+      "cleave": 5,
+      "rush": 3,
+      "rise": 2,
+      "awakening": 3,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  },
+  "hatsune-miku": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "attack2": [
+        4,
+        5,
+        9
+      ],
+      "attack3": [
+        4,
+        5,
+        9
+      ],
+      "enhanced": [
+        2,
+        3,
+        4,
+        5,
+        9
+      ],
+      "cleave": [
+        2,
+        3,
+        4,
+        5,
+        9
+      ],
+      "rush": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "rise": [
+        4,
+        5,
+        9
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        5,
+        5,
+        9,
+        5,
+        9
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        19
+      ],
+      "recover": [
+        5,
+        4,
+        2,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 3,
+      "attack2": 2,
+      "attack3": 2,
+      "enhanced": 3,
+      "cleave": 3,
+      "rush": 3,
+      "rise": 2,
+      "awakening": 3,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  },
+  "amaterasu": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4
+      ],
+      "attack2": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "attack3": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "enhanced": [
+        8,
+        9,
+        10,
+        11,
+        19,
+        20
+      ],
+      "cleave": [
+        8,
+        9,
+        10,
+        11,
+        19,
+        20
+      ],
+      "rush": [
+        2,
+        3,
+        4
+      ],
+      "rise": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        9,
+        10,
+        11,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        20
+      ],
+      "recover": [
+        18,
+        15,
+        2,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 1,
+      "attack2": 2,
+      "attack3": 5,
+      "enhanced": 3,
+      "cleave": 3,
+      "rush": 1,
+      "rise": 2,
+      "awakening": 1,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  },
+  "tsukuyomi": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "attack2": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "attack3": [
+        15,
+        16,
+        17,
+        18
+      ],
+      "enhanced": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "cleave": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "rush": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "rise": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        16,
+        17,
+        18
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        18
+      ],
+      "recover": [
+        16,
+        14,
+        2,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 2,
+      "attack2": 2,
+      "attack3": 2,
+      "enhanced": 4,
+      "cleave": 4,
+      "rush": 2,
+      "rise": 2,
+      "awakening": 2,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  },
+  "susanoo": {
+    "clips": {
+      "idle": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "attack1": [
+        2,
+        3,
+        4
+      ],
+      "attack2": [
+        4,
+        5,
+        6
+      ],
+      "attack3": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "enhanced": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cleave": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "rush": [
+        2,
+        3,
+        4
+      ],
+      "rise": [
+        4,
+        5,
+        6
+      ],
+      "awakening": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "guard": [
+        1,
+        2,
+        1
+      ],
+      "cast": [
+        1,
+        2,
+        1
+      ],
+      "hurt": [
+        2,
+        1
+      ],
+      "dead": [
+        15
+      ],
+      "recover": [
+        12,
+        10,
+        2,
+        1
+      ]
+    },
+    "contacts": {
+      "attack1": 1,
+      "attack2": 1,
+      "attack3": 3,
+      "enhanced": 3,
+      "cleave": 3,
+      "rush": 1,
+      "rise": 1,
+      "awakening": 1,
+      "guard": 1,
+      "cast": 1
+    },
+    "motion": {
+      "idle": 1.6,
+      "recovery": 0.14,
+      "weights": {}
+    }
+  }
+}

@@ -10,6 +10,8 @@ import { AudioEngine } from "../audio.js";
 import { SKILL_RECTS, RESUME_BUTTON, CAMP_BUTTON, contains } from "../controls.js";
 import { stageAct, stageName, stageSub } from "../copy.js";
 import { SW, SH, WORLD_W, PALETTE, RENDER_DENSITY } from "./constants.js";
+import { createBattleMapWorkers } from "./battle-map-workers.js";
+import { LEGACY_BAND } from "./depth.js";
 
 export class Game {
   constructor(canvas) {
@@ -62,28 +64,51 @@ export class Game {
     this.mapFx = null;
     this.mapFxTiles = [];
     this.mapTileFrames = [];
+    this.mapStageIndex = null;
     this.worldW = WORLD_W;
+    this.walkBand = LEGACY_BAND;
     this.cameraX = 0;
     this.hubActive = false;
     // Hub loading is synchronous only for a lightweight fallback; authored map art
     // is decoded asynchronously by the hub tile pool.
+    this.battleMapWorkers = createBattleMapWorkers(this);
     this.loadHub?.();
     this.loadPersistedProfile?.();
   }
 
   loadStage(index, camp = false) {
     if (camp) {
+      this.battleMapWorkers?.unmount();
       this.loadHub?.();
       return;
     }
+    const previousHub = this.hubActive;
     this.hubActive = false;
     this.stageIndex = index;
     this.stage = STAGES[index];
-    if (!this.adoptStagePrewarm?.(index)) {
+    // Start the worker before touching the synchronous fallback map bake. A stage transition
+    // is already covered by the travel fade, so keeping the previous map until the worker's
+    // first raster arrives avoids blocking the main thread or exposing a blank frame.
+    this.walkBand = this.stage.map.map.depth ?? LEGACY_BAND;
+    const workerMounted = this.battleMapWorkers?.mountStage(index, this.stage.mapKey, this.stage.map) === true;
+    const nextStage = STAGES[index + 1];
+    if (workerMounted && nextStage) this.battleMapWorkers?.prepareStage(index + 1, nextStage.mapKey, nextStage.map);
+    if (workerMounted && previousHub) {
+      // Do not let the hub PNG remain as the stage's temporary fallback while the
+      // worker produces its first raster. Keep the canvas dark until the right map
+      // arrives; consecutive battle stages may retain their previous battle map.
+      this.mapFx = null;
+      this.mapFxTiles = [];
+      this.mapTileFrames = [];
+      this.mapStageIndex = null;
+    } else if (!workerMounted && !this.adoptStagePrewarm?.(index)) {
       const baked = acquireStageMapTiles(index, this.hubActive ? null : this.mapFxTiles);
       this.mapFxTiles = baked?.mapFxTiles ?? [];
       this.mapFx = this.mapFxTiles[0] ?? null;
       this.mapTileFrames = baked?.mapTileFrames ?? [];
+      this.mapStageIndex = baked?.index ?? index;
+    } else if (!workerMounted) {
+      this.mapStageIndex = index;
     }
     this.ui.reset();
     this.hero.spawn(this.stage.map.map.spawns.hero[0], this.stage.map.map.spawns.hero[1]);
@@ -162,8 +187,9 @@ export class Game {
       return "resume";
     }
     if (this.ui.handleAutoPointer(x, y)) return "auto";
-    if (this.state !== "playing") return null;
-    const slot = this.touchUi ? -1 : SKILL_RECTS.findIndex((rect) => contains(rect, x, y));
+    const training = this.state === "camp" && this.hubZone === "arena" && !this.campMenuOpen;
+    if (this.state !== "playing" && !training) return null;
+    const slot = this.touchUi?.active ? -1 : SKILL_RECTS.findIndex((rect) => contains(rect, x, y));
     if (slot >= 0) {
       this.cast(this.hero.skillSlots[slot]);
       return "skill";

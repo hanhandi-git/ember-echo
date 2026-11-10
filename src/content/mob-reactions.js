@@ -9,13 +9,22 @@ export function clearMobPoseOptions(opts) {
   delete opts.poseHold;
   delete opts.poseRecover;
   delete opts.hurtDir;
+  delete opts.walkDistance;
+  delete opts.walkStride;
 }
 
 export function syncMobPoseOptions(enemy) {
   const react = enemy.type?.mobReact;
   const opts = enemy.fx?.options;
   if (!react || !opts) return;
+  clearMobPoseOptions(opts);
   const { poseState, poseT, hurtDir } = enemy;
+  if (poseState === "walk") {
+    opts.pose = "walk";
+    opts.walkDistance = enemy.walkDistance;
+    opts.walkStride = react.walkStride ?? 5;
+    return;
+  }
   if (poseState === "cast") {
     opts.pose = "cast";
     opts.cast = react.cast;
@@ -38,7 +47,6 @@ export function syncMobPoseOptions(enemy) {
     opts.poseDur = react.dieFor;
     return;
   }
-  clearMobPoseOptions(opts);
 }
 
 export function mobCastHitAt(react) {

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createFrame, clearFrame, createFx } from "../../pixelfx/src/core/index.js";
 import { CUSTOM_MELEE_FX } from "../src/fx/custom-melee-arts.js";
-import { MELEE_WEAPONS } from "../src/data.js";
+import { LEGACY_WEAPONS as MELEE_WEAPONS } from "../src/data.js";
 import { meleeArt } from "../src/melee-arts.js";
 
 const IDS = ["ember-greatsword", "frost-lightsword", "shadow-katana", "thunder-claymore", "starlight-rapier"];

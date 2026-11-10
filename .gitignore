@@ -2,3 +2,7 @@ node_modules/
 dist/
 *.log
 .eslintcache
+
+output/hero-previews/
+output/playwright/
+.playwright-cli/

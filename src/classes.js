@@ -1,7 +1,7 @@
 // Stable job IDs and skill ownership are shared by UI, saves, and the cast boundary.
 export const HERO_CLASSES = [
-  { id: "swordsman", name: { zh: "剑士", en: "Swordsman", ja: "剣士" }, desc: { zh: "三段连斩 · 剑技 · 近身突进", en: "Blade combos · sword arts · close combat", ja: "三連斬・剣技・近接戦闘" }, look: "dnf-blade-master" },
-  { id: "mage", name: { zh: "法师", en: "Mage", ja: "魔法使い" }, desc: { zh: "魔弹普攻 · 元素法术 · 远程控场", en: "Magic bolts · elements · ranged control", ja: "魔弾・元素魔法・遠距離制御" }, look: "dnf-elementalist" },
+  { id: "swordsman", name: { zh: "剑士", en: "Swordsman", ja: "剣士" }, desc: { zh: "三段连斩 · 剑技 · 近身突进", en: "Blade combos · sword arts · close combat", ja: "三連斬・剣技・近接戦闘" }, look: "lu-mingfei" },
+  { id: "mage", name: { zh: "法师", en: "Mage", ja: "魔法使い" }, desc: { zh: "魔弹普攻 · 元素法术 · 远程控场", en: "Magic bolts · elements · ranged control", ja: "魔弾・元素魔法・遠距離制御" }, look: "moon-priestess" },
 ];
 export const classOf = (id) => HERO_CLASSES.find((job) => job.id === id) ?? HERO_CLASSES[0];
 export const classLabel = (id, language = "zh") => classOf(id).name[language] ?? classOf(id).name.en;

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { HERO_LOOKS, WEAPONS, SKILL_META } from "../src/data.js";
+import { HERO_LOOKS, LEGACY_WEAPONS as WEAPONS, SKILL_META } from "../src/data.js";
 import { meleeArt } from "../src/melee-arts.js";
 
 test("DNF combat catalog excludes showcase characters and placed equipment", () => {
@@ -10,8 +10,9 @@ test("DNF combat catalog excludes showcase characters and placed equipment", () 
     assert.ok(!skill.module.meta.tags.some(tag => ["character", "weapon"].includes(tag)), skill.id);
     assert.notEqual(skill.name, skill.nameEn);
   }
-  assert.equal(HERO_LOOKS.filter(look => look.sprite).length, 5);
-  assert.ok(HERO_LOOKS.filter(look => look.sprite).every(look => look.theme === "dnf"));
+  assert.equal(HERO_LOOKS.filter(look => look.sprite).length, 13);
+  assert.equal(HERO_LOOKS.filter(look => look.theme === "heroes").length, 8);
+  assert.equal(HERO_LOOKS.filter(look => look.theme === "dnf").length, 5);
 });
 
 test("DNF equipment resolves its own attack module for every combo beat", () => {

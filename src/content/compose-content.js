@@ -17,6 +17,7 @@ const MAP_BY_KEY = {
   crystal: MAPS.mapCrystal,
   inkbound: MAPS.mapInkbound,
   sunscar: MAPS.mapSunscar,
+  mosswood: MAPS.mapMosswood,
 };
 
 const DEATH_FX = {
@@ -50,10 +51,13 @@ function mobStatPatch(def) {
 }
 
 function resolveStage(raw) {
-  const map = MAP_BY_KEY[raw.map];
-  if (!map) throw new Error(`stages.config: unknown map key "${raw.map}" in ${raw.id ?? raw.name}`);
+  // Every combat stage intentionally shares one backdrop: the layered belt-scroll
+  // sample map. Wave layouts and encounter pacing remain stage-specific.
+  const mapKey = "mosswood";
+  const map = MAP_BY_KEY[mapKey];
+  if (!map) throw new Error(`stages.config: unknown map key "${mapKey}" in ${raw.id ?? raw.name}`);
   const { map: _mapKey, id: _id, ...rest } = raw;
-  return { ...rest, map };
+  return { ...rest, map, mapKey };
 }
 
 export const STAGES = stagesConfig.stages.map(resolveStage);

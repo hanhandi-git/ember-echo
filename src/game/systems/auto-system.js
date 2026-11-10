@@ -46,8 +46,8 @@ function wantsLoot(h, p) {
 
 function tryAutoCast(g, dist) {
   const h = g.hero;
-  if (h.actPose || g.hitStop > 0) return;
   g._autoCastCd = Math.max(0, (g._autoCastCd ?? 0) - (g._autoDt ?? 0));
+  if (h.actPose || h.actionBusy || g.hitStop > 0) return;
   if (g._autoCastCd > 0) return;
 
   const primary = h.classId === "mage" ? "mage:bolt" : "j";

@@ -8,6 +8,8 @@ import { drawSpellActFx } from "../../spell-act.js";
 export const sceneRenderSystem = {
   render() {
     const f = this.frame;
+    // Cached spell rasters are refreshed at their authored FPS; simulation still
+    // advances every tick so effects do not disappear between redraws.
     const sh = this.shakeState;
     let sx = 0, sy = 0;
     if (sh.amp > 0 && sh.t < sh.dur) {
@@ -66,7 +68,7 @@ export const sceneRenderSystem = {
       drawSpellActFx(this, ef, "front");
       p = painterFor(f);
     }
-    for (const pr of this.projectiles) { this.drawScaledFx(pr.fx, pr.x, pr.y, COMBAT_SCALE); p = painterFor(f); }
+    for (const pr of this.projectiles) { this.drawScaledFx(pr.fx, pr.x, pr.y + (pr.visualOffsetY ?? 0), COMBAT_SCALE); p = painterFor(f); }
 
     const largeSpells = this.effects.filter((ef) => !ef.act && !ef.melee && ef.layer !== "ground" && (ef.inst.meta.size?.[0] ?? 0) >= 128);
     if (largeSpells.length >= 2 && this.hero.alive && !this.hero.actPose) this.hero.drawCombatFocus(p);
@@ -83,6 +85,9 @@ export const sceneRenderSystem = {
       p = painterFor(f);
       p.text(this.portal.label, this.portal.x, this.portal.y - 56, this.portal.color, { align: "center", outline: C.ink, font: "mini" });
     }
+
+    // Foreground map layers (overhanging leaves, drifting motes) sit over the fight.
+    if (this.battleMapWorkers?.drawMapFront(f)) p = painterFor(f);
 
     for (const m of this.motes) {
       const a = 1 - m.t / m.life;

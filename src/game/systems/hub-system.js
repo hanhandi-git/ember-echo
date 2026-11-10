@@ -1,8 +1,11 @@
 import { createFx, clamp } from "../../../../pixelfx/src/core/index.js";
 import { GATE_PALETTES } from "../../fx/stage-portal.js";
 import { uiCopy } from "../../copy.js";
-import { HUB_ADVENTURE_GATE, HUB_SPAWNS, HUB_WORLD_W } from "../../content/hub-worlds.js";
+import { HUB_ADVENTURE_GATE, HUB_ARENA_DUMMY, HUB_SPAWNS, HUB_WORLD_W } from "../../content/hub-worlds.js";
 import { acquireHubMapTiles } from "../map-tile-pool.js";
+import { TrainingDummy } from "../../training-dummy.js";
+import { LEGACY_BAND } from "../depth.js";
+import { DNF, label } from "../../../../pixelfx/src/fx/ui/_dnf.js";
 
 export const hubSystem = {
   hubActive: false,
@@ -20,13 +23,17 @@ export const hubSystem = {
     this.mapFxTiles = built.mapFxTiles;
     this.mapTileFrames = built.mapTileFrames;
     this.mapFx = this.mapFxTiles[0];
+    this.mapStageIndex = null;
     this.worldW = HUB_WORLD_W;
+    this.walkBand = LEGACY_BAND;
     this.hubZone = opts.zone ?? "camp";
     const spawn = HUB_SPAWNS[this.hubZone] ?? HUB_SPAWNS.camp;
     this.ui.reset();
     this.hero.spawn(spawn[0], spawn[1]);
     this.cameraX = clamp(this.hero.x - 160, 0, HUB_WORLD_W - 320);
-    this.enemies = [];
+    this.enemies = this.hubZone === "arena"
+      ? [new TrainingDummy(HUB_ARENA_DUMMY[0], HUB_ARENA_DUMMY[1])]
+      : [];
     this.effects = [];
     this.projectiles = [];
     this.pickups = [];
@@ -97,6 +104,29 @@ export const hubSystem = {
     return true;
   },
 
+  /** Open the camp loadout panel from anywhere in the hub, without the gate. */
+  openHubBag(tab = "loadout") {
+    if (this.state !== "camp" || !this.hubActive || this.campMenuOpen || this._hubDepartPending) return false;
+    this.keys.clear();
+    this.touchUi?.reset?.();
+    this.hero.vx = this.hero.vy = 0;
+    this.campMenuOpen = true;
+    this.domUi?.open?.(tab, "camp", { anywhere: true });
+    this.audio.play("ui");
+    return true;
+  },
+
+  closeHubBag() {
+    if (this.state !== "camp" || !this.campMenuOpen) return false;
+    this.domUi?.close?.();
+    this.audio.play("ui");
+    return true;
+  },
+
+  toggleHubBag() {
+    return this.campMenuOpen ? this.closeHubBag() : this.openHubBag();
+  },
+
   tryHubDepart() {
     if (this.state !== "camp" || !this.hubActive) return false;
     if (this.nearHubAdventureGate()) {
@@ -117,11 +147,14 @@ export const hubSystem = {
       if (this.hubAdventureDistance() > HUB_ADVENTURE_GATE.r + 4) this.hubGateArmed = true;
       if (this.hubGateArmed && this.nearHubAdventureGate()) this.openHubDeparture();
     }
-    const nextZone = this.hero.x < 300 ? "camp" : "town";
+    const nextZone = this.hero.x < 300 ? "camp" : this.hero.x < 620 ? "town" : "arena";
     if (nextZone !== this.hubZone) {
       this.hubZone = nextZone;
+      this.enemies = nextZone === "arena"
+        ? [new TrainingDummy(HUB_ARENA_DUMMY[0], HUB_ARENA_DUMMY[1])]
+        : [];
       const c = uiCopy(this);
-      this.ui.toast(nextZone === "town" ? c.hubTownArrive : c.hubCampArrive, "gold");
+      this.ui.toast(nextZone === "town" ? c.hubTownArrive : nextZone === "arena" ? c.hubArenaArrive : c.hubCampArrive, "gold");
       this.audio.play("ui");
     }
     if (this.hubDepartHintT > 0) this.hubDepartHintT -= dt;
@@ -134,19 +167,21 @@ export const hubSystem = {
     const gate = HUB_ADVENTURE_GATE;
     this.hubAdventureFx.options.x = gate.x;
     this.hubAdventureFx.options.y = gate.y;
-    const ink = "#07060d", gold = "#ffd36a", dim = "#a8a0b0";
+    const ink = DNF.ink, gold = DNF.goldHi, dim = DNF.text;
     if (!this.campMenuOpen) {
-      p.text(c.hubExploreHint, this.cameraX + 160, 173, gold, { align: "center", outline: ink, font: "mini" });
+      label(p, c.hubExploreHint, this.cameraX + 160, 6, gold, { align: "center", outline: ink });
     }
     if (this.nearHubAdventureGate()) {
-      p.text(c.hubDepartReady, gate.x, gate.y - 62, gold, { align: "center", outline: ink, font: "mini" });
+      label(p, c.hubDepartReady, gate.x, gate.y - 62, gold, { align: "center", outline: ink });
     } else if (this.hubZone === "camp") {
-      p.text(c.hubAdventureSign, gate.x, gate.y - 62, dim, { align: "center", outline: ink, font: "mini" });
+      label(p, c.hubAdventureSign, gate.x, gate.y - 62, dim, { align: "center", outline: ink });
     }
     if (this.hubZone === "camp" && this.hero.x < 260) {
-      p.text(c.hubTownSign, 310, 132, dim, { align: "center", outline: ink, font: "mini" });
+      label(p, c.hubTownSign, 310, 132, dim, { align: "center", outline: ink });
     } else if (this.hubZone === "town" && this.hero.x > 340) {
-      p.text(c.hubCampSign, 330, 132, dim, { align: "center", outline: ink, font: "mini" });
+      label(p, c.hubCampSign, 330, 132, dim, { align: "center", outline: ink });
+    } else if (this.hubZone === "arena") {
+      label(p, c.hubArenaSign, HUB_ARENA_DUMMY[0], 74, gold, { align: "center", outline: ink });
     }
   },
 };

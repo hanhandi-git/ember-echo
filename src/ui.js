@@ -1,22 +1,21 @@
-// The entire game UI is pixel art drawn into the same 320×240 canvas as the fight. The frames, bars,
-// slots, dialog, banners and toasts are reusable UI effects from pixelfx/src/fx/ui; this file only
-// places them and feeds them the current game state. There is no DOM HUD.
+// The entire game UI is pixel art drawn into the same 320×180 canvas as the fight. The console, slots,
+// orbs, target bars, dungeon card and windows are reusable UI effects from pixelfx/src/fx/ui (the
+// arcade-dungeon pack); this file only places them and feeds them the current game state.
 
-import { createFx, painterFor, hex } from "../../pixelfx/src/core/index.js";
+import { createFx, painterFor, hex, clamp } from "../../pixelfx/src/core/index.js";
 import { UI_GOLD } from "../../pixelfx/src/fx/ui/_lib.js";
-import * as panelFx from "../../pixelfx/src/fx/ui/panel.js";
-import * as statusFx from "../../pixelfx/src/fx/ui/status-bar.js";
-import * as dialogFx from "../../pixelfx/src/fx/ui/dialog.js";
-import * as bannerFx from "../../pixelfx/src/fx/ui/banner.js";
-import * as toastFx from "../../pixelfx/src/fx/ui/toast.js";
-import * as questFx from "../../pixelfx/src/fx/ui/quest-complete.js";
+import { TONES } from "../../pixelfx/src/fx/ui/_ember.js";
+import { DNF, veil, windowFrame, slotFrame, button, layeredBar, label, labelWidth, title, titleWidth } from "../../pixelfx/src/fx/ui/_dnf.js";
+import * as hudFx from "../../pixelfx/src/fx/ui/dnf-hud.js";
+import * as bossBarFx from "../../pixelfx/src/fx/ui/dnf-boss-bar.js";
+import * as minimapFx from "../../pixelfx/src/fx/ui/dnf-minimap.js";
 import * as comboFx from "../../pixelfx/src/fx/ui/combo-counter.js";
-import * as hudToggleFx from "../../pixelfx/src/fx/ui/hud-toggle.js";
-import { SKILL_META, STAGES, MELEE_WEAPONS, THROWN_WEAPONS } from "./data.js";
+import { SKILL_META, STAGES } from "./data.js";
 import { classLabel } from "./classes.js";
-import { skillLabel, stageAct, stageName, uiCopy, weaponLabel } from "./copy.js";
+import { skillLabel, stageName, uiCopy, pick } from "./copy.js";
+import { heroSprite } from "./hero-sprites.js";
 import {
-  RESUME_BUTTON, CAMP_BUTTON, SKILL_RECTS, SKILL_KEYS, AUTO_TOGGLE_RECTS, AUTO_TOGGLE_SIZE, AUTO_TOGGLE_X, contains,
+  RESUME_BUTTON, CAMP_BUTTON, SKILL_KEYS, AUTO_TOGGLE_RECTS, HUD_CONSOLE, HERO_PANEL, contains,
 } from "./controls.js";
 
 const SW = 320, SH = 180;
@@ -36,20 +35,50 @@ const withPlace = (p, x, y, fn) => {
   fn();
   p.place(0, 0, false, 0);
 };
+const BOSS_ROOMS = STAGES.map((stage, i) => (stage.waves.some((wave) => wave.some((spec) => spec.type === "boss")) ? i : -1)).filter((i) => i >= 0);
+/** Sword arts share one school; each gets its own slot picture so the bar reads at a glance. */
+const ART_ICON = { cleave: "cleave", rush: "rush", rise: "rise", guard: "guard", awakening: "awaken" };
+export function slotIconOf(skill) {
+  if (!skill) return { icon: "none" };
+  if (skill.art && ART_ICON[skill.art]) return { icon: ART_ICON[skill.art] };
+  if (skill.id === "t") return { icon: "slash", palette: TONES.frost };
+  return { icon: skill.icon ?? "burst" };
+}
+/** Clear time decides the grade on the result card. */
+export function runRank(time) {
+  return time < 240 ? "S" : time < 360 ? "A" : time < 540 ? "B" : "C";
+}
 
-function plate(p, t, x, y, w, h, opts = {}) {
-  withPlace(p, x, y, () => panelFx.draw(p, t, {
-    width: w, height: h, title: "", ornament: false, shine: false, ...opts,
-  }));
-}
-function meter(p, t, x, y, opts) {
-  withPlace(p, x, y, () => statusFx.draw(p, t, opts));
-}
-function card(p, t, x, y, opts) {
-  withPlace(p, x, y, () => dialogFx.draw(p, t, opts));
-}
-function hudToggle(p, t, x, y, opts) {
-  withPlace(p, x, y, () => hudToggleFx.draw(p, t, opts));
+const HEADLINE_TIME = 2.4, TOAST_TIME = 1.8;
+const TOAST_TONES = { gold: DNF.goldHi, mp: hex("#8fc0ff"), hp: hex("#ff9a86") };
+
+const PORTRAIT = 18;
+const portraits = new Map();
+/** The hero's head, cropped from the idle frame at the frame's own density. */
+function heroPortrait(look, appearance, density) {
+  const key = `${look}:${density}:${JSON.stringify(appearance ?? null)}`;
+  let image = portraits.get(key);
+  if (image !== undefined) return image;
+  const body = heroSprite(look, {}, false, appearance);
+  image = null;
+  if (body?.n) {
+    let top = Infinity;
+    for (let i = 0; i < body.n; i++) if (body.ys[i] < top) top = body.ys[i];
+    let sum = 0, count = 0;
+    for (let i = 0; i < body.n; i++) if (body.ys[i] < top + 11) { sum += body.xs[i]; count++; }
+    const cx = sum / Math.max(1, count), size = PORTRAIT * density;
+    image = new Uint32Array(size * size);
+    for (let i = 0; i < body.n; i++) {
+      const x = Math.round((body.xs[i] - cx + PORTRAIT / 2) * density), y = Math.round((body.ys[i] - top + 1) * density);
+      if (x < 0 || y < 0 || x >= size || y >= size) continue;
+      // Sprites authored below the frame density would leave gaps; fill the whole source texel.
+      const span = Math.max(1, Math.round(density / (body.density ?? density)));
+      for (let dy = 0; dy < span && y + dy < size; dy++) for (let dx = 0; dx < span && x + dx < size; dx++) image[(y + dy) * size + x + dx] = body.color[i];
+    }
+  }
+  if (portraits.size > 24) portraits.delete(portraits.keys().next().value);
+  portraits.set(key, image);
+  return image;
 }
 
 export class UI {
@@ -61,6 +90,10 @@ export class UI {
     this.deny = {};
     this.inventorySkillPick = null;
     this.actionPulse = { id: "", t: 0 };
+    this.target = null;
+    this.bossTrail = { ref: null, v: 1 };
+    this.headline = null;
+    this.toasts = [];
   }
 
   reset() {
@@ -70,6 +103,10 @@ export class UI {
     this.deny = {};
     this.inventorySkillPick = null;
     this.actionPulse = { id: "", t: 0 };
+    this.target = null;
+    this.bossTrail = { ref: null, v: 1 };
+    this.headline = null;
+    this.toasts = [];
   }
 
   update(dt) {
@@ -79,22 +116,36 @@ export class UI {
     this.actionPulse.t = Math.max(0, this.actionPulse.t - dt);
     for (const inst of this.fx) inst.update(dt);
     this.fx = this.fx.filter((inst) => !inst.done());
+    if (this.headline && (this.headline.t += dt) >= HEADLINE_TIME) this.headline = null;
+    for (const toast of this.toasts) toast.t += dt;
+    this.toasts = this.toasts.filter((toast) => toast.t < TOAST_TIME);
+    // damage trails catch up with the real health a moment after the hit
+    const boss = this.bossTrail.ref;
+    if (boss) this.bossTrail.v = Math.max(Math.max(0, boss.hp) / boss.maxHp, this.bossTrail.v - dt * 0.12);
+    if (this.target) {
+      const e = this.target.ref;
+      this.target.t -= dt * (e.dead || e.hp <= 0 ? 4 : 1);
+      this.target.trail = Math.max(Math.max(0, e.hp) / e.maxHp, this.target.trail - dt * 0.9);
+      if (this.target.t <= 0) this.target = null;
+    }
   }
 
   // screen-space pixelfx UI effects
   play(mod, opts) { this.fx.push(createFx(mod, opts)); }
+  /** A headline across the middle of the screen: stage intro, wave, boss, stage clear. */
   banner(kicker, text, sub = "") {
-    this.play(bannerFx, { x: 160, y: 86, kicker, text, sub, plate: false });
+    this.headline = { kicker, text, sub, t: 0 };
   }
-  toast(text, tone = "gold") { this.play(toastFx, { x: 160, y: 154, text, tone, plate: false }); }
+  toast(text, tone = "gold") {
+    this.toasts.push({ text, tone, t: 0 });
+    if (this.toasts.length > 3) this.toasts.shift();
+  }
   stageClear() {
-    const c = uiCopy(this.g);
-    this.play(questFx, { x: 160, y: 96, text: c.stageClear, palette: UI_GOLD });
+    this.banner("", uiCopy(this.g).stageClear, "");
   }
   comboMilestone(n) {
-    const c = uiCopy(this.g);
     this.play(comboFx, {
-      x: 214, y: 104, count: n, label: c.combo, palette: UI_GOLD,
+      x: 214, y: 96, count: n, label: "COMBO", palette: UI_GOLD,
       textScale: COMBO_MILESTONE_TEXT_SCALE,
     });
   }
@@ -102,85 +153,120 @@ export class UI {
   pulseSkill(id) { this.pulse[id] = 0.26; }
   denySkill(id) { this.deny[id] = 0.22; }
 
+  /** Remember the enemy that was just hit so its name and health show at the top of the screen. */
+  noteTarget(enemy) {
+    if (!enemy || enemy.boss) return;
+    this.target = { ref: enemy, t: 3, trail: Math.max(enemy.hp, 0) / enemy.maxHp };
+  }
+
+  touchLayout(g) { return !!g.touchUi?.active; }
+
   draw(g, p, frame) {
     const t = this.t;
-    if (g.state === "camp") return;
-    if (g.state === "inventory") {
-      this.drawHud(g, p, t);
+    if (g.state === "camp") {
+      if (!g.campMenuOpen) {
+        this.drawHeroPanel(g, p, t);
+        if (!this.touchLayout(g)) this.drawConsole(g, p, t, g.hubZone !== "arena");
+        for (const inst of this.fx) inst.draw(frame);
+        this.drawNotices(painterFor(frame));
+      }
       return;
     }
     this.drawHud(g, p, t);
+    if (g.state === "inventory") return;
     this.drawCommand(g, p, t);
     for (const inst of this.fx) inst.draw(frame);
     p = painterFor(frame);
-    if (g.state === "paused") {
-      this.drawMenu(g, p, 0.62);
-      const resume = RESUME_BUTTON;
-      plate(p, t, resume.x + resume.w / 2, resume.y + resume.h / 2, resume.w, resume.h);
-      p.text(uiCopy(g).continue, resume.x + resume.w / 2, resume.y + 6, C.gold2, { align: "center", outline: C.ink, font: "mini" });
-      const camp = CAMP_BUTTON;
-      plate(p, t, camp.x + camp.w / 2, camp.y + camp.h / 2, camp.w, camp.h);
-      p.text(uiCopy(g).returnCamp, camp.x + camp.w / 2, camp.y + 6, C.muted, { align: "center", outline: C.ink, font: "mini" });
+    this.drawNotices(p);
+    if (g.state === "paused" || g.state === "gameover" || g.state === "victory") this.drawMenu(g, p);
+  }
+
+  /** The headline and the toast stack. Both slide in, hold, and fade by dither. */
+  drawNotices(p) {
+    const h = this.headline;
+    if (h) {
+      const k = Math.min(1, h.t / 0.16), out = clamp((h.t - (HEADLINE_TIME - 0.28)) / 0.28), a = Math.min(k, 1 - out);
+      const x = 160 + Math.round((1 - k) * (1 - k) * 26 - out * out * 26), y = 70, w = Math.max(60, titleWidth(h.text));
+      if (a > 0.02) {
+        veil(p, 0, y - 6, SW, 28, DNF.ink, 0.34 * a);
+        if (h.kicker) label(p, h.kicker, x, y - 11, DNF.goldHi, { align: "center", outline: DNF.ink, a });
+        title(p, h.text, x, y, { align: "center", a });
+        for (const dir of [-1, 1]) {
+          const x0 = x + dir * (w / 2 + 8);
+          p.rect(dir < 0 ? x0 - 40 : x0, y + 7, 40, 1, DNF.gold, a);
+          p.rect(x0 - 1, y + 6, 3, 3, DNF.goldHi, a);
+        }
+        if (h.sub) label(p, h.sub, x, y + 19, DNF.text, { align: "center", outline: DNF.ink, a });
+      }
     }
-    else if (g.state === "gameover") this.drawMenu(g, p, 0.7);
-    else if (g.state === "victory") this.drawMenu(g, p, 0.7);
+    this.toasts.forEach((toast, i) => {
+      const a = Math.min(1, toast.t / 0.12, (TOAST_TIME - toast.t) / 0.3);
+      const y = 140 - (this.toasts.length - 1 - i) * 9 - Math.round((1 - Math.min(1, toast.t / 0.12)) * 4);
+      const w = labelWidth(p, toast.text) + 12;
+      veil(p, 160 - w / 2, y - 2, w, 9, DNF.ink, 0.5 * a);
+      label(p, toast.text, 160, y, TOAST_TONES[toast.tone] ?? DNF.goldHi, { align: "center", outline: DNF.ink, a });
+    });
   }
 
   drawHud(g, p, t) {
-    const h = g.hero;
-    // hero card (no HUD plate — text and bars float over the scene)
-    p.ellipse(23, 25, 18, 18, C.ink, 0.55);
-    p.ring(23, 25, 17, 2, C.gold, 0.9);
-    p.ellipse(23, 23, 8, 9, hex("#b47650"), 1);
-    p.arc(23, 21, 10, 3, Math.PI, Math.PI * 2, hex("#302235"), 1);
-    p.dot(20, 23, C.gold2); p.dot(26, 23, C.gold2); p.dot(23, 19, hex("#6ce1c8"));
-    const c = uiCopy(g);
-    p.text(classLabel(h.classId, g.language), 47, 8, C.gold, { outline: C.ink });
-    p.text(c.level + " " + h.level, 116, 8, C.gold2, { align: "right", outline: C.ink });
-    meter(p, t, 64, 21, { label: c.hp, value: h.hp / h.maxHp, text: `${Math.ceil(h.hp)}/${h.maxHp}`, tone: "hp", width: 108, height: 9, cells: 10 });
-    meter(p, t, 64, 32, { label: c.mp, value: h.mp / h.maxMp, text: `${Math.floor(h.mp)}/${h.maxMp}`, tone: "mp", width: 108, height: 8, cells: 10 });
-    meter(p, t, 64, 41, { label: c.ap, value: h.ap / h.maxAp, text: `${Math.floor(h.ap)}/${h.maxAp}`, tone: "gold", width: 108, height: 8, cells: 10 });
-    meter(p, t, 64, 50, { label: "", value: h.xp / h.xpNext, text: "", tone: "xp", width: 108, height: 3, cells: 10 });
-    this.drawAutoToggles(g, p, t, c);
-    p.text(`${c.embers} ${h.embers ?? 0}`, 10, 86, C.gold2, { outline: C.ink, font: "mini" });
+    const c = uiCopy(g), touch = this.touchLayout(g);
+    this.drawHeroPanel(g, p, t);
+    if (!touch) this.drawConsole(g, p, t, false);
 
-    // stage card
-    p.text(stageAct(g, g.stage), 186, 8, C.gold, { align: "center", outline: C.ink });
-    p.text(stageName(g, g.stage), 186, 15, C.gold2, { align: "center", font: "big", outline: C.ink });
-    const boss = g.bossRef && !g.bossRef.dead;
+    // dungeon card, top right (below the DOM bag/pause buttons on touch screens)
+    const boss = g.bossRef && !g.bossRef.dead ? g.bossRef : null;
     const phaseLine = g.phase === "clear" ? c.enterGate : g.phase === "travel" ? c.travelling : boss ? c.boss : c.wave(g.waveIndex + 1, g.stage.waves.length);
-    p.text(phaseLine, 186, 27, C.muted, { align: "center", outline: C.ink, font: "mini" });
-    for (let i = 0; i < STAGES.length; i++) {
-      const x = 160 + i * 8, y = 36, on = i === g.stageIndex;
-      p.px(x, y - 1, on ? C.gold2 : C.muted); p.px(x, y + 1, on ? C.gold2 : C.muted);
-      p.px(x - 1, y, on ? C.gold : C.muted); p.px(x + 1, y, on ? C.gold : C.muted);
-      p.px(x, y, on ? C.gold2 : C.muted);
-    }
+    const mapY = touch ? 38 : 4;
+    withPlace(p, SW - 4, mapY, () => minimapFx.draw(p, t, {
+      title: stageName(g, g.stage), rooms: STAGES.length, current: g.stageIndex, boss: BOSS_ROOMS,
+      sub: phaseLine, time: fmtTime(g.runTime ?? 0), width: 62,
+    }));
+    label(p, `${c.kills} ${g.kills}`, SW - 6, mapY + 34, DNF.text, { align: "right", outline: DNF.ink });
 
-    // kills
-    p.text(c.kills, 290, 9, C.gold, { align: "center", outline: C.ink });
-    p.text(String(g.kills), 290, 18, C.gold2, { align: "center", font: "big", outline: C.ink });
-    // boss bar
+    // target bar, top centre: the boss while it lives, otherwise the enemy that was last hit
     if (boss) {
-      p.text(uiCopy(g).bossWarden, 160, 46, C.boss, { align: "center", outline: C.ink });
-      p.text(["PHASE I", "PHASE II", "PHASE III"][g.bossRef.phase - 1] ?? "", 312, 46, C.boss, { align: "right", outline: C.ink });
-      meter(p, t, 160, 57, { label: "", value: g.bossRef.hp / g.bossRef.maxHp, text: "", tone: "boss", width: 200, height: 9, cells: 20 });
+      const value = Math.max(0, boss.hp) / boss.maxHp;
+      if (this.bossTrail.ref !== boss) this.bossTrail = { ref: boss, v: value };
+      withPlace(p, 164, 4, () => bossBarFx.draw(p, t, {
+        name: pick(g, boss.nameEn ?? "BOSS", c.bossWarden, boss.nameEn ?? "BOSS"), value, trail: this.bossTrail.v,
+        layers: Math.max(2, Math.round(boss.maxHp / 30)), phase: ["PHASE I", "PHASE II", "PHASE III"][boss.phase - 1] ?? "",
+      }));
+    } else if (this.target && this.target.t > 0) {
+      const e = this.target.ref, value = Math.max(0, e.hp) / e.maxHp;
+      withPlace(p, 160, 6, () => bossBarFx.draw(p, t, {
+        compact: true, name: pick(g, e.type?.nameEn ?? "", e.name ?? "", e.type?.nameEn ?? ""), value, trail: this.target.trail,
+        a: Math.min(1, this.target.t / 0.4),
+      }));
     }
   }
 
-  drawAutoToggles(g, p, t, c = uiCopy(g)) {
-    const r = AUTO_TOGGLE_RECTS;
-    const half = Math.floor(AUTO_TOGGLE_SIZE / 2);
-    const rows = [
-      { key: "battle", icon: "battle", label: c.autoBattleHud, on: g.autoBattle, y: r.battle.y + half },
-      { key: "loot", icon: "loot", label: c.autoLootHud, on: g.autoLoot, y: r.loot.y + half },
-    ];
-    for (const row of rows) {
-      const cx = AUTO_TOGGLE_X + half;
-      hudToggle(p, t, cx, row.y, { on: row.on, icon: row.icon, size: AUTO_TOGGLE_SIZE });
-      p.text(row.label, AUTO_TOGGLE_X + AUTO_TOGGLE_SIZE + 4, row.y - 2, row.on ? C.gold2 : C.muted, { outline: C.ink });
-      p.text(row.on ? "ON" : "OFF", AUTO_TOGGLE_X + AUTO_TOGGLE_SIZE + 34, row.y - 2, row.on ? C.gold : C.muted, { outline: C.ink });
+  drawHeroPanel(g, p, t) {
+    const h = g.hero, c = uiCopy(g), r = HERO_PANEL;
+    slotFrame(p, r.x, r.y, r.s, { selected: true });
+    p.rect(r.x + 2, r.y + 2, r.s - 4, r.s - 4, hex("#1a2030"));
+    const density = p.density ?? 1, image = heroPortrait(h.look, h.appearance, density);
+    if (image) p.image(image, PORTRAIT * density, PORTRAIT * density, r.x + 2, r.y + 2, density);
+    const tx = r.x + r.s + 3;
+    label(p, classLabel(h.classId, g.language), tx, r.y + 1, DNF.goldHi, { outline: DNF.ink });
+    const level = `Lv${h.level}`;
+    if (this.touchLayout(g)) {
+      label(p, level, tx + labelWidth(p, classLabel(h.classId, g.language)) + 4, r.y + 1, DNF.text, { outline: DNF.ink });
+      layeredBar(p, tx, r.y + 9, 58, 3, h.hp / h.maxHp, 1);
+      layeredBar(p, tx, r.y + 14, 58, 2, h.mp / h.maxMp, 1, { colors: [hex("#3a8ee0")] });
+      layeredBar(p, tx, r.y + 18, 58, 1, h.xp / h.xpNext, 1, { colors: [hex("#9ac83c")] });
+    } else {
+      label(p, level, tx, r.y + 9, DNF.text, { outline: DNF.ink });
+      label(p, `${c.embers} ${h.embers ?? 0}`, tx + labelWidth(p, level) + 4, r.y + 9, DNF.gold, { outline: DNF.ink });
     }
+    if (g.state !== "camp") this.drawAutoToggles(g, p, t, c);
+  }
+
+  drawAutoToggles(g, p, _t, c = uiCopy(g)) {
+    const rows = [
+      { rect: AUTO_TOGGLE_RECTS.battle, label: c.autoBattleHud, on: g.autoBattle },
+      { rect: AUTO_TOGGLE_RECTS.loot, label: c.autoLootHud, on: g.autoLoot },
+    ];
+    for (const { rect, label, on } of rows) button(p, rect.x, rect.y, rect.w, rect.h, label, { hot: on, dim: !on });
   }
 
   handleAutoPointer(x, y) {
@@ -197,95 +283,38 @@ export class UI {
     return false;
   }
 
-  drawCommand(g, p, _t) {
+  /** Bottom console: life orb, seven slots, action and experience bars, mana orb. */
+  drawConsole(g, p, t, locked) {
     const h = g.hero;
-    // A vertical right-hand skill rail follows the reference layout: each skill is a compact
-    // round node with a colored school, key label and cooldown veil.
-    h.skillSlots.forEach((id, i) => {
-      if (g.touchUi) return;
+    const slots = h.skillSlots.map((id, i) => {
       const s = SKILL_META.find((skill) => skill.id === id) ?? SKILL_META[0];
-      const left = h.cd[s.id] ?? 0, cd = left / (s.id === "j" ? h.meleeCooldownMax : s.cd);
-      const r = SKILL_RECTS[i];
-      const y = r.y + 10, color = s.tint ? hex(s.tint) : C.gold2;
-      p.ellipse(294, y, 9, 9, C.ink, 0.92);
-      p.ring(294, y, 9, 2, color, 0.9);
-      p.text(s.glyph, 294, y - 4, color, { align: "center", font: "big", outline: C.ink });
-      p.text(SKILL_KEYS[i] ?? String(i + 1), 307, y - 3, C.gold2, { align: "center", font: "mini", outline: C.ink });
-      if (cd > 0.001) {
-        p.ellipse(294, y, 8, 8, C.ink, Math.min(0.8, cd * 0.75));
-        p.text(left >= 1 ? String(Math.ceil(left)) : left.toFixed(1), 294, y - 2, C.gold2, { align: "center", font: "mini", outline: C.ink });
-      }
+      const left = h.cd[s.id] ?? 0, max = s.id === "j" ? h.meleeCooldownMax : s.cd;
+      return {
+        ...slotIconOf(s), key: SKILL_KEYS[i] ?? String(i + 1),
+        cooldown: max > 0 ? clamp(left / max) : 0,
+        cdText: left > 0.05 && max >= 1 ? (left >= 1 ? String(Math.ceil(left)) : left.toFixed(1)) : "",
+        mana: h.mp >= (s.cost ?? 0), flash: (this.pulse[s.id] ?? 0) > 0, deny: (this.deny[s.id] ?? 0) > 0,
+      };
     });
-    const hud = uiCopy(g);
-    if (g.combo.count >= 2 && g.combo.timer > 0) p.text(hud.combo + " x" + g.combo.count, 8, 172, C.gold2, { outline: C.ink });
-    if (g.portal) p.text(hud.gate, 282, 172, g.portal.color, { align: "center", outline: C.ink });
+    withPlace(p, HUD_CONSOLE.x, HUD_CONSOLE.y, () => hudFx.draw(p, t, {
+      hp: h.hp / h.maxHp, mp: h.mp / h.maxMp, ap: h.ap / h.maxAp, xp: h.xp / h.xpNext,
+      hpText: String(Math.max(0, Math.ceil(h.hp))), mpText: String(Math.floor(h.mp)), slots, locked,
+    }));
   }
 
-  drawInventory(g, p, t) {
-    const h = g.hero;
+  drawCommand(g, p, _t) {
     const hud = uiCopy(g);
-    p.rect(0, 0, SW, SH, C.ink, 0.76);
-    plate(p, t, 160, 120, 304, 208, { ornament: true });
-    p.text("SATCHEL", 16, 22, C.gold, { outline: C.ink, font: "big" });
-    p.text("TAB / ESC CLOSE", 304, 22, C.muted, { align: "right", outline: C.ink });
-    p.text(hud.meleeWeapons, 18, 38, C.gold2, { outline: C.ink });
-    MELEE_WEAPONS.slice(0, 3).forEach((w, i) => {
-      const x = 58 + i * 96, active = h.meleeWeaponId === w.id;
-      p.rect(x - 42, 44, 84, 30, active ? C.gold : C.muted, active ? 0.28 : 0.12);
-      p.rect(x - 40, 46, 80, 26, C.ink, 0.88);
-      p.text(w.glyph, x - 30, 56, active ? C.gold2 : C.text, { font: "big", outline: C.ink });
-      p.text(weaponLabel(g, w).slice(0, 8), x + 2, 54, active ? C.gold2 : C.text, { align: "center", outline: C.ink, font: "mini" });
-      p.text(String(i + 1), x - 36, 48, C.muted, { outline: C.ink, font: "mini" });
-    });
-    p.text(hud.thrownWeapons, 18, 78, C.gold2, { outline: C.ink });
-    THROWN_WEAPONS.slice(0, 3).forEach((w, i) => {
-      const x = 58 + i * 96, active = h.thrownWeaponId === w.id;
-      p.rect(x - 42, 84, 84, 30, active ? C.gold : C.muted, active ? 0.28 : 0.12);
-      p.rect(x - 40, 86, 80, 26, C.ink, 0.88);
-      p.text(w.glyph, x - 30, 96, active ? C.gold2 : C.text, { font: "big", outline: C.ink });
-      p.text(weaponLabel(g, w).slice(0, 8), x + 2, 94, active ? C.gold2 : C.text, { align: "center", outline: C.ink, font: "mini" });
-      p.text(String(i + 4), x - 36, 88, C.muted, { outline: C.ink, font: "mini" });
-    });
-    p.text("LOADOUT", 18, 120, C.gold2, { outline: C.ink });
-    p.text(this.inventorySkillPick == null ? "CLICK A SLOT, THEN PICK A SKILL" : "PICK A SKILL", 302, 96, C.muted, { align: "right", outline: C.ink, font: "mini" });
-    h.skillSlots.forEach((id, i) => {
-      const s = SKILL_META.find((x) => x.id === id) ?? SKILL_META[0];
-      const active = this.inventorySkillPick === i;
-      const x = 14 + i * 41;
-      p.rect(x - 18, 126, 38, 28, active ? C.gold2 : C.muted, active ? 0.36 : 0.16);
-      p.rect(x - 16, 128, 34, 24, C.ink, 0.9);
-      p.text(SKILL_KEYS[i] ?? String(i + 1), x - 12, 130, C.muted, { outline: C.ink, font: "mini" });
-      p.text(s.glyph, x + 2, 130, s.tint ? hex(s.tint) : C.gold2, { align: "center", font: "big", outline: C.ink });
-      p.text(skillLabel(g, s).slice(0, 6), x + 2, 143, C.text, { align: "center", outline: C.ink, font: "mini" });
-    });
-    p.text("SKILLS", 18, 160, C.gold2, { outline: C.ink });
-    SKILL_META.filter((s) => h.canUseSkill(s.id)).slice(0, 7).forEach((s, i) => {
-      const x = 10 + i * 42;
-      const selected = this.inventorySkillPick != null && h.skillSlots[this.inventorySkillPick] === s.id;
-      p.rect(x, 166, 36, 26, selected ? C.gold : C.muted, selected ? 0.3 : 0.1);
-      p.rect(x + 2, 168, 32, 22, C.ink, 0.9);
-      p.text(s.key, x + 6, 170, C.muted, { outline: C.ink, font: "mini" });
-      p.text(s.glyph, x + 18, 170, s.tint ? hex(s.tint) : C.gold2, { align: "center", font: "big", outline: C.ink });
-      p.text(skillLabel(g, s).slice(0, 6), x + 18, 181, C.text, { align: "center", outline: C.ink, font: "mini" });
-    });
-    p.text(hud.inventoryHint, 160, 194, C.muted, { align: "center", outline: C.ink, font: "mini" });
-    p.text(hud.inventoryReturn, 160, 205, C.gold, { align: "center", outline: C.ink, font: "mini" });
+    if (g.combo.count >= 2 && g.combo.timer > 0) {
+      label(p, hud.combo, 6, 56, DNF.goldHi, { outline: DNF.ink });
+      label(p, "x" + g.combo.count, 6, 63, C.gold2, { outline: DNF.ink, font: "big" });
+    }
+    if (g.portal) label(p, hud.gate, 314, 146, g.portal.color, { align: "right", outline: C.ink });
   }
 
   handlePointer(x, y) {
     const g = this.g, h = g.hero;
     if (g.state !== "inventory") return false;
     if (y < 34) { g.toggleInventory(); return true; }
-    if (y >= 42 && y <= 76) {
-      const i = Math.floor((x + 38) / 96);
-      const w = MELEE_WEAPONS[i];
-      if (w) { h.equipWeapon(w.id, g); return true; }
-    }
-    if (y >= 82 && y <= 116) {
-      const i = Math.floor((x + 38) / 96);
-      const w = THROWN_WEAPONS[i];
-      if (w) { h.equipWeapon(w.id, g); return true; }
-    }
     if (y >= 124 && y <= 156) {
       const i = Math.floor((x + 4) / 41);
       if (i >= 0 && i < h.skillSlots.length) { this.inventorySkillPick = i; g.audio.play("ui"); return true; }
@@ -307,14 +336,6 @@ export class UI {
     const g = this.g, h = g.hero;
     if (g.state !== "inventory") return false;
     if (key === "escape" || key === "tab") { g.toggleInventory(); return true; }
-    if (["1", "2", "3"].includes(key)) {
-      const w = MELEE_WEAPONS[Number(key) - 1];
-      if (w) { h.equipWeapon(w.id, g); return true; }
-    }
-    if (["4", "5", "6"].includes(key)) {
-      const w = THROWN_WEAPONS[Number(key) - 4];
-      if (w) { h.equipWeapon(w.id, g); return true; }
-    }
     if (key === "arrowleft" || key === "arrowright") {
       const d = key === "arrowright" ? 1 : -1;
       this.inventorySkillPick = (this.inventorySkillPick == null ? 0 : (this.inventorySkillPick + d + h.skillSlots.length) % h.skillSlots.length);
@@ -332,27 +353,36 @@ export class UI {
     return false;
   }
 
-  drawMenu(g, p, dim) {
-    p.rect(0, 0, SW, SH, C.ink, dim);
-    const s = g.stats();
+  drawMenu(g, p) {
+    const c = uiCopy(g), s = g.stats(), t = this.t;
+    veil(p, 0, 0, SW, SH, DNF.ink, g.state === "paused" ? 0.55 : 0.64);
+    const rows = (x, y, w, list) => list.forEach(([name, value], i) => {
+      if (i % 2) veil(p, x, y + i * 9 - 2, w, 9, DNF.bar0, 0.5);
+      label(p, name, x + 4, y + i * 9, DNF.muted, { outline: DNF.ink });
+      label(p, String(value), x + w - 4, y + i * 9, DNF.text, { align: "right", outline: DNF.ink });
+    });
     if (g.state === "paused") {
-      card(p, this.t, 160, 90, {
-        kicker: uiCopy(g).pausedKicker, title: uiCopy(g).pausedTitle, subtitle: uiCopy(g).pausedSub,
-        lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
-        prompt: uiCopy(g).pausedPrompt, width: 240, height: 158,
-      });
-    } else if (g.state === "gameover") {
-      card(p, this.t, 160, 90, {
-        kicker: "DEFEAT", title: "YOU FELL", subtitle: "THE EMBER WENT OUT",
-        lines: [`STAGE ${s.stage}`, `KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
-        prompt: `${uiCopy(g).toCamp}   R RETRY`, width: 240, height: 140, tone: "blood",
-      });
-    } else if (g.state === "victory") {
-      card(p, this.t, 160, 90, {
-        kicker: "VICTORY", title: "EMBER STILL BURNS", subtitle: "THE WARDEN IS ASH",
-        lines: [`KILLS ${s.kills}`, `LEVEL ${s.level}`, `TIME ${fmtTime(s.time)}`],
-        prompt: `${uiCopy(g).toCamp}   R RETRY`, width: 260, height: 130,
-      });
+      const box = windowFrame(p, 78, 34, 164, 110, { title: c.pausedTitle, close: true });
+      rows(box.x + 4, box.y + 4, box.w - 8, [[c.kills, s.kills], [c.level, s.level], [c.time, fmtTime(s.time)]]);
+      const hot = Math.sin(t * 4) > -0.2;
+      button(p, RESUME_BUTTON.x, RESUME_BUTTON.y, RESUME_BUTTON.w, RESUME_BUTTON.h, c.continue, { hot });
+      button(p, CAMP_BUTTON.x, CAMP_BUTTON.y, CAMP_BUTTON.w, CAMP_BUTTON.h, c.returnCamp);
+      label(p, c.pausedPrompt, 160, 134, DNF.muted, { align: "center", outline: DNF.ink });
+      return;
     }
+    const win = g.state === "victory";
+    const box = windowFrame(p, 80, 38, 160, 96, { title: win ? c.victoryTitle : c.defeatTitle, accent: win ? DNF.goldHi : hex("#ff8a7a") });
+    label(p, win ? c.wardenAsh : c.defeatSub, 160, box.y + 2, win ? DNF.gold : DNF.muted, { align: "center", outline: DNF.ink });
+    if (win) {
+      const rank = runRank(s.time);
+      label(p, c.rank, box.x + 22, box.y + 14, DNF.muted, { align: "center", outline: DNF.ink });
+      label(p, rank, box.x + 22, box.y + 24, rank === "S" ? DNF.goldHi : DNF.text, { align: "center", outline: DNF.ink, font: "big", scale: 3 });
+      p.glow(box.x + 22, box.y + 34, 22, DNF.goldHi, 0.12 + 0.05 * Math.sin(t * 3));
+      rows(box.x + 46, box.y + 16, box.w - 50, [[c.time, fmtTime(s.time)], [c.kills, s.kills], [c.level, s.level], [c.embers, g.hero.embers ?? 0]]);
+    } else {
+      rows(box.x + 4, box.y + 16, box.w - 8, [[c.stage, s.stage], [c.kills, s.kills], [c.level, s.level], [c.time, fmtTime(s.time)]]);
+    }
+    const a = 0.55 + 0.45 * Math.abs(Math.sin(t * 3.2));
+    label(p, c.resultPrompt, 160, box.y + box.h - 8, DNF.goldHi, { align: "center", outline: DNF.ink, a });
   }
 }

@@ -61,6 +61,7 @@ export const fxEntitySystem = {
       scale: cfg.scale ?? COMBAT_SCALE,
       split: !!cfg.split, melee: !!cfg.melee,
     });
+    if (cfg.cache === false) inst.__emberNoCache = true;
     return inst;
   },
 

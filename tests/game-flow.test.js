@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Game } from "../src/game.js";
-import { STAGES, SKILL_META, WEAPONS } from "../src/data.js";
+import { STAGES, SKILL_META, WEAPONS, HERO_LOOKS } from "../src/data.js";
 import { RESUME_BUTTON, CAMP_BUTTON, SKILL_RECTS } from "../src/controls.js";
 import { GATE_PALETTES } from "../src/fx/stage-portal.js";
 import { WEAPON_PROFILES } from "../src/weapon-profiles.js";
@@ -39,6 +39,15 @@ test("small enemies animate without summoning circles; the boss keeps its entran
   const boss = g.spawnEnemy("boss", 400, 150);
   assert.ok(boss.portal);
   assert.ok(g.effects.some((e) => e.inst.meta.name === "Spawn portal"));
+});
+
+test("every combat stage shares the layered belt-scroll sample backdrop", () => {
+  assert.equal(STAGES.length, 7);
+  for (const stage of STAGES) {
+    assert.equal(stage.map, STAGES[0].map);
+    assert.equal(stage.mapKey, "mosswood", "worker rasterization must use the same backdrop");
+  }
+  assert.ok(Array.isArray(STAGES[0].map.map.layers), "the sample map exports its parallax layers");
 });
 
 test("movement echoes follow actual paths in both directions, expire and reset on restart", () => {
@@ -123,7 +132,7 @@ test("clearing stays in the current stage until the hero enters the portal", () 
   assert.equal(g.phase, "clear");
   assert.ok(g.portal);
   g.hero.x = g.portal.x;
-  g.hero.y = 134;
+  g.hero.y = g.walkBand[0];
   g.updatePortal(0.05);
   assert.equal(g.phase, "clear", "must overlap in depth too");
   g.hero.y = g.portal.y;
@@ -141,7 +150,7 @@ test("clearing stays in the current stage until the hero enters the portal", () 
 test("portal appearing beneath the player requires stepping out and entering again", () => {
   const g = game();
   g.hero.x = g.worldW - 70;
-  g.hero.y = 152;
+  g.hero.y = g.depthY(152);
   clearStage(g);
   advance(g, 2);
   assert.equal(g.phase, "clear");
@@ -198,13 +207,13 @@ test("standing portal is animated, deterministic and seamless in every palette",
   }
 });
 
-test("the full pixelfx armory and spell catalog are playable through the adapter", () => {
-  assert.ok(WEAPONS.length >= 22);
+test("bound hero weapons and the spell catalog are playable through the adapter", () => {
+  assert.equal(WEAPONS.length, 13);
   assert.ok(SKILL_META.length >= 190);
   assert.equal(STAGES.length, 7);
   const g = game();
   const enemy = g.spawnEnemy("slime", 220, 150);
-  const weapon = WEAPONS.find((w) => w.id.startsWith("armory:"));
+  const weapon = g.hero.weapon;
   assert.ok(g.hero.equipWeapon(weapon.id, g));
   assert.ok(g.cast("j"));
   const samples = ["moves/sword-combo", "fire/fire-ring", "ice/ice-spikes", "lightning/chain-lightning", "arcane/arcane-missiles", "ninjutsu/great-fireball", "senjutsu/wind-shuriken", "dragonball/ki-wave", "fanren/xuantian-sword", "kami/ame-no-murakumo", "thrown/boomerang-throw"];
@@ -222,34 +231,20 @@ test("the full pixelfx armory and spell catalog are playable through the adapter
   assert.ok(enemy.hp < enemy.maxHp || g.effects.length > 0);
 });
 
-test("equipping a weapon changes the actual hero rig shape, not only its stats", () => {
+test("character selection binds its weapon and the enhanced attack never swaps the rig", () => {
   const g = game();
-  const meleeCases = [
-    ["ember-blade", "sword"], ["moon-scythe", "scythe"], ["storm-fang", "claw"],
-    ["armory:staff", "staff"], ["armory:katana", "katana"], ["armory:war-mace", "war-mace"],
-  ];
-  for (const [id, expected] of meleeCases) {
-    assert.ok(g.hero.equipWeapon(id, g), `weapon ${id} exists`);
-    assert.equal(g.hero.pose().weapon, expected, `rig uses ${expected}`);
+  for (const look of HERO_LOOKS) {
+    g.hero.equipLook(look.id, g);
+    assert.equal(g.hero.weaponId, look.weapon.id);
+    assert.equal(g.hero.equipWeapon("armory:kunai", g), false);
+    assert.equal(g.hero.thrownWeapon, null);
   }
-  assert.ok(g.hero.equipWeapon("armory:kunai", g));
-  assert.equal(g.hero.thrownWeaponId, "armory:kunai");
-  assert.equal(g.hero.thrownWeapon.rigWeapon, "kunai");
-  assert.equal(g.hero.pose().weapon, "war-mace", "thrown loadout does not replace the melee rig");
-});
-
-test("throw skill swaps the hand rig for the throw anim then restores melee", () => {
-  const g = game();
-  g.hero.equipWeapon("armory:war-mace", g);
-  g.hero.equipWeapon("armory:kunai", g);
-  assert.equal(g.hero.pose().weapon, "war-mace");
+  g.hero.equipLook("erii", g);
   assert.ok(g.cast("t"));
-  assert.equal(g.hero.pose().weapon, "kunai");
-  const track = g.hero.anim.track;
-  const dur = track[track.length - 1][0];
-  g.hero.anim.t = dur - 1e-4;
-  g.hero.update(g, 0.02, new Set());
-  assert.equal(g.hero.pose().weapon, "war-mace");
+  assert.equal(g.hero.anim.kind, "enhanced");
+  assert.equal(g.hero.weaponId, "hero:erii");
+  advance(g, 0.7);
+  assert.equal(g.hero.weaponId, "hero:erii");
 });
 
 test("weapon paths use moving enemy sweeps and stop or pierce according to the profile", () => {
@@ -294,7 +289,7 @@ test("a target outside the shortened sword range is missed while a closer one is
   const result = g.weaponStrike(g.hero.weapon.attack, { dmg: 10, knock: 0, crit: false });
   assert.deepEqual(result.hits, [near]);
   assert.equal(far.hp, far.maxHp);
-  assert.ok(Math.abs(result.points.at(-1).x - g.hero.x - g.hero.weapon.attack.range * COMBAT_SCALE) < 1e-8);
+  assert.deepEqual(result.points, g.weaponAttackPath(g.hero.weapon.attack));
 });
 
 test("frost damage radius and lightning telegraph shrink with their combat effects", () => {

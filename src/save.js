@@ -135,8 +135,7 @@ export function applyHeroProfile(hero, profile) {
   if (profile.appearances && typeof profile.appearances === "object") {
     hero.appearances = Object.fromEntries(Object.entries(profile.appearances).filter(([id]) => HERO_LOOKS.some((look) => look.id === id)).map(([id, value]) => [id, normalizeAppearance(value)]));
   } else if (profile.appearance) hero.setAppearance(profile.appearance);
-  if (profile.meleeWeaponId) hero.equipWeapon(profile.meleeWeaponId);
-  if (profile.thrownWeaponId) hero.equipWeapon(profile.thrownWeaponId);
+  hero.bindHeroWeapon();
   if (Array.isArray(profile.skillSlots) && profile.skillSlots.length === hero.skillSlots.length) {
     hero.skillSlots = normalizeClassSlots(hero.classId, profile.skillSlots, SKILL_META);
   }

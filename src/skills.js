@@ -1,15 +1,16 @@
 // Class-specific combat: blade strings and sword arts for swordsmen, bolts and spells for mages.
 // pixelfx supplies the effects; these adapters own targeting, resource costs, and contact timing.
 
-import { createFx, clamp } from "../../pixelfx/src/core/index.js";
+import { createFx } from "../../pixelfx/src/core/index.js";
 import { FX, SKILL_META } from "./data.js";
 import { HERO_TRACKS } from "./hero.js";
 import { COMBAT_SCALE, combatDistance as size } from "./combat-scale.js";
 import { castActSpell, interruptSpellActs } from "./spell-act.js";
 import { ATTACK_BUFFER, meleeBeat } from "./combat-feel.js";
-import * as meleeSwing from "./fx/melee-swing.js";
 import { meleeArt, meleePoseTrack } from "./melee-arts.js";
 import { canUseSkill } from "./classes.js";
+import * as heroProjectile from "./fx/hero-projectile.js";
+import { clampDepth } from "./game/depth.js";
 
 export const SKILLS = SKILL_META.map((s) => ({ ...s, cast: null }));
 
@@ -21,25 +22,49 @@ function afterHero(g, time, fn) {
 }
 
 function castMageBolt(g) {
-  const h = g.hero, aim = aimPoint(g, 240);
+  const h = g.hero, c = h.comboIndex;
+  castNativeProjectile(g, c, 0.44, 14);
+  h.comboIndex = (c + 1) % 3;
+  h.comboTimer = 0.95;
+}
+
+function nativeAnim(h, kind, duration, contact) {
+  h.startAnim(kind, [[0, {}], [duration, {}]], false);
+  h.anim.dur = duration;
+  h.anim.contact = contact;
+}
+
+function castNativeProjectile(g, combo, duration, damage, enhanced = false) {
+  const h = g.hero, aim = aimPoint(g, 260), contact = duration * 0.4;
+  enhanced ||= h.dashAttackT > 0;
   faceTo(h, aim.x);
-  h.startAnim("castK", HERO_TRACKS.castK, false);
-  const x = h.x + h.facing * size(12), y = h.y - size(28);
-  const dx = aim.x - x, dy = aim.y - y, length = Math.hypot(dx, dy) || 1;
-  g.projectiles.push({
-    x, y, prevX: x, prevY: y, vx: dx / length * 220, vy: dy / length * 220,
-    r: size(4), dmg: 14 * h.dmgMul, team: "hero", life: 1.35, kind: "magic-bolt", color: "#c6a0ff", knock: 12,
-    fx: createFx(FX.plasmaShot, { x, y, flip: dx < 0, seed: 950, palette: ["#33145f", "#6136a0", "#a479ef", "#d5b6ff", "#f0e4ff", "#ffffff"] }),
+  nativeAnim(h, enhanced ? "enhanced" : "attack" + (combo + 1), duration, contact);
+  h.dashAttackT = 0;
+  const attack = { cancelled: false };
+  h.melee = attack;
+  afterHero(g, contact, () => {
+    if (attack.cancelled || h.melee !== attack) return;
+    // Pick the target's horizontal lane once, then travel across it. This keeps
+    // the release straight even when the target is standing at another depth.
+    const x = h.x + h.facing * size(16), y = aim.target?.y ?? h.y;
+    // Basic bow and magic releases travel on the combat lane. The old target-height
+    // aim made the projectile line visibly slope whenever a foe stood above/below us.
+    const dx = aim.x - x, direction = Math.sign(dx) || h.facing;
+    g.projectiles.push({ x, y, prevX: x, prevY: y, vx: direction * 230, vy: 0,
+      r: size(enhanced ? 7 : 4), dmg: damage * h.dmgMul * (enhanced ? 1.15 : 1), team: "hero", life: 1.4,
+      kind: "hero-weapon", color: "#e6daff", knock: enhanced ? 44 : 15,
+      pierce: enhanced, maxHits: enhanced ? 3 : 1,
+      visualOffsetY: -size(14),
+      fx: createFx(heroProjectile, { x, y: y - size(14), flip: direction < 0, angle: 0, look: h.look, appearance: h.appearance }) });
   });
-  g.audio.play("cast", { gain: 0.45, pitch: 1.2 });
+  g.audio.play("slash", { gain: 0.5, pitch: 1.2 });
 }
 
 function castSwordArt(g, sk) {
   const h = g.hero;
   if (sk.art === "guard") {
-    h.startAnim("castI", HERO_TRACKS.castI, false);
+    nativeAnim(h, "guard", 0.6, 0.15);
     h.addShield(g, 36, 6);
-    g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 0.5 }, { life: 1.2, follow: () => h });
     g.audio.play("shield");
     return;
   }
@@ -50,17 +75,20 @@ function castSwordArt(g, sk) {
   const origin = { x: h.x, y: h.y, facing: h.facing };
   const combo = sk.art === "rise" ? 1 : 2;
   const beat = { ...meleeBeat(h, combo), hit: rush ? 0.13 : 0.2, duration: awakening ? 0.8 : 0.5 };
-  const art = meleeArt(h.meleeWeapon, combo, rush);
-  h.startAnim("attack" + (combo + 1), meleePoseTrack(art, beat, h.meleeWeapon, combo), false);
+  nativeAnim(h, sk.art ?? "cleave", beat.duration, beat.hit);
+  if (awakening) h.anim.hits = [beat.hit, 0.4, 0.62];
+  const attack = { cancelled: false };
+  h.melee = attack;
   if (rush) h.vx = h.facing * size(330);
   const strike = (index) => {
-    const at = rush ? h : origin;
-    g.addFx(meleeSwing, { x: at.x, y: at.y, flip: origin.facing < 0, combo: (combo + index) % 3, art, beat, weapon: h.meleeWeapon, range, seed: 740 + index, light: 0.75 }, { split: true, melee: true });
-    const hit = g.weaponStrike({ kind: "arc", range, radius: awakening ? 26 : 20, pierce: true, maxHits: 8 }, {
+    if (attack.cancelled || h.melee !== attack) return;
+    const at = origin;
+    const reach = range + (rush ? Math.abs(h.x - origin.x) / COMBAT_SCALE : 0);
+    const hit = g.weaponStrike({ kind: rush ? "line" : "arc", range: reach, radius: awakening ? 26 : 20, pierce: true, maxHits: 8 }, {
       origin: { x: at.x, y: at.y, facing: origin.facing }, dmg: sk.power * h.dmgMul, knock: rush ? 28 : 50,
       impact: "heavy", status: sk.art === "rise" ? "stun" : undefined, statusTime: 0.9,
     });
-    if (hit) { g.shake(2.4, 0.18); g.hitStop = Math.max(g.hitStop, 0.055); }
+    if (hit.hits.length > 0) { g.shake(2.4, 0.18); g.hitStop = Math.max(g.hitStop, 0.055); }
     g.audio.play("slash2", { pitch: awakening ? 0.8 + index * 0.15 : 0.85 });
   };
   afterHero(g, beat.hit, () => strike(0));
@@ -102,50 +130,12 @@ function rollCrit(extra = 0) {
   return Math.random() < 0.1 + extra;
 }
 
-function castWeaponProjectile(g, combo, profile, weapon = null) {
-  const h = g.hero, aim = aimPoint(g, profile.range ?? 240);
-  const w = weapon ?? h.meleeWeapon ?? h.weapon;
-  faceTo(h, aim.x);
-  h.startAnim("castK", HERO_TRACKS.castK, false);
-  const sx = h.x + h.facing * 12 * COMBAT_SCALE, sy = h.y - 22 * COMBAT_SCALE;
-  const dx = aim.x - sx, dy = aim.y - sy, len = Math.hypot(dx, dy) || 1;
-  const speed = profile.speed ?? 220;
-  const module = w?.module;
-  const fx = module ? createFx(module, { x: sx, y: sy, flip: dx < 0, seed: 800 + combo, light: 1 }) : createFx(FX.plasmaShot, { x: sx, y: sy, flip: dx < 0, seed: 800 + combo });
-  const base = profile.dmg ?? [12, 16, 25][combo] ?? 14;
-  g.projectiles.push({
-    x: sx, y: sy, vx: dx / len * speed, vy: dy / len * speed, prevX: sx, prevY: sy,
-    r: size(profile.radius ?? 4), dmg: base * h.dmgMul, team: "hero", fx,
-    life: ((profile.range ?? 240) / speed + 0.45) * COMBAT_SCALE, kind: "weapon", color: "#fff0c0",
-    pierce: !!profile.pierce, maxHits: profile.maxHits ?? 1, response: profile.response ?? (w?.id === "armory:boomerang" ? "return" : undefined),
-    returnSpeed: profile.returnSpeed, blastRadius: size(profile.blastRadius ?? 0), status: profile.status, statusTime: profile.statusTime,
-    knock: profile.knock ?? 22, crit: profile.crit ?? false,
-  });
-  g.audio.play(w?.class === "thrown" ? "quick" : "slash");
-}
-
 // ------------------------------------------------------------------------------------------------
-// T — 投掷: fires the equipped thrown weapon.
+// T — 强化普攻: uses the character's fixed weapon and authored action frames.
 // ------------------------------------------------------------------------------------------------
 function castT(g) {
-  const h = g.hero;
-  const w = h.thrownWeapon;
-  if (!w) return;
-  const t = nearest(g, 120);
-  if (t) faceTo(h, t.x);
-  const attack = w.attack ?? { kind: "projectile", range: 70, radius: 8 };
-  const profile = {
-    ...attack,
-    kind: "projectile",
-    range: attack.range ?? 70,
-    speed: w.class === "thrown" ? 210 : 200,
-    dmg: 15 * (w.dmgMul ?? 1),
-    pierce: attack.pierce,
-    maxHits: attack.maxHits,
-    knock: 26,
-  };
-  h.setThrowRig(w.rigWeapon);
-  castWeaponProjectile(g, 0, profile, w);
+  if (g.hero.meleeWeapon.attack.kind === "projectile") castNativeProjectile(g, 2, 0.6, 30, true);
+  else castSwordArt(g, { art: "enhanced", power: 30 });
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -168,25 +158,21 @@ function castJ(g) {
   if (scaledProfile.kind === "projectile") {
     h.comboIndex = (c + 1) % 3;
     h.comboTimer = 0.95;
-    castWeaponProjectile(g, c, scaledProfile);
+    castNativeProjectile(g, c, beat.duration, dmg);
     return;
   }
   h.cancelMelee(true);
   const art = meleeArt(h.meleeWeapon, c, dashAttack);
   const track = meleePoseTrack(art, beat, h.meleeWeapon, c);
-  h.startAnim("attack" + (c + 1), track, false);
+  h.startAnim(dashAttack ? "enhanced" : "attack" + (c + 1), track, false);
+  h.anim.contact = beat.hit;
+  h.anim.dur = beat.duration;
   h.comboIndex = (c + 1) % 3;
   h.comboTimer = 0.9;
   h.vx = h.facing * size(beat.lunge * (dashAttack ? 1.45 : 1));
   h.dashAttackT = 0;
   const attack = { x: h.x, y: h.y, facing: h.facing, hitTime: beat.hit, landed: false, cancelled: false, art, echoT: 0 };
   h.melee = attack;
-  const attackFx = g.addFx(meleeSwing, {
-    x: h.x, y: h.y, flip: h.facing < 0, combo: c, art, beat, weapon: h.meleeWeapon,
-    range: scaledProfile.range, seed: 200 + c + Math.floor(g.time * 60),
-    light: c === 2 ? 0.62 : 0.5,
-  }, { follow: () => attack.landed || attack.cancelled ? attack : h, split: true, melee: true });
-  h.attackFx = attackFx;
   g.audio.play(c === 1 ? "slash2" : "slash", { pitch: c === 2 ? 0.72 : 1, gain: c === 2 ? 0.85 : 0.7 });
   afterHero(g, beat.hit, () => {
     if (!h.alive || attack.cancelled || h.melee !== attack) return;
@@ -266,7 +252,7 @@ function castU(g) {
   faceTo(h, aim.x);
   h.startAnim("castU", HERO_TRACKS.castU, false);
   g.audio.play("cast");
-  const tx = g.clampX(aim.x, 26), ty = clamp(aim.y, 138, 168);
+  const tx = g.clampX(aim.x, 26), ty = clampDepth(g, aim.y, 4, 2);
   g.telegraph(tx, ty, 40, 0.95, "#c9a8ff");
   afterHero(g, 0.18, () => {
     g.addFx(FX.lightningStrike, { x: tx, y: ty, light: 1.25, seed: 51 + Math.floor(Math.random() * 11) });
@@ -290,13 +276,13 @@ function castU(g) {
 function castI(g) {
   const h = g.hero;
   h.startAnim("castI", HERO_TRACKS.castI, false);
-  g.addFx(FX.healAoe, { x: h.x, y: h.y, light: 0.9, seed: 61 }, { layer: "ground" });
-  g.addFx(FX.blessing, { x: h.x, y: h.y - size(12), seed: 62, light: 0.8 }, { life: 3.4, follow: () => h });
+  g.addFx(FX.healAoe, { x: h.x, y: h.y, light: 0.9, seed: 61 }, { layer: "ground", cache: false });
+  g.addFx(FX.blessing, { x: h.x, y: h.y - size(12), seed: 62, light: 0.8 }, { life: 3.4, follow: () => h, cache: false });
   g.audio.play("heal");
   afterHero(g, 0.18, () => {
     h.heal(g, Math.min(48, h.maxHp * 0.32), { linger: 4 });
     h.addShield(g, 30, 6.5);
-    g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 1, seed: 63 }, { life: 6.5, follow: () => h });
+    g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 1, seed: 63 }, { life: 6.5, follow: () => h, cache: false });
     g.audio.play("shield");
     g.flashScreen("#c8ffb0", 0.1);
   });
@@ -311,11 +297,11 @@ function castO(g) {
   faceTo(h, aim.x);
   h.startAnim("castO", HERO_TRACKS.castO, false);
   h.invuln = Math.max(h.invuln, 0.9);
-  const tx = g.clampX(aim.x, 40), ty = clamp(aim.y, 140, 166);
+  const tx = g.clampX(aim.x, 40), ty = clampDepth(g, aim.y, 6, 4);
   const spots = [
     [tx, ty],
-    [g.clampX(tx - size(46), 35), clamp(ty + size(5), 142, 166)],
-    [g.clampX(tx + size(46), 35), clamp(ty - size(5), 142, 166)],
+    [g.clampX(tx - size(46), 35), clampDepth(g, ty + size(5), 8, 4)],
+    [g.clampX(tx + size(46), 35), clampDepth(g, ty - size(5), 8, 4)],
   ];
   spots.forEach(([x, y], i) => {
     g.telegraph(x, y, 38, 1.15 + i * 0.16, "#ffa050");
@@ -400,16 +386,17 @@ function castGeneric(g, sk) {
 }
 
 const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO, e: castE, t: castT, "mage:bolt": castMageBolt };
-for (const s of SKILLS) s.cast = CASTS[s.id] ?? (s.art ? (g) => castSwordArt(g, s) : (g) => castGeneric(g, s));
+for (const s of SKILLS) s.cast = CASTS[s.id] ?? (s.classId === "swordsman" ? (g) => castSwordArt(g, s) : (g) => castGeneric(g, s));
 
 /** Try to cast. Returns true when the skill actually fired. */
 export function castSkill(g, id) {
   const sk = SKILLS.find((s) => s.id === id);
-  if (!sk || !canUseSkill(g.hero.classId, sk) || g.state !== "playing" || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
+  const training = g.state === "camp" && g.hubZone === "arena" && !g.campMenuOpen;
+  if (!sk || !canUseSkill(g.hero.classId, sk) || (g.state !== "playing" && !training) || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
   const h = g.hero;
-  if (id === "j" && (h.cd.j > 0 || g.hitStop > 0 || h.dashT > 0.1)) {
+  if (["j", "mage:bolt"].includes(id) && (h.cd[id] > 0 || g.hitStop > 0 || h.dashT > 0.1 || h.actionBusy)) {
     // One queued press, never a backlog of attacks. Hit-stop does not age this buffer.
-    if (h.cd.j <= ATTACK_BUFFER || g.hitStop > 0 || h.dashT > 0) h.attackBuffer = ATTACK_BUFFER;
+    if (Math.max(h.cd[id] ?? 0, h.actionBusy ? h.anim.dur - h.anim.t : 0) <= ATTACK_BUFFER || g.hitStop > 0 || h.dashT > 0) h.attackBuffer = ATTACK_BUFFER;
     return false;
   }
   if (h.cd[id] > 0) {

@@ -8,6 +8,8 @@ import { uiCopy } from "./copy.js";
 import { emberForXp } from "./upgrades.js";
 import { clearMobPoseOptions, mobCastEndAt, mobCastHitAt, syncMobPoseOptions } from "./content/mob-reactions.js";
 import { IMPACTS } from "./combat-feel.js";
+import { RENDER_DENSITY } from "./game/constants.js";
+import { clampDepth, mapDepth } from "./game/depth.js";
 
 const C = {
   ink: hex("#07060d"), white: 0xffffffff, barBack: hex("#1a0d18"), bar: hex("#d8422f"),
@@ -74,6 +76,7 @@ export class Enemy {
     this.fx = createFx(t.mod, { x, y, flip: true, seed: this.seed, ...(opts.fxOptions ?? {}) });
     this.poseState = "idle";
     this.poseT = 0;
+    this.walkDistance = 0;
     this.castHit = false;
     this.hurtDir = -1;
     this.dying = false;
@@ -133,6 +136,10 @@ export class Enemy {
     // Critter modules are live simulations (not static sprites). Advancing the instance here
     // keeps hops, wings, eyes and wisps animating while the combat brain runs.
     this.fx.update(dt);
+    if (this.poseState === "walk") {
+      this.poseState = "idle";
+      clearMobPoseOptions(this.fx.options);
+    }
 
     if (this.burn > 0) {
       this.burn -= dt;
@@ -243,15 +250,23 @@ export class Enemy {
 
     const want = size(this.type.want ?? 18);
     const wantDx = this.type.ranged ? want : want - size(2);
+    const walkX = this.x, walkY = this.y;
     if (Math.abs(dx) > wantDx) this.x += Math.sign(dx) * this.speed * slowK * dt;
     if (Math.abs(dy) > 7) this.y += Math.sign(dy) * this.speed * slowK * 0.55 * dt;
+    const walked = Math.hypot(g.clampX(this.x, 20) - g.clampX(walkX, 20),
+      (clampDepth(g, this.y, 2, 1) - clampDepth(g, walkY, 2, 1)) / 0.55);
     this.clampSeparation(g);
     this.clampPos(g);
+    if (this.type.mobReact && this.poseState === "idle" && walked > 1e-6) {
+      this.walkDistance += walked / this.renderScale;
+      this.poseState = "walk";
+      syncMobPoseOptions(this);
+    }
   }
 
   clampPos(g) {
     this.x = g.clampX(this.x, 20);
-    this.y = clamp(this.y, 136, 169);
+    this.y = clampDepth(g, this.y, 2, 1);
   }
 
   clampSeparation(g) {
@@ -316,7 +331,7 @@ export class Enemy {
     if (this.type.ranged) {
       this.setState(g, "recover");
       this.timer = 0.45;
-      this.y = clamp(this.y, 136, 169);
+      this.y = clampDepth(g, this.y, 2, 1);
       g.enemyShot(this, hero);
       g.sfxAt("cast", this.x);
       return;
@@ -363,6 +378,7 @@ export class Enemy {
       this.atkCd = Math.max(this.atkCd, this.hitStun + 0.12);
     }
     if (opts.status) this.addStatus(g, opts.status, opts.statusTime ?? 2);
+    if (!opts.dot) g.ui?.noteTarget?.(this);
     if (!opts.silent) {
       g.comboAdd();
       g.number(this.x, this.y - this.barH - 6, String(dmg), {
@@ -652,7 +668,7 @@ export class Boss {
 
   clampPos(g) {
     this.x = g.clampX(this.x, 44);
-    this.y = clamp(this.y, 140, 166);
+    this.y = clampDepth(g, this.y, 6, 4);
   }
 
   chooseAttack(g) {
@@ -690,7 +706,7 @@ export class Boss {
         }
       });
     } else if (this.pattern === "thunder") {
-      const tx = hero.x, ty = clamp(hero.y, 138, 168);
+      const tx = hero.x, ty = clampDepth(g, hero.y, 4, 2);
       g.telegraph(tx, ty, 34, 0.9, "#c9a8ff");
       g.addFx(g.fx.lightningStrike, { x: tx, y: ty, light: 1.2 });
       g.sfxAt("thunder", tx);
@@ -715,12 +731,12 @@ export class Boss {
     } else if (this.pattern === "summon") {
       g.sfxAt("spawn", this.x);
       g.after(0.25, () => {
-        const spots = [[g.clampX(this.x - 58, 30), 150], [g.clampX(this.x + 58, 30), 156]];
+        const spots = [[g.clampX(this.x - 58, 30), mapDepth(g, 150)], [g.clampX(this.x + 58, 30), mapDepth(g, 156)]];
         for (const [x, y] of spots) if (g.enemies.filter((e) => e.alive && !e.boss).length < 5) g.spawnEnemy("wisp", x, y, { seed: 400 + Math.floor(Math.random() * 99) });
       });
     } else if (this.pattern === "meteor") {
       const tx = hero.x, ty = hero.y;
-      const spots = [[g.clampX(tx, 28), ty], [g.clampX(tx - size(46), 28), clamp(ty + size(6), 140, 168)], [g.clampX(tx + size(46), 28), clamp(ty - size(6), 140, 168)]];
+      const spots = [[g.clampX(tx, 28), ty], [g.clampX(tx - size(46), 28), clampDepth(g, ty + size(6), 6, 2)], [g.clampX(tx + size(46), 28), clampDepth(g, ty - size(6), 6, 2)]];
       spots.forEach(([x, y], i) => {
         g.telegraph(x, y, 34, 1.0 + i * 0.14, "#ff9a5c");
         g.after(0.18 + i * 0.16, () => {
@@ -781,8 +797,8 @@ export class Boss {
       if (Math.hypot(hero.x - this.x, (hero.y - this.y) * 1.5) < size(74)) hero.hurt(g, 12, { fromX: this.x });
     });
     if (phase === 2) {
-      g.spawnEnemy("wisp", g.clampX(this.x - 62, 30), 150, { seed: 511 });
-      g.spawnEnemy("wisp", g.clampX(this.x + 62, 30), 156, { seed: 512 });
+      g.spawnEnemy("wisp", g.clampX(this.x - 62, 30), mapDepth(g, 150), { seed: 511 });
+      g.spawnEnemy("wisp", g.clampX(this.x + 62, 30), mapDepth(g, 156), { seed: 512 });
     }
   }
 
@@ -824,7 +840,7 @@ export class Boss {
       return;
     }
 
-    const r = posed(poseAt(this.anim.track, this.anim.loop ? this.anim.t % this.anim.dur : Math.min(this.anim.t, this.anim.dur)), BOSS_LOOK, { density: 2 });
+    const r = posed(poseAt(this.anim.track, this.anim.loop ? this.anim.t % this.anim.dur : Math.min(this.anim.t, this.anim.dur)), BOSS_LOOK, { density: RENDER_DENSITY });
     const flip = this.facing < 0;
     const tinted = this.hitFlash > 0;
     const scale = this.renderScale;

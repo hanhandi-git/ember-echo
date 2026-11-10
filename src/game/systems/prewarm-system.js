@@ -1,6 +1,7 @@
 import { canContinue, loadSave } from "../../save.js";
 import { warmAudioTemplates } from "../../audio.js";
 import { acquireStageMapTiles } from "../map-tile-pool.js";
+import { STAGES } from "../../data.js";
 
 export const prewarmSystem = {
   _stagePrewarm: null,
@@ -8,6 +9,8 @@ export const prewarmSystem = {
 
   prewarmResumeStage() {
     if (this.state !== "camp") return;
+    // Workers rasterize the stage off-thread; the main-thread bake is only a fallback.
+    if (this.battleMapWorkers?.available) return;
     const data = loadSave();
     const index = canContinue(data) ? (data.run.stageIndex ?? 0) : 0;
     if (this._stagePrewarm?.index === index) return;
@@ -27,6 +30,7 @@ export const prewarmSystem = {
     this.mapFxTiles = prewarm.mapFxTiles;
     this.mapTileFrames = prewarm.mapTileFrames;
     this.mapFx = prewarm.mapFxTiles[0];
+    this.mapStageIndex = index;
     return true;
   },
 
@@ -41,6 +45,13 @@ export const prewarmSystem = {
       if (this.state !== "camp") return;
       warmAudioTemplates();
       this.hero.warmMeleePoses();
+      // Bake the resumed stage's worker raster while the player is still in
+      // camp so stepping through the gate never waits on the main thread.
+      const data = loadSave();
+      const index = canContinue(data) ? (data.run.stageIndex ?? 0) : 0;
+      const mapKey = STAGES[index]?.mapKey;
+      if (mapKey) this.battleMapWorkers?.prepareStage(index, mapKey, STAGES[index].map);
+      this.prewarmResumeStage();
     };
     if (typeof requestIdleCallback === "function") {
       this._prewarmIdle = requestIdleCallback(run, { timeout: 1500 });

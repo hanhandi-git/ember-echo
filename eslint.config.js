@@ -14,6 +14,7 @@ export default [
   {
     ignores: [
       "game.js",
+      "battle-map-worker.js",
       "node_modules/**",
       "coverage/**",
       "**/*.tmpdir/**",
@@ -28,6 +29,7 @@ export default [
       sourceType: "module",
       globals: {
         ...globals.browser,
+        self: "readonly",
       },
     },
     rules: {
@@ -38,6 +40,7 @@ export default [
   {
     files: [
       "tests/**/*.js",
+      "scripts/**/*.mjs",
       "*.mjs",
       "build.mjs",
       "server.mjs",
@@ -48,6 +51,7 @@ export default [
       sourceType: "module",
       globals: {
         ...globals.node,
+        self: "readonly",
       },
     },
     rules: {

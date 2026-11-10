@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createFx, createFrame, clearFrame, posed } from "../../pixelfx/src/core/index.js";
-import { WEAPONS } from "../src/data.js";
+import { LEGACY_WEAPONS as WEAPONS } from "../src/data.js";
 import { Hero } from "../src/hero.js";
 import { Game } from "../src/game.js";
 import { meleeBeat } from "../src/combat-feel.js";
@@ -14,7 +14,7 @@ const count = (frame) => frame.color.reduce((n, c, i) => n + (c !== 0 || frame.l
 test("every equipped melee weapon has drawable, deterministic art that finishes empty in both directions", () => {
   const h = new Hero(), f = createFrame(240, 160);
   for (const weapon of weapons) {
-    h.equipWeapon(weapon.id);
+    h.meleeWeapon = weapon;
     for (let combo = 0; combo < 3; combo++) for (const flip of [false, true]) {
       const art = meleeArt(weapon, combo), beat = meleeBeat(h, combo);
       const opts = { x: 120, y: 120, art, beat, combo, seed: 17, flip, range: weapon.attack.range };
@@ -36,7 +36,7 @@ test("every equipped melee weapon has drawable, deterministic art that finishes 
 test("pose and effect clocks reach the authored contact together while preserving the equipped rig", () => {
   const h = new Hero();
   for (const weapon of weapons) {
-    h.equipWeapon(weapon.id);
+    h.meleeWeapon = weapon;
     for (let combo = 0; combo < 3; combo++) {
       const art = meleeArt(weapon, combo), beat = meleeBeat(h, combo);
       assert.ok(Math.abs(meleeSourceTime(art, beat, beat.hit, weapon, combo) - art.contact) < 1e-8);
@@ -54,7 +54,7 @@ test("pose and effect clocks reach the authored contact together while preservin
 test("sword strings begin behind the shoulder and draw forward before contact", () => {
   const h = new Hero();
   const weapon = WEAPONS.find((w) => w.id === "ember-blade");
-  h.equipWeapon(weapon.id);
+  h.meleeWeapon = weapon;
   const beat = meleeBeat(h, 0), art = meleeArt(weapon, 0);
   const track = meleePoseTrack(art, beat, weapon, 0);
   const first = track[0][1];
@@ -72,7 +72,7 @@ test("the blade finisher turns the whole body and the thrust keeps a distinct fo
   const spin = meleePoseTrack(meleeArt(weapon, 2), beat, weapon, 2);
   assert.ok(spin.some(([, pose]) => pose.yaw < -3));
   assert.ok(spin.some(([, pose]) => pose.yaw > 1));
-  h.equipWeapon("armory:rapier");
+  h.meleeWeapon = WEAPONS.find((weapon) => weapon.id === "armory:rapier");
   assert.equal(meleeFamily(h.meleeWeapon), "thrust");
   const thrust = meleePoseTrack(meleeArt(h.meleeWeapon, 0), meleeBeat(h, 0), h.meleeWeapon, 0);
   assert.ok(thrust.some(([, pose]) => pose.lean >= 8));
@@ -101,7 +101,7 @@ test("normal attacks create short body echoes without taking over movement or sp
   for (let i = 0; i < 12; i++) g.tick(1 / 120);
   assert.ok(g.hero.x > x);
   assert.equal(g.hero.actPose, null);
-  assert.ok(g.effects.some((ef) => ef.melee && ef.split && !ef.act));
+  assert.ok(!g.effects.some((ef) => ef.melee), "weapon VFX are already in the supplied action frame");
   assert.ok(g.hero.meleeEchoes.length > 0 && g.hero.meleeEchoes.length <= 3);
   g.hero.tryDash(g);
   assert.equal(g.hero.meleeEchoes.length, 0);

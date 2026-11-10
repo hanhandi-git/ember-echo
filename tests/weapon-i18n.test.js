@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { WEAPONS } from "../src/data.js";
+import { LEGACY_WEAPONS as WEAPONS } from "../src/data.js";
 import { weaponLabel } from "../src/copy.js";
 import { localizeArmoryWeapon } from "../src/weapon-i18n.js";
 import { ARMORY } from "../../pixelfx/src/core/weapons.js";

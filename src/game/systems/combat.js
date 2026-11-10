@@ -12,7 +12,7 @@ export const combatSystem = {
     if (!h.alive) { h.attackBuffer = 0; return; }
     const primary = h.classId === "mage" ? "mage:bolt" : "j";
     const held = this.touchAttackHeld || Object.entries(SKILL_SLOT_KEYS).some(([key, slot]) => this.keys.has(key) && h.skillSlots[slot] === primary);
-    if ((held || h.attackBuffer > 0) && (h.cd[primary] ?? 0) <= 0 && h.dashT <= 0.1 && !h.actPose) this.cast(primary);
+    if ((held || h.attackBuffer > 0) && (h.cd[primary] ?? 0) <= 0 && h.dashT <= 0.1 && !h.actPose && !h.actionBusy) this.cast(primary);
     if (h.dashT <= 0.1) h.attackBuffer = Math.max(0, h.attackBuffer - dt);
   },
 
@@ -24,7 +24,7 @@ export const combatSystem = {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.fx.options.x = p.x;
-      p.fx.options.y = p.y;
+      p.fx.options.y = p.y + (p.visualOffsetY ?? 0);
       p.fx.options.flip = p.vx < 0;
       p.fx.update(dt);
       if (p.team === "hero") {

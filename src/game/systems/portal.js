@@ -9,7 +9,7 @@ export const portalSystem = {
     const exit = targetStage >= STAGES.length;
     const finalGate = targetStage === STAGES.length - 1;
     const palette = exit ? GATE_PALETTES.exit : finalGate ? GATE_PALETTES.final : GATE_PALETTES.normal;
-    const x = this.worldW - 70, y = 152;
+    const x = this.worldW - 70, y = this.depthY(152);
     const distance = Math.hypot(this.hero.x - x, (this.hero.y - y) * 1.4);
     this.portal = {
       x, y, finalGate, exit, targetStage, t: 0, armed: distance > 20,

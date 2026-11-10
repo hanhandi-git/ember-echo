@@ -1,23 +1,23 @@
-// Player state and animation. DNF looks use lossless sprite frames; legacy looks use the pixelfx rig.
+// Player state and animation. Every playable hero uses the supplied action frames.
 
-import { posed, poseAt, READY, hex, clamp } from "../../pixelfx/src/core/index.js";
+import { poseAt, READY, hex } from "../../pixelfx/src/core/index.js";
 import {
   HERO_LOOK_DEFAULT, HERO_LOOKS, loadHeroLook, WEAPONS, DEFAULT_SKILL_SLOTS,
-  DEFAULT_MELEE_WEAPON_ID, DEFAULT_THROWN_WEAPON_ID, SKILL_META,
+  DEFAULT_MELEE_WEAPON_ID, SKILL_META,
 } from "./data.js";
-import { uiCopy, weaponLabel } from "./copy.js";
+import { uiCopy } from "./copy.js";
 import { QUICK_MOVE_AP_COST } from "./save.js";
 import { stashItem, stashLabel } from "./content/stash-catalog.js";
-import { weaponEquipKind } from "./weapons-util.js";
 import { createMovementTrail } from "./movement-fx.js";
 import { COMBAT_SCALE, HERO_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
 import { UPGRADE_STATS, emptyUpgrades, spentUpgrades, upgradeById, upgradeCost } from "./upgrades.js";
 import { interruptSpellActs } from "./spell-act.js";
-import { meleeArt, meleePoseTrack, isSheathDrawWeapon, sheathedIdlePose, applySheathCarry } from "./melee-arts.js";
-import { meleeBeat } from "./combat-feel.js";
+import { isSheathDrawWeapon, sheathedIdlePose, applySheathCarry } from "./melee-arts.js";
 import { canUseSkill, classOf, DEFAULT_CLASS_SLOTS, normalizeClassSlots } from "./classes.js";
-import { heroSprite, loadHeroSprite, invalidateHeroSprite, spriteLook } from "./hero-sprites.js";
+import { heroSprite, heroFrameId, isHeroAction, loadHeroSprite, invalidateHeroSprite, spriteLook } from "./hero-sprites.js";
+import { SKILL_SLOT_KEYS } from "./input/bindings.js";
 import { normalizeAppearance } from "./hero-wardrobe.js";
+import { clampDepth } from "./game/depth.js";
 
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
 const IDLE = { ...GUARD, fx: 10, fy: -20, bx: 7, by: -19, crouch: 1 };
@@ -106,13 +106,7 @@ export class Hero {
     this.xpNext = XP_STEPS[1];
     this.dmgMul = 1;
     this.speed = 64;
-    const melee = WEAPONS.find((w) => w.id === DEFAULT_MELEE_WEAPON_ID) ?? WEAPONS[0];
-    const thrown = WEAPONS.find((w) => w.id === DEFAULT_THROWN_WEAPON_ID) ?? WEAPONS.find((w) => w.class === "thrown");
-    this.meleeWeapon = melee;
-    this.meleeWeaponId = melee?.id;
-    this.thrownWeapon = thrown ?? melee;
-    this.thrownWeaponId = this.thrownWeapon?.id;
-    this.inventory = [...WEAPONS];
+    this.bindHeroWeapon();
     this.skillSlots = [...(DEFAULT_CLASS_SLOTS[this.classId] ?? DEFAULT_SKILL_SLOTS)];
     this.skillCursor = 0;
     this.dashCd = 0;
@@ -142,7 +136,7 @@ export class Hero {
     this.attackFx = null;
     this.dashAttackT = 0;
     this.healGlow = 0;
-    this.anim = { kind: "idle", t: 0, track: TRACKS.idle, loop: true, dur: 2.8 };
+    this.anim = { kind: "idle", t: 0, track: TRACKS.idle, loop: true, dur: spriteLook(this.look)?.motion?.idle ?? 1.6, look: this.look };
     this.stepT = 0;
     this.lunge = 0;
     this.rigWeaponOverride = null;
@@ -224,24 +218,18 @@ export class Hero {
     return refund;
   }
 
-  equipWeapon(id, g = null) {
-    const weapon = this.inventory.find((item) => item.id === id);
-    if (!weapon) return false;
-    const kind = weaponEquipKind(weapon);
-    if (kind === "thrown") {
-      this.thrownWeapon = weapon;
-      this.thrownWeaponId = weapon.id;
-    } else {
-      this.meleeWeapon = weapon;
-      this.meleeWeaponId = weapon.id;
-      this.applyMeleeStats();
-    }
-    if (g) {
-      if (kind !== "thrown") this.warmMeleePoses();
-      g.ui.toast(uiCopy(g).equipped(weaponLabel(g, weapon)), "gold");
-      g.persistSave?.();
-    }
-    return true;
+  bindHeroWeapon() {
+    const id = spriteLook(this.look)?.weapon.id ?? DEFAULT_MELEE_WEAPON_ID;
+    this.meleeWeapon = WEAPONS.find((weapon) => weapon.id === id);
+    this.meleeWeaponId = this.meleeWeapon.id;
+    this.thrownWeapon = null;
+    this.thrownWeaponId = null;
+    this.inventory = [this.meleeWeapon];
+    this.applyMeleeStats();
+  }
+
+  equipWeapon(id) {
+    return id === this.meleeWeaponId;
   }
 
   addStash(id, amount = 1, g = null) {
@@ -284,6 +272,7 @@ export class Hero {
     this.skillSlots = normalizeClassSlots(id, saved?.skillSlots, SKILL_META);
     const savedLook = HERO_LOOKS.find((look) => look.id === saved?.look);
     this.look = savedLook && (!savedLook.classId || savedLook.classId === id) ? savedLook.id : classOf(id).look;
+    this.bindHeroWeapon();
     loadHeroSprite(this.look);
     if (typeof localStorage !== "undefined") localStorage.setItem("ember-echo-look", this.look);
     this.cancelMelee();
@@ -300,13 +289,13 @@ export class Hero {
   }
 
   pixelBody() {
-    const sprite = heroSprite(this.look, this.anim, !!this.actPose, this.appearance, this.pose());
-    if (sprite) return sprite;
-    return posed(this.pose(), spriteLook(this.look)?.fallback ?? this.look, { density: 2 });
+    return heroSprite(this.look, this.anim, !!this.actPose, this.appearance);
   }
 
   get bodyScale() {
-    return spriteLook(this.look) ? 1 : this.renderScale;
+    // Source hero atlases are authored much larger than the 320x180 combat scale.
+    // Keep the feet at the same world anchor while reducing the whole silhouette.
+    return spriteLook(this.look) ? 0.65 : this.renderScale;
   }
 
   setAppearance(patch = {}, g = null) {
@@ -330,10 +319,17 @@ export class Hero {
     const look = HERO_LOOKS.find((c) => c.id === id);
     if (!look) return false;
     if (look.classId && look.classId !== this.classId) this.setClass(look.classId, g);
+    if (this.look !== look.id) {
+      this.classRevision++;
+      this.cancelMelee();
+      this.attackBuffer = this.comboIndex = this.comboTimer = 0;
+      if (g) interruptSpellActs(g);
+      this.startAnim("idle", TRACKS.idle, true);
+    }
     this.look = look.id;
+    this.bindHeroWeapon();
     loadHeroSprite(look.id);
     if (typeof localStorage !== "undefined") localStorage.setItem("ember-echo-look", look.id);
-    if (!spriteLook(look.id)) for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, look.id);
     this.warmMeleePoses();
     if (g) {
       const name = g.language === "zh" ? look.label : look.name;
@@ -381,20 +377,24 @@ export class Hero {
   }
 
   tryQuickMove(g, dir = null) {
-    if (!this.alive || this.dashT > 0 || g.state !== "playing" || g.phase === "travel") return false;
-    if (this.ap < QUICK_MOVE_AP_COST) {
+    const canCampMove = g.state === "camp" && g.hubActive && !g.campMenuOpen;
+    if (!this.alive || this.dashT > 0 || (g.state !== "playing" && !canCampMove) || g.phase === "travel") return false;
+    // The camp is for travel and preparation, not resource management: quick
+    // movement stays free there so crossing the hub never runs out of AP.
+    const free = canCampMove;
+    if (!free && this.ap < QUICK_MOVE_AP_COST) {
       g.ui.toast(uiCopy(g).apLow, "mp");
       g.audio.play("ui");
       return false;
     }
-    this.ap = Math.max(0, this.ap - QUICK_MOVE_AP_COST);
+    if (!free) this.ap = Math.max(0, this.ap - QUICK_MOVE_AP_COST);
     const d = dir ?? this.moveDirection(g);
     const len = Math.hypot(d.x, d.y) || 1;
     this.dashDir = { x: d.x / len, y: d.y / len };
     if (this.dashDir.x) this.facing = Math.sign(this.dashDir.x);
     const from = { x: this.x, y: this.y };
     this.x = g.clampX(this.x + this.dashDir.x * 22);
-    this.y = clamp(this.y + this.dashDir.y * 13, 134, 170);
+    this.y = clampDepth(g, this.y + this.dashDir.y * 13);
     this.vx = this.dashDir.x * 72;
     this.vy = this.dashDir.y * 42;
     this.lunge = 0.1;
@@ -417,15 +417,25 @@ export class Hero {
     this.x = x;
     this.y = y;
     this.vx = this.vy = this.dashT = this.dodgeWindow = this.dodgeBuffer = 0;
-    this.anim = { kind: "idle", t: 0, track: TRACKS.idle, loop: true, dur: 2.8 };
+    this.anim = { kind: "idle", t: 0, track: TRACKS.idle, loop: true, dur: spriteLook(this.look)?.motion?.idle ?? 1.6, look: this.look };
   }
 
   get alive() { return !this.dead && this.hp > 0; }
 
+  get actionBusy() { return isHeroAction(this.anim.kind) && this.anim.t + 1e-8 < this.anim.dur; }
+
   startAnim(kind, track, loop = false) {
-    if (!kind.startsWith("attack")) this.cancelMelee(kind === "idle" || kind === "walk");
+    const look = spriteLook(this.look), previous = this.anim;
+    const entryFrame = previous?.look === this.look && (isHeroAction(previous.kind) || previous.kind === "recover")
+      ? heroFrameId(look, previous) : undefined;
+    if (!kind.startsWith("attack")) this.cancelMelee(["idle", "walk", "recover"].includes(kind));
     if (kind !== "castK") this.clearThrowRig();
-    this.anim = { kind, t: 0, track, loop, dur: track[track.length - 1][0] };
+    const authored = look?.motion;
+    const dur = loop ? (kind === "walk" ? authored?.walk : authored?.idle) ?? track[track.length - 1][0]
+      : kind === "recover" ? authored?.recovery ?? 0.14 : track[track.length - 1][0];
+    const t = loop && previous?.loop ? previous.t / previous.dur % 1 * dur : 0;
+    this.anim = { kind, t, track, loop, dur, look: this.look,
+      entryFrame: isHeroAction(kind) || kind === "recover" ? entryFrame : undefined };
   }
 
   cancelMelee(keepTail = false) {
@@ -438,9 +448,9 @@ export class Hero {
     if (!retain) this.meleeEchoes = [];
   }
 
-  /** While throwing, the rig briefly shows the thrown weapon instead of the melee one. */
+  /** Legacy call sites cannot override a character’s signature weapon. */
   setThrowRig(rigWeapon) {
-    this.rigWeaponOverride = rigWeapon ?? null;
+    this.rigWeaponOverride = rigWeapon === this.meleeWeapon.rigWeapon ? rigWeapon : null;
   }
 
   clearThrowRig() {
@@ -529,17 +539,17 @@ export class Hero {
       this.dashVx *= Math.max(0, 1 - 10 * dt);
       this.dashVy *= Math.max(0, 1 - 10 * dt);
       this.x = g.clampX(this.x);
-      this.y = clamp(this.y, 134, 170);
+      this.y = clampDepth(g, this.y);
       this.anim.t += dt;
       return;
     }
-    const busy = this.anim.kind.startsWith("cast") ? 0.42 : this.anim.kind.startsWith("attack") ? 0.76 : this.anim.kind === "hurt" ? 0.2 : 1;
+    const busy = this.anim.kind.startsWith("cast") ? 0.42 : isHeroAction(this.anim.kind) ? 0.76 : this.anim.kind === "hurt" ? 0.2 : 1;
     const sp = this.speed * busy;
 
     if (moving) {
       this.x += ix * sp * dt + this.vx * dt;
       this.y += iy * sp * 0.56 * dt + this.vy * dt;
-      if (ix && !(this.melee && this.anim.t < this.melee.hitTime + 0.045)) this.facing = ix > 0 ? 1 : -1;
+      if (ix && !this.actionBusy) this.facing = ix > 0 ? 1 : -1;
       this.dashDir = { x: ix, y: iy };
       this.stepT -= dt;
       if (this.stepT <= 0) {
@@ -554,10 +564,13 @@ export class Hero {
     this.vy *= Math.max(0, 1 - 9 * dt);
     this.lunge = Math.max(0, this.lunge - dt);
     this.x = g.clampX(this.x);
-    this.y = clamp(this.y, 134, 170);
+    this.y = clampDepth(g, this.y);
 
     // animation selection
-    this.anim.t += dt;
+    const walkMotion = spriteLook(this.look)?.motion;
+    const walkRate = this.anim.kind === "walk" && walkMotion?.walkDistance
+      ? Math.min(1, Math.hypot(ix, iy)) * this.speed / this.meleeWeapon.speed : 1;
+    this.anim.t += dt * walkRate;
     if (this.melee?.art && this.pose().ghost) {
       this.melee.echoT += dt;
       if (this.melee.echoT >= 0.025) {
@@ -576,7 +589,17 @@ export class Hero {
       }
     } else if (this.anim.t >= this.anim.dur) {
       if (this.rigWeaponOverride && this.anim.kind === "castK") this.clearThrowRig();
-      this.startAnim(moving ? "walk" : "idle", moving ? TRACKS.walk : TRACKS.idle, true);
+      if (isHeroAction(this.anim.kind)) {
+        const primary = this.classId === "mage" ? "mage:bolt" : "j";
+        const autoQueued = g.autoBattle && g.enemies.some((e) => e.alive
+          && Math.hypot(e.x - this.x, (e.y - this.y) * 1.35) < size(this.classId === "mage" ? 150 : 58));
+        const queued = this.attackBuffer > 0 || g.touchAttackHeld || autoQueued
+          || Object.entries(SKILL_SLOT_KEYS).some(([key, slot]) => keys.has(key) && this.skillSlots[slot] === primary);
+        // Combat input runs immediately after Hero.update; keep the final release
+        // pose available so the next beat does not pass through an idle frame.
+        if (queued && (this.cd[primary] ?? 0) <= 1e-8) return;
+        this.startAnim("recover", [[0, IDLE], [spriteLook(this.look)?.motion?.recovery ?? 0.14, IDLE]], false);
+      } else this.startAnim(moving ? "walk" : "idle", moving ? TRACKS.walk : TRACKS.idle, true);
     }
   }
 
@@ -735,62 +758,31 @@ export class Hero {
     }
   }
 
-  /** Warm the pose cache so the first swing does not hitch. */
+  /** Decode the selected source frames before the next render. */
   warmMeleePoses() {
-    if (spriteLook(this.look)) { loadHeroSprite(this.look); return; }
-    for (let combo = 0; combo < 3; combo++) {
-      const art = meleeArt(this.meleeWeapon, combo), beat = meleeBeat(this, combo);
-      for (const [, pose] of meleePoseTrack(art, beat, this.meleeWeapon, combo)) posed(pose, this.look, { density: 2 });
-    }
+    loadHeroSprite(this.look);
   }
 
   static prepare() {
-    const warm = new Set([HERO_LOOK_DEFAULT, loadHeroLook()]);
-    for (const c of HERO_LOOKS) {
-      if (!warm.has(c.id)) continue;
-      if (spriteLook(c.id)) { loadHeroSprite(c.id); continue; }
-      for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, c.id);
-    }
+    for (const id of new Set([HERO_LOOK_DEFAULT, loadHeroLook()])) loadHeroSprite(id);
   }
+
 }
 
 export { TRACKS as HERO_TRACKS };
 
 /** Draw a small standing portrait into a canvas (used by the HUD card). */
-export function drawHeroPortrait(canvas, weapon = "sword", look = loadHeroLook(), appearance = undefined) {
+export function drawHeroPortrait(canvas, _weapon = "sword", look = loadHeroLook(), appearance = undefined) {
   if (!canvas) return;
-  canvas.dataset.look = look;
-  const sprite = spriteLook(look);
-  if (sprite) {
-    const body = heroSprite(look, {}, false, appearance, { weapon });
-    if (!body) {
-      loadHeroSprite(look).then((frames) => {
-        if (frames && canvas.dataset.look === look) drawHeroPortrait(canvas, weapon, look, appearance);
-      });
-    } else {
-      // Exactly 1 source pixel per portrait pixel; CSS only uses nearest sampling.
-      canvas.width = 224; canvas.height = 176;
-      const ctx = canvas.getContext("2d"), img = ctx.createImageData(224, 176);
-      const out = new Uint32Array(img.data.buffer);
-      for (let i = 0; i < body.n; i++) {
-        const x = 112 + Math.round(body.xs[i] * body.density), y = 164 + Math.round(body.ys[i] * body.density);
-        if (x >= 0 && x < 224 && y >= 0 && y < 176) out[y * 224 + x] = body.color[i];
-      }
-      ctx.putImageData(img, 0, 0);
-      return;
-    }
-  }
-  const density = 2, w = 112 * density, h = 88 * density;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  const img = ctx.createImageData(w, h);
+  const chosen = spriteLook(look) ? look : HERO_LOOK_DEFAULT;
+  canvas.dataset.look = chosen;
+  const body = heroSprite(chosen, {}, false, appearance);
+  canvas.width = 224; canvas.height = 176;
+  const ctx = canvas.getContext("2d"), img = ctx.createImageData(224, 176);
   const out = new Uint32Array(img.data.buffer);
-  const r = posed({ ...IDLE, weapon }, sprite?.fallback ?? look, { density });
-  for (let i = 0; i < r.n; i++) {
-    const x = Math.round((42 + r.xs[i]) * density), y = Math.round(h - (14 - r.ys[i]) * density);
-    if (x < 0 || y < 0 || x >= w || y >= h) continue;
-    out[y * w + x] = r.color[i];
+  for (let i = 0; i < body.n; i++) {
+    const x = 112 + Math.round(body.xs[i] * body.density), y = 164 + Math.round(body.ys[i] * body.density);
+    if (x >= 0 && x < 224 && y >= 0 && y < 176) out[y * 224 + x] = body.color[i];
   }
   ctx.putImageData(img, 0, 0);
 }

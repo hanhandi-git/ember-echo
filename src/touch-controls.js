@@ -40,8 +40,11 @@ export function createTouchControls(game) {
   const active = () => forceTouch || coarsePointer.matches || lastInputWasTouch;
   const playing = () => game.state === "playing"
     && game.hero.alive && game.phase !== "travel";
+  const trainingArena = () => game.state === "camp" && game.hubZone === "arena" && game.hubActive
+    && !game.campMenuOpen && !game._hubDepartPending;
   const walking = () => playing() || (game.state === "camp" && game.hubActive
     && !game.campMenuOpen && !game._hubDepartPending);
+  const arenaCombat = () => playing() || trainingArena();
 
   function resetJoystick() {
     const id = joystickId;
@@ -79,22 +82,23 @@ export function createTouchControls(game) {
   root.addEventListener("click", event => {
     // Keyboard activation generates a click without pointerdown.
     const button = event.target.closest("[data-touch-slot]");
-    if (event.detail === 0 && button && !button.disabled && playing()) {
+    if (event.detail === 0 && button && !button.disabled && arenaCombat()) {
       game.audio.unlock(); game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
     }
   });
   root.addEventListener("pointerdown", (event) => {
     const button = event.target.closest("button");
-    if (!button || button.disabled || event.button !== 0 || !playing()) return;
+    const touchHub = walking();
+    if (!button || button.disabled || event.button !== 0 || (!arenaCombat() && !touchHub)) return;
     event.preventDefault();
     game.audio.unlock();
     pressed.set(event.pointerId, button);
     button.classList.add("is-pressed");
     button.setPointerCapture(event.pointerId);
     if (button.hasAttribute("data-touch-slot") && ["j", "mage:bolt"].includes(game.hero.skillSlots[Number(button.dataset.touchSlot)])) game.touchAttackHeld = true;
-    if (button.hasAttribute("data-touch-slot")) game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
-    else if (button.dataset.touchAction === "quick") game.hero.tryQuickMove(game);
-    else if (button.dataset.touchAction === "dodge") game.hero.tryDash(game);
+    if (button.hasAttribute("data-touch-slot") && arenaCombat()) game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
+    else if (button.dataset.touchAction === "quick" && walking()) game.hero.tryQuickMove(game);
+    else if (button.dataset.touchAction === "dodge" && playing()) game.hero.tryDash(game);
   });
   for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
     root.addEventListener(type, (event) => {
@@ -108,6 +112,7 @@ export function createTouchControls(game) {
     if (button.disabled) return;
     reset(); game.audio.unlock();
     if (button.dataset.gameAction === "bag" && game.state === "playing") game.toggleInventory();
+    else if (button.dataset.gameAction === "bag" && game.state === "camp") game.toggleHubBag?.();
     else if (button.dataset.gameAction === "pause" && ["playing", "paused"].includes(game.state)) game.togglePause();
     sync();
   }
@@ -137,19 +142,24 @@ export function createTouchControls(game) {
   function sync() {
     const language = game.language ?? "zh", copy = COPY[language] ?? COPY.zh;
     root.hidden = !walking();
-    skills.hidden = game.state === "camp";
-    for (const button of actionButtons) button.hidden = game.state === "camp";
+    skills.hidden = game.state === "camp" && !trainingArena();
+    for (const button of actionButtons) {
+      const action = button.dataset.touchAction;
+      button.hidden = game.state === "camp" && (action !== "quick" ? !trainingArena() : false);
+    }
     root.classList.toggle("is-touch", active());
     tools?.classList.toggle("is-touch", active());
     if (!walking() || !active()) reset();
     if (tools) {
-      tools.hidden = !["playing", "paused"].includes(game.state);
+      const hub = game.state === "camp" && game.hubActive && !game.campMenuOpen && !game._hubDepartPending;
+      tools.hidden = !["playing", "paused"].includes(game.state) && !hub;
       const pause = tools.querySelector('[data-game-action="pause"]');
+      pause.hidden = hub;
       const label = game.state === "paused" ? copy.resume : copy.pause;
       pause.setAttribute("aria-label", label); pause.title = `${label} · P`;
       pause.classList.toggle("is-paused", game.state === "paused");
       const bag = tools.querySelector('[data-game-action="bag"]');
-      bag.disabled = !playing(); bag.title = `${copy.bag} · Tab`; bag.setAttribute("aria-label", copy.bag);
+      bag.disabled = !(playing() || hub); bag.title = `${copy.bag} · Tab/B`; bag.setAttribute("aria-label", copy.bag);
     }
     if (language !== renderedLanguage) {
       root.querySelectorAll("[data-touch-action]").forEach((button) => {
@@ -173,7 +183,7 @@ export function createTouchControls(game) {
       const id = game.hero.skillSlots[index], skill = SKILL_META.find((s) => s.id === id);
       const left = game.hero.cd[id] ?? 0;
       // Slash must keep receiving pointerdown during recovery so taps can enter its buffer.
-      button.disabled = !playing() || (id !== "j" && left > 0) || game.hero.mp < (skill?.cost ?? 0);
+      button.disabled = !arenaCombat() || (id !== "j" && left > 0) || game.hero.mp < (skill?.cost ?? 0);
       button.classList.toggle("is-cooling", left > 0);
       button.querySelector(".touch-cooldown").textContent = left > 0 ? (left >= 1 ? String(Math.ceil(left)) : left.toFixed(1)) : "";
     });
@@ -187,7 +197,7 @@ export function createTouchControls(game) {
       const icon = button.dataset.gameAction === "pause" && game.state === "paused" ? "resume" : button.dataset.gameAction;
       paintUiArt(button.querySelector("canvas"), "action", { icon, disabled: button.disabled, hud: true }, time);
     }
-    if (root.hidden || game.state === "camp") return;
+    if (root.hidden || (game.state === "camp" && !trainingArena())) return;
     slotButtons.forEach((button, index) => {
       const id = game.hero.skillSlots[index], s = SKILL_META.find(s => s.id === id) ?? SKILL_META[0];
       const left = game.hero.cd[id] ?? 0, lacksMana = game.hero.mp < s.cost;

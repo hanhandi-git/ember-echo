@@ -32,8 +32,8 @@ test("a fresh boot starts in the walkable camp and departure requires portal pre
   assert.equal(g.state, "camp");
   assert.equal(g.phase, "camp");
   assert.equal(g.hubActive, true);
-  assert.equal(g.worldW, 640);
-  assert.ok(g.mapFxTiles.length === 2);
+  assert.equal(g.worldW, 960);
+  assert.ok(g.mapFxTiles.length === 3);
   assert.equal(g.hero.hp, g.hero.maxHp);
   assert.equal(g.campMenuOpen, false);
   assert.equal(g.hero.x, HUB_SPAWNS.camp[0]);
@@ -48,6 +48,47 @@ test("a fresh boot starts in the walkable camp and departure requires portal pre
   assert.equal(g.state, "playing");
   assert.equal(g.phase, "intro");
   assert.equal(g.stageIndex, 0);
+});
+
+test("quick move works in camp and the training arena exposes a non lethal straw dummy", () => {
+  const g = mockGame();
+  g.hero.ap = g.hero.maxAp;
+  const x = g.hero.x;
+  assert.equal(g.hero.tryQuickMove(g, { x: 1, y: 0 }), true);
+  assert.ok(g.hero.x > x);
+
+  g.loadHub({ zone: "arena" });
+  assert.equal(g.state, "camp");
+  assert.equal(g.hubZone, "arena");
+  assert.equal(g.enemies.length, 1);
+  assert.equal(g.enemies[0].typeId, "training-dummy");
+  const dummy = g.enemies[0];
+  g.hero.x = dummy.x - 26;
+  g.hero.y = dummy.y;
+  assert.ok(g.cast("j"));
+  for (let i = 0; i < 50; i++) g.tick(1 / 60);
+  assert.ok(dummy.totalDamage > 0, "training dummy receives test damage");
+  assert.equal(dummy.alive, true, "training dummy is non lethal");
+});
+
+test("the bag shortcut opens the camp panel anywhere in the hub and closes again", () => {
+  const g = mockGame();
+  const calls = [];
+  g.domUi = {
+    open(...args) { calls.push(args); },
+    close() { g.campMenuOpen = false; },
+  };
+  g.hero.x = 140;
+  assert.equal(g.openHubBag("skills"), true);
+  assert.equal(g.campMenuOpen, true);
+  assert.deepEqual(calls[0].slice(0, 2), ["skills", "camp"]);
+  assert.equal(calls[0][2].anywhere, true, "the bag shortcut bypasses the gate");
+  assert.equal(g.openHubBag(), false, "the panel is already open");
+  assert.equal(g.toggleHubBag(), true);
+  assert.equal(g.campMenuOpen, false);
+  assert.equal(g.closeHubBag(), false, "already closed");
+  g.hubActive = false;
+  assert.equal(g.openHubBag(), false, "bag stays closed outside the hub");
 });
 
 test("portal preparation freezes movement, can be cancelled and reopens after leaving the gate", () => {

@@ -15,6 +15,7 @@ export function installKeyboard(game) {
 
   const handleTab = () => {
     if (game.state === "playing" || game.state === "inventory") game.toggleInventory();
+    else if (game.state === "camp" && game.hubActive && !game.campMenuOpen) game.openHubBag?.();
   };
 
   const handleEscape = () => {
@@ -25,12 +26,18 @@ export function installKeyboard(game) {
     }
   };
 
+  const handleBag = () => {
+    if (game.state === "playing" || game.state === "inventory") game.toggleInventory();
+    else if (game.state === "camp" && game.hubActive) game.toggleHubBag?.();
+  };
+
   const handleDash = () => {
     if (game.state === "playing") game.hero.tryDash(game);
   };
 
   const handleQuickMove = () => {
-    if (game.state === "playing") game.hero.tryQuickMove(game);
+    const hubWalk = game.state === "camp" && game.hubActive && !game.campMenuOpen && !game._hubDepartPending;
+    if (game.state === "playing" || hubWalk) game.hero.tryQuickMove(game);
   };
 
   const handleConfirm = () => {
@@ -55,7 +62,7 @@ export function installKeyboard(game) {
   };
 
   const castSlotKey = (key) => {
-    if (game.state === "camp") return;
+    if (game.state === "camp" && game.hubZone !== "arena") return;
     const id = game.hero.skillSlots[SKILL_SLOT_KEYS[key]];
     castSkill(game, id);
   };
@@ -77,6 +84,12 @@ export function installKeyboard(game) {
       e.preventDefault();
       unlock();
       handleTab();
+      return;
+    }
+    if (key === "b" && !e.repeat) {
+      e.preventDefault();
+      unlock();
+      handleBag();
       return;
     }
     if (key === "escape") {

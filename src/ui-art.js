@@ -5,9 +5,10 @@ import * as action from "../../pixelfx/src/fx/ui/touch-action-button.js";
 import * as skill from "../../pixelfx/src/fx/ui/skill-node.js";
 import * as card from "../../pixelfx/src/fx/ui/loadout-card.js";
 import * as panel from "../../pixelfx/src/fx/ui/loadout-panel.js";
-import { cutPlate, tone, GOLD, SILVER } from "../../pixelfx/src/fx/ui/_ember.js";
+import { GOLD, SILVER } from "../../pixelfx/src/fx/ui/_ember.js";
 import { MELEE_SHAPES, THROWN_SHAPES } from "../../pixelfx/src/core/weapons.js";
 import { STASH_FX } from "./content/stash-catalog.js";
+import { RENDER_DENSITY } from "./game/constants.js";
 
 const modules = { action, skill, card, panel }, sprites = new Map(), images = new Map();
 const views = new WeakMap();
@@ -46,21 +47,11 @@ export function artUrl(kind, options = {}) {
   return images.get(key);
 }
 export function installUiFrames(stage) {
-  for (const selected of [false, true]) {
-    if (!selected) {
-      const source = artSprite("panel", { frameOnly: true });
-      const canvas = document.createElement("canvas"); canvas.width = 328; canvas.height = 224;
-      canvas.getContext("2d").drawImage(source, 12, 14, 328, 224, 0, 0, 328, 224);
-      stage.style.setProperty("--frame-steel", `url("${canvas.toDataURL()}")`);
-      continue;
-    }
-    const f = createFrame(80, 80);
-    cutPlate(painterFor(f), 0, 0, 80, 80, tone("bag"), selected);
-    const canvas = document.createElement("canvas"); canvas.width = canvas.height = 80;
-    const ctx = canvas.getContext("2d"), img = ctx.createImageData(80, 80);
-    composite(f, img.data, null); ctx.putImageData(img, 0, 0);
-    stage.style.setProperty("--frame-selected", `url("${canvas.toDataURL()}")`);
-  }
+  // These frames are static pixelfx art. scripts/build-ui-frames.mjs bakes them
+  // ahead of time so opening the camp panel never pays a ~110ms paint bill.
+  const asset = (path) => new URL(path, document.baseURI).href;
+  stage.style.setProperty("--frame-steel", `url("${asset("assets/ui/frame-steel.png")}")`);
+  stage.style.setProperty("--frame-selected", `url("${asset("assets/ui/frame-selected.png")}")`);
 }
 
 // Registered weapon shapes are the very same geometry held by the hero. Fit each
@@ -74,9 +65,9 @@ export function weaponArtUrl(weapon) {
   ctx.drawImage(base, 7, 7, 78, 78, 0, 0, 78, 78);
   const shape = MELEE_SHAPES[weapon.rigWeapon] ?? THROWN_SHAPES[weapon.rigWeapon];
   if (shape?.pixels) {
-    // Sample the composed engraving directly at two output pixels per UI unit.
+    // Sample the composed engraving directly at the configured output density.
     // Painting one rectangle per source texel would cover neighboring inlay pixels.
-    const density = 2, size = 78 * density, root = Math.SQRT1_2;
+    const density = RENDER_DENSITY, size = 78 * density, root = Math.SQRT1_2;
     canvas.width = canvas.height = size;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(base, 7, 7, 78, 78, 0, 0, size, size);

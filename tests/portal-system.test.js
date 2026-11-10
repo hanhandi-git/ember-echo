@@ -40,7 +40,7 @@ test("portal entry requires arming, depth overlap and reveal time", () => {
   const g = game();
   g.phase = "clear";
   g.hero.x = g.worldW - 70;
-  g.hero.y = 152;
+  g.hero.y = g.depthY(152);
   g.openPortal();
   assert.equal(g.portal.armed, false, "starts disarmed when the hero stands on the gate");
   g.hero.x = g.portal.x - 60;

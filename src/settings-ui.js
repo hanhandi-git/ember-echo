@@ -1,9 +1,8 @@
-import { HERO_LOOKS, SKILL_META, SKILL_ATTR_ORDER, SKILL_ATTR_LABELS, skillAttr, MELEE_WEAPONS, THROWN_WEAPONS, STASH_ITEMS } from "./data.js";
+import { HERO_LOOKS, SKILL_META, SKILL_ATTR_ORDER, SKILL_ATTR_LABELS, skillAttr, STASH_ITEMS } from "./data.js";
 import { stashLabel } from "./content/stash-catalog.js";
 import { skillLabel, weaponLabel } from "./copy.js";
 import { SKILL_KEYS } from "./controls.js";
-import { weaponEquipKind } from "./weapons-util.js";
-import { artUrl, weaponArtUrl, stashPickupArtUrl, installUiFrames } from "./ui-art.js";
+import { artUrl, stashPickupArtUrl, installUiFrames } from "./ui-art.js";
 import { drawHeroPortrait } from "./hero.js";
 import { UPGRADE_STATS, upgradeCost } from "./upgrades.js";
 import { HERO_CLASSES, classLabel } from "./classes.js";
@@ -12,11 +11,11 @@ import { heroPalette, spriteLook } from "./hero-sprites.js";
 
 const LANG = {
   zh: {
-    "menu.kicker": "余烬回响", "menu.title": "背包与设置", "menu.subtitle": "选择武器、技能与语言。",
+    "menu.kicker": "余烬回响", "menu.title": "背包与设置", "menu.subtitle": "选择人物、技能与语言。",
     "camp.kicker": "余烬回响 / CAMP", "camp.title": "营地", "camp.subtitle": "整备你的决斗者，然后踏入遗迹。",
     "tabs.loadout": "装备", "tabs.stash": "收藏", "tabs.skills": "技能", "tabs.upgrade": "升级", "tabs.appearance": "造型", "tabs.profile": "人物", "tabs.settings": "设置",
     "stash.title": "长期收藏", "stash.hint": "战斗中有几率掉落，会永久保存在浏览器。", "stash.empty": "还没有收藏品，去狩猎吧。", "stash.count": "数量",
-    "loadout.weapons": "武器", "loadout.melee": "近战武器", "loadout.thrown": "投掷武器", "loadout.skills": "技能槽",
+    "loadout.bound": "专属武器", "loadout.boundHint": "每个人物固定使用自带武器。前往「造型」选择人物；普攻、强化普攻和剑技使用该人物的动作。", "loadout.weapons": "武器", "loadout.melee": "近战武器", "loadout.thrown": "投掷武器", "loadout.skills": "技能槽",
     "loadout.weaponHint": "点击卡片立即装备", "loadout.skillHint": "先选择槽位，再选择技能", "loadout.skillPick": "按属性筛选技能", "loadout.skillEmpty": "该属性暂无可用技能", "loadout.slot": "槽位",
     "loadout.equipped": "已装备", "loadout.ready": "可用", "loadout.replace": "替换", "settings.language": "语言",
     "settings.languageHint": "语言会保存在本机，下次打开仍会保留。", "settings.audio": "声音", "settings.audioHint": "所有音效均由 WebAudio 实时合成，音量与静音会保存在本机。", "settings.master": "总音量", "settings.sfx": "音效", "settings.music": "背景音乐", "settings.ambience": "环境音", "settings.musicHint": "原创芯片音乐会在营地、关卡和 Boss 战之间切换。", "settings.soundOn": "声音开启", "settings.soundOff": "已静音", "settings.mute": "静音", "settings.audioKeyHint": "战斗中按 M 也能快速静音；拖动音效滑杆会试听 UI 音效。", "settings.auto": "自动化", "settings.autoHint": "自动战斗/拾取开关在战斗画面左侧血条下方，点击切换；状态会写入存档。", "settings.autoBattle": "自动战斗", "settings.autoLoot": "自动拾取", "settings.autoBattleHint": "自动寻敌、普攻与技能轮转。", "settings.autoLootHint": "靠近掉落物并拾取生命/法力/经验。",
@@ -30,7 +29,7 @@ const LANG = {
     "camp.kicker": "EMBER ECHO / CAMP", "camp.title": "Camp", "camp.subtitle": "Prepare your duelist, then step into the ruins.",
     "tabs.loadout": "Loadout", "tabs.stash": "Stash", "tabs.skills": "Skills", "tabs.upgrade": "Upgrade", "tabs.appearance": "Looks", "tabs.profile": "Hero", "tabs.settings": "Settings",
     "stash.title": "Collectibles", "stash.hint": "Drops in combat are saved in this browser.", "stash.empty": "No collectibles yet.", "stash.count": "Qty",
-    "loadout.weapons": "Weapons", "loadout.melee": "Melee", "loadout.thrown": "Thrown", "loadout.skills": "Skill slots",
+    "loadout.bound": "Signature weapon", "loadout.boundHint": "Each hero keeps their own weapon. Choose a hero in Appearance; basic attacks, empowered attacks and weapon arts use their action frames.", "loadout.weapons": "Weapons", "loadout.melee": "Melee", "loadout.thrown": "Thrown", "loadout.skills": "Skill slots",
     "loadout.weaponHint": "Click a card to equip", "loadout.skillHint": "Pick a slot, then choose a skill", "loadout.skillPick": "Filter by element", "loadout.skillEmpty": "No skills in this element", "loadout.slot": "Slot",
     "loadout.equipped": "Equipped", "loadout.ready": "Ready", "loadout.replace": "Replace", "settings.language": "Language",
     "settings.languageHint": "Your language is saved on this device.", "settings.audio": "Audio", "settings.audioHint": "Every sound is synthesised live with WebAudio. Volumes and mute are saved on this device.", "settings.master": "Master", "settings.sfx": "Effects", "settings.music": "Music", "settings.ambience": "Ambience", "settings.musicHint": "Original chiptune loops switch between camp, stages and boss fights.", "settings.soundOn": "Sound on", "settings.soundOff": "Muted", "settings.mute": "Mute", "settings.audioKeyHint": "Press M in battle to mute instantly; dragging the effects slider previews the UI cue.", "settings.auto": "Automation", "settings.autoHint": "Auto battle and loot toggles are below the HP bars on the left HUD.", "settings.autoBattle": "Auto battle", "settings.autoLoot": "Auto loot", "settings.autoBattleHint": "Chase foes and rotate skills.", "settings.autoLootHint": "Run to useful pickups.",
@@ -44,7 +43,7 @@ const LANG = {
     "camp.kicker": "EMBER ECHO / CAMP", "camp.title": "キャンプ", "camp.subtitle": "決闘者を整えて、遺跡へ踏み出そう。",
     "tabs.loadout": "装備", "tabs.stash": "収藏", "tabs.skills": "スキル", "tabs.upgrade": "強化", "tabs.appearance": "スタイル", "tabs.profile": "人物", "tabs.settings": "設定",
     "stash.title": "コレクション", "stash.hint": "戦闘ドロップはブラウザに保存されます。", "stash.empty": "まだ収集品がありません。", "stash.count": "数",
-    "loadout.weapons": "武器", "loadout.melee": "近接武器", "loadout.thrown": "投擲武器", "loadout.skills": "スキルスロット",
+    "loadout.bound": "固有武器", "loadout.boundHint": "武器はキャラクター専用です。「外見」でキャラクターを選択できます。", "loadout.weapons": "武器", "loadout.melee": "近接武器", "loadout.thrown": "投擲武器", "loadout.skills": "スキルスロット",
     "loadout.weaponHint": "カードをクリックして装備", "loadout.skillHint": "スロットを選んでスキルを選択", "loadout.skillPick": "属性で絞り込み", "loadout.skillEmpty": "この属性のスキルはありません", "loadout.slot": "スロット",
     "loadout.equipped": "装備中", "loadout.ready": "使用可能", "loadout.replace": "変更", "settings.language": "言語",
     "settings.languageHint": "言語はこの端末に保存されます。", "settings.audio": "サウンド", "settings.audioHint": "効果音はすべて WebAudio でリアルタイム合成。音量とミュートは端末に保存されます。", "settings.master": "全体音量", "settings.sfx": "効果音", "settings.music": "BGM", "settings.ambience": "環境音", "settings.musicHint": "オリジナルのチップチューンがキャンプ・ステージ・ボス戦で切り替わります。", "settings.soundOn": "サウンド ON", "settings.soundOff": "ミュート中", "settings.mute": "ミュート", "settings.audioKeyHint": "戦闘中は M キーでもミュートできます。効果音スライダーを動かすと UI 音が試聴できます。", "settings.auto": "自動化", "settings.autoHint": "自動戦闘/拾得は画面左・体力バーの下で切り替えます。", "settings.autoBattle": "自動戦闘", "settings.autoLoot": "自動拾得", "settings.autoBattleHint": "敵を追尾しスキルを使用。", "settings.autoLootHint": "ドロップに近づいて取得。",
@@ -135,6 +134,27 @@ function ensureSettingsDom(panel, language) {
 }
 
 export function createSettingsUI(game) {
+  // Building the panel DOM and its pixelfx frames costs ~100ms at boot. Defer it
+  // until the first idle window (or the first real use), so the camp scene can
+  // paint immediately while the UI still feels instant when opened.
+  let ui = null;
+  const ensure = () => (ui ??= buildSettingsUI(game));
+  const prime = () => { if (!ui) ensure(); };
+  if (typeof requestIdleCallback === "function") requestIdleCallback(prime, { timeout: 2000 });
+  else setTimeout(prime, 500);
+  return {
+    open: (...args) => ensure().open?.(...args),
+    openCamp: (...args) => ensure().openCamp?.(...args),
+    close: (...args) => ui?.close?.(...args),
+    render: (...args) => ensure().render?.(...args),
+    handleKey: (...args) => ensure().handleKey?.(...args) ?? false,
+    setLanguage: (...args) => ensure().setLanguage?.(...args),
+    refreshAudio: (...args) => ui?.refreshAudio?.(...args),
+    prime,
+  };
+}
+
+function buildSettingsUI(game) {
   const panel = document.querySelector("#settings-panel");
   if (!panel) {
     return {
@@ -175,28 +195,15 @@ export function createSettingsUI(game) {
   const weaponName = (weapon) => weaponLabel(game, weapon);
   const lookName = (look) => game.language === "zh" ? look.label : look.name;
 
-  function weaponCard(w, h) {
-    const equipped = h.isWeaponEquipped(w.id);
-    return `<button class="item-card ${equipped ? "is-equipped" : ""}" data-weapon="${w.id}" data-weapon-kind="${weaponEquipKind(w)}" data-kind="weapon-${w.id}" aria-pressed="${equipped}" aria-label="${escapeHtml(weaponName(w))}">
-        <span class="item-icon"><img src="${weaponArtUrl(w)}" alt="" aria-hidden="true" draggable="false"></span><span class="item-name">${escapeHtml(weaponName(w))}</span>
-        <span class="item-meta">${t(game.language, "stats.damage")} ${w.dmgMul > 1 ? "+" : ""}${Math.round((w.dmgMul - 1) * 100)}% · ${t(game.language, "stats.speed")} ${w.speed}</span>
-        ${equipped ? `<span class="item-badge">${t(game.language, "loadout.equipped")}</span>` : ""}</button>`;
-  }
-
   function renderLoadout() {
     if (!loadout) return;
-    const h = game.hero;
-    const meleeGrid = MELEE_WEAPONS.filter(inTheme).map((w) => weaponCard(w, h)).join("");
-    const thrownGrid = THROWN_WEAPONS.filter(inTheme).map((w) => weaponCard(w, h)).join("");
-    loadout.innerHTML = `<div class="loadout-overview loadout-overview--dual">
-      <div class="overview-weapons">
-        <div class="overview-weapon"><img src="${weaponArtUrl(h.meleeWeapon)}" alt="" aria-hidden="true" draggable="false"><span>${t(game.language, "loadout.melee")}</span><strong>${escapeHtml(weaponName(h.meleeWeapon))}</strong></div>
-        <div class="overview-weapon"><img src="${weaponArtUrl(h.thrownWeapon)}" alt="" aria-hidden="true" draggable="false"><span>${t(game.language, "loadout.thrown")}</span><strong>${escapeHtml(weaponName(h.thrownWeapon))}</strong></div>
-      </div>
-      <div class="overview-copy"><small>${t(game.language, "stats.damage")} ${Math.round(h.dmgMul * 100)}% · ${t(game.language, "stats.speed")} ${h.speed}</small></div>
-    </div>
-    ${themePicker()}<section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.melee")}</h2><div class="item-grid">${meleeGrid}</div></section>
-    <section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.thrown")}</h2><div class="item-grid">${thrownGrid}</div></section>`;
+    const h = game.hero, look = spriteLook(h.look);
+    loadout.innerHTML = `<section class="appearance-overview">
+      <canvas class="appearance-portrait" data-bound-portrait role="img" aria-label="${escapeHtml(lookName(look))}"></canvas>
+      <div class="appearance-copy"><span>${t(game.language, "loadout.bound")}</span><strong>${escapeHtml(weaponName(h.meleeWeapon))}</strong><small>${escapeHtml(lookName(look))}</small></div>
+    </section><p class="settings-note">${t(game.language, "loadout.boundHint")}</p>
+    <p class="settings-note">${t(game.language, "stats.damage")} ${Math.round(h.dmgMul * 100)}% · ${t(game.language, "stats.speed")} ${h.speed}</p>`;
+    drawHeroPortrait(loadout.querySelector("[data-bound-portrait]"), h.meleeWeapon.rigWeapon, h.look, h.appearance);
   }
 
   function renderStash() {
@@ -366,7 +373,7 @@ export function createSettingsUI(game) {
     const h = game.hero;
     const weapon = h.meleeWeapon;
     const current = HERO_LOOKS.find((look) => look.id === h.look) ?? HERO_LOOKS[0];
-    const looks = HERO_LOOKS.filter((look) => inTheme(look) && (!look.classId || look.classId === h.classId)).map((look) => {
+    const looks = HERO_LOOKS.map((look) => {
       const equipped = h.look === look.id;
       return `<button type="button" class="item-card hero-look-card ${equipped ? "is-equipped" : ""}" data-hero-look="${look.id}" data-kind="look-${look.id}" aria-pressed="${equipped}" aria-label="${escapeHtml(lookName(look))}">
         <span class="item-icon"><canvas class="hero-look-preview" width="112" height="88" aria-hidden="true"></canvas></span>
@@ -380,7 +387,7 @@ export function createSettingsUI(game) {
       <canvas class="appearance-portrait" data-hero-portrait role="img" aria-label="${escapeHtml(lookName(current))}"></canvas>
       <div class="appearance-copy"><span>${t(game.language, "loadout.equipped")}</span><strong>${escapeHtml(lookName(current))}</strong><small>${escapeHtml(current.role)}</small></div>
     </section>
-    <section class="loadout-section"><h2 class="section-title">${t(game.language, "profile.appearance")} <span class="section-caption">${t(game.language, "profile.appearanceHint")}</span></h2><div class="appearance-presets" aria-label="${game.language === "zh" ? "颜色预设" : "Color presets"}">${presetButtons}<button type="button" class="appearance-preset" data-appearance-reset>${game.language === "zh" ? "恢复原貌" : game.language === "ja" ? "リセット" : "Reset"}</button></div>${paletteEditor}${themePicker()}<div class="item-grid hero-look-grid">${looks}</div></section>`;
+    <section class="loadout-section"><h2 class="section-title">${t(game.language, "profile.appearance")} <span class="section-caption">${t(game.language, "profile.appearanceHint")}</span></h2><div class="appearance-presets" aria-label="${game.language === "zh" ? "颜色预设" : "Color presets"}">${presetButtons}<button type="button" class="appearance-preset" data-appearance-reset>${game.language === "zh" ? "恢复原貌" : game.language === "ja" ? "リセット" : "Reset"}</button></div>${paletteEditor}<div class="item-grid hero-look-grid">${looks}</div></section>`;
     drawHeroPortrait(appearance.querySelector("[data-hero-portrait]"), weapon.rigWeapon, h.look, h.appearance);
     appearance.querySelectorAll(".hero-look-card").forEach((card) => {
       drawHeroPortrait(card.querySelector("canvas"), weapon.rigWeapon, card.dataset.heroLook, h.appearance);
@@ -407,8 +414,7 @@ export function createSettingsUI(game) {
           ${stat(skillIcon("bolt"), "profile.crit", "10%", "crit")}
           ${stat("✦", "profile.embers", `${h.embers ?? 0}`, "gold")}
           ${stat(skillIcon("burst"), "profile.xp", `${Math.floor(h.xp)} / ${h.xpNext}`, "xp")}
-          ${stat(`<img src="${weaponArtUrl(h.meleeWeapon)}" alt="">`, "profile.weapon", escapeHtml(weaponName(h.meleeWeapon)), "weapon")}
-          ${stat(`<img src="${weaponArtUrl(h.thrownWeapon)}" alt="">`, "loadout.thrown", escapeHtml(weaponName(h.thrownWeapon)), "weapon")}
+          ${stat(skillIcon("slash"), "profile.weapon", escapeHtml(weaponName(h.meleeWeapon)), "weapon")}
           ${stat(skillIcon(active.icon), "profile.skill", escapeHtml(skillName(active)), "skill")}
         </div>
       </div>
@@ -505,8 +511,8 @@ export function createSettingsUI(game) {
     game.persistSave?.();
     render();
   }
-  function open(nextTab = "loadout", nextMode = "battle") {
-    if (nextMode === "camp" && (!game.hubActive || !game.nearHubAdventureGate?.())) return;
+  function open(nextTab = "loadout", nextMode = "battle", opts = {}) {
+    if (nextMode === "camp" && !opts.anywhere && (!game.hubActive || !game.nearHubAdventureGate?.())) return;
     returnFocus = document.activeElement;
     mode = nextMode;
     if (mode === "camp") {
@@ -619,8 +625,6 @@ export function createSettingsUI(game) {
     if (attrButton) { skillAttrTab = attrButton.dataset.skillAttr; render(); return; }
     const languageButton = event.target.closest("[data-language]");
     if (languageButton) { setLanguage(languageButton.dataset.language); return; }
-    const weaponButton = event.target.closest("[data-weapon]");
-    if (weaponButton) { game.hero.equipWeapon(weaponButton.dataset.weapon, game); render(); return; }
     const lookButton = event.target.closest("[data-hero-look]");
     if (lookButton) { game.hero.equipLook(lookButton.dataset.heroLook, game); render(); return; }
     const upgradeButton = event.target.closest("[data-upgrade]");

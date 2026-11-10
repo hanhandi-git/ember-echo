@@ -83,7 +83,7 @@ test("a tap during the start of a dodge buffers into a dash attack", () => {
   g.hero.tryDash(g, { x: 1, y: 0 });
   assert.equal(g.cast("j"), false);
   advance(g, 0.23);
-  assert.ok(g.hero.anim.kind.startsWith("attack"));
+  assert.ok(g.hero.anim.kind.startsWith("attack") || g.hero.anim.kind === "enhanced");
   assert.equal(g.hero.comboIndex, 1);
   advance(g, 0.12);
   assert.ok(g.combo.count > 0);

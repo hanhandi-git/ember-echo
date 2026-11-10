@@ -1,7 +1,8 @@
 // Spells that ship pixelfx `act` data: sync rig poses, displacement, hit timing and VFX.
 
-import { createAct, characterOf, clamp } from "../../pixelfx/src/core/index.js";
+import { createAct, characterOf } from "../../pixelfx/src/core/index.js";
 import { COMBAT_SCALE, combatDistance as size } from "./combat-scale.js";
+import { clampDepth } from "./game/depth.js";
 
 export const ACT_POS_SCALE = COMBAT_SCALE;
 const ACT_POSE_Y_SCALE = 0.52;
@@ -106,7 +107,7 @@ export function syncHeroSpellAct(g, ef) {
   if (!pose) return;
   h.actPose = pose;
   h.x = g.clampX(ef.anchorX + ef.facing * (pose.x ?? 0) * ef.posScale);
-  h.y = clamp(ef.anchorY + (pose.y ?? 0) * ef.posScale * ACT_POSE_Y_SCALE, 134, 170);
+  h.y = clampDepth(g, ef.anchorY + (pose.y ?? 0) * ef.posScale * ACT_POSE_Y_SCALE);
   syncActAnchor(ef, h);
   const sh = ef.act.shake;
   if (sh[0] || sh[1]) g.shake(Math.hypot(sh[0], sh[1]) * 0.55, 0.12);
