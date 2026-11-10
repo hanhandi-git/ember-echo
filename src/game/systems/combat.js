@@ -10,8 +10,9 @@ export const combatSystem = {
   updateCombatInput(dt) {
     const h = this.hero;
     if (!h.alive) { h.attackBuffer = 0; return; }
-    const held = this.touchAttackHeld || Object.entries(SKILL_SLOT_KEYS).some(([key, slot]) => this.keys.has(key) && h.skillSlots[slot] === "j");
-    if ((held || h.attackBuffer > 0) && h.cd.j <= 0 && h.dashT <= 0.1 && !h.actPose) this.cast("j");
+    const primary = h.classId === "mage" ? "mage:bolt" : "j";
+    const held = this.touchAttackHeld || Object.entries(SKILL_SLOT_KEYS).some(([key, slot]) => this.keys.has(key) && h.skillSlots[slot] === primary);
+    if ((held || h.attackBuffer > 0) && (h.cd[primary] ?? 0) <= 0 && h.dashT <= 0.1 && !h.actPose) this.cast(primary);
     if (h.dashT <= 0.1) h.attackBuffer = Math.max(0, h.attackBuffer - dt);
   },
 

@@ -18,5 +18,7 @@ attribution comments are preserved inside the bundled effect code.
 **Hollow Crown.** pixelfx's act timing (12 fps pose steps, hit-stop, target reaction) adapts
 https://github.com/rehan-remade/hollow-crown, Copyright (c) 2026 rehan-remade, MIT License.
 
-**Characters.** The duelist and the warden are procedural designs from pixelfx's character rig; no third-party
-sprite art is included.
+**Characters.** The legacy duelist and warden use pixelfx's procedural character rig. Five local DNF
+reference sprite atlases in `assets/heroes/` come from NEOPLE / NEXON via Spriters Resource; they are
+not covered by this repository's MIT license. Their exact source entries, frame hashes and local
+noncommercial prototype usage are recorded in `assets/heroes/manifest.json` and `docs/HEROES.md`.

@@ -5,7 +5,7 @@ import { HERO_RENDER_SCALE, combatDistance as size } from "./combat-scale.js";
 export function createMovementTrail(hero, from, kind) {
   return {
     kind, t: 0, life: kind === "dodge" ? 0.52 : 0.44,
-    body: posed(hero.pose(), hero.look), facing: hero.facing,
+    body: hero.pixelBody?.() ?? posed(hero.pose(), hero.look), facing: hero.facing, scale: hero.bodyScale ?? HERO_RENDER_SCALE,
     from: { ...from }, to: { x: hero.x, y: hero.y },
     color: hex(kind === "dodge" ? "#ffc36c" : "#87dfff"),
     rim: hex(kind === "dodge" ? "#fff1c1" : "#dcfaff"),
@@ -15,16 +15,17 @@ export function createMovementTrail(hero, from, kind) {
 export function drawMovementTrail(p, trail) {
   const k = Math.max(0, 1 - trail.t / trail.life);
   if (!k) return;
-  const { from, to, body: b, color, rim, facing } = trail;
+  const { from, to, body: b, color, rim, facing, scale = HERO_RENDER_SCALE } = trail;
   const length = Math.hypot(to.x - from.x, to.y - from.y);
   // The closest echo is brightest; rows erode into stripes as the older echoes dissolve.
   for (let j = 0; j < 3; j++) {
     const u = j / 3, x = from.x + (to.x - from.x) * u, y = from.y + (to.y - from.y) * u;
     const alpha = k * (0.28 + j * 0.17);
     for (let i = 0; i < b.n; i++) {
-      const py = Math.round(b.ys[i] * HERO_RENDER_SCALE);
+      const py = Math.round(b.ys[i] * scale);
       if (j === 0 && (py + Math.floor(trail.t * 20)) % 3 === 0) continue;
-      p.dot(x + b.xs[i] * HERO_RENDER_SCALE * facing, y + py, j === 2 ? rim : color, alpha);
+      const cell = scale / b.density;
+      p.rect(x + (facing < 0 ? -b.xs[i] - 1 / b.density : b.xs[i]) * scale, y + b.ys[i] * scale, cell, cell, j === 2 ? rim : color, alpha);
     }
     p.glow(x, y - size(11), size(14), color, k * 0.1);
   }

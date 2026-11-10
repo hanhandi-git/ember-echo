@@ -50,8 +50,9 @@ function tryAutoCast(g, dist) {
   g._autoCastCd = Math.max(0, (g._autoCastCd ?? 0) - (g._autoDt ?? 0));
   if (g._autoCastCd > 0) return;
 
-  if (dist < MELEE_CAST) {
-    if (castSkill(g, "j")) {
+  const primary = h.classId === "mage" ? "mage:bolt" : "j";
+  if (dist < (h.classId === "mage" ? SPELL_CAST : MELEE_CAST)) {
+    if (castSkill(g, primary)) {
       g._autoCastCd = AUTO_CAST_GAP;
       return;
     }
@@ -62,7 +63,7 @@ function tryAutoCast(g, dist) {
   const start = g._autoSkillCursor ?? 0;
   for (let n = 0; n < slots.length; n++) {
     const id = slots[(start + n) % slots.length];
-    if (id === "j") continue;
+    if (id === primary) continue;
     if (h.cd[id] > 0) continue;
     const sk = SKILLS.find((s) => s.id === id);
     const cost = sk?.cost ?? 8;
@@ -121,7 +122,8 @@ export const autoSystem = {
       tx = pickup.x;
       ty = pickup.y;
     } else if (enemy) {
-      tx = enemy.x;
+      const standOff = h.classId === "mage" ? size(95) : 0;
+      tx = enemy.x - Math.sign(enemy.x - h.x || h.facing) * standOff;
       ty = enemy.y;
     } else if (pickup && this.autoLoot) {
       tx = pickup.x;

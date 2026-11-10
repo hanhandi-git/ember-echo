@@ -308,3 +308,33 @@ button:focus-visible { outline: 2px solid #ffdf99; outline-offset: 3px; }
   .profile-stat-label { font-size: 10px; }
   .profile-stat strong { font-size: 11px; }
 }
+
+.hero-class-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.hero-class-card {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  text-align: left;
+  color: #bdb2a4;
+  background: #191620;
+  border: 1px solid #584331;
+  cursor: pointer;
+  font: inherit;
+}
+.hero-class-card strong { color: #f1d5a2; font-size: 17px; }
+.hero-class-card span { font-size: 12px; line-height: 1.6; }
+.hero-class-card.is-active { border-color: #d9ab67; background: #302522; box-shadow: inset 0 0 0 1px #88643d; }
+.hero-class-card:focus-visible { outline: 2px solid #ffe2ae; outline-offset: 3px; }
+.appearance-presets { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0 12px; }
+.appearance-preset { padding: 6px 11px; color: #c5b9aa; background: #191620; border: 1px solid #584331; cursor: pointer; font: inherit; }
+.appearance-preset.is-active { color: #fff0c0; border-color: #d9ab67; background: #302522; }
+.appearance-colors { margin: 10px 0 18px; color: #c5b9aa; font-size: 12px; }
+.appearance-colors summary { cursor: pointer; margin-bottom: 10px; }
+.appearance-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.appearance-swatches label { display: grid; justify-items: center; gap: 3px; }
+.appearance-swatches input { width: 30px; height: 28px; padding: 0; border: 1px solid #584331; background: transparent; cursor: pointer; }

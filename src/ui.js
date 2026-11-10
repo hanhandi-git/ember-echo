@@ -13,6 +13,7 @@ import * as questFx from "../../pixelfx/src/fx/ui/quest-complete.js";
 import * as comboFx from "../../pixelfx/src/fx/ui/combo-counter.js";
 import * as hudToggleFx from "../../pixelfx/src/fx/ui/hud-toggle.js";
 import { SKILL_META, STAGES, MELEE_WEAPONS, THROWN_WEAPONS } from "./data.js";
+import { classLabel } from "./classes.js";
 import { skillLabel, stageAct, stageName, uiCopy, weaponLabel } from "./copy.js";
 import {
   RESUME_BUTTON, CAMP_BUTTON, SKILL_RECTS, SKILL_KEYS, AUTO_TOGGLE_RECTS, AUTO_TOGGLE_SIZE, AUTO_TOGGLE_X, contains,
@@ -134,7 +135,7 @@ export class UI {
     p.arc(23, 21, 10, 3, Math.PI, Math.PI * 2, hex("#302235"), 1);
     p.dot(20, 23, C.gold2); p.dot(26, 23, C.gold2); p.dot(23, 19, hex("#6ce1c8"));
     const c = uiCopy(g);
-    p.text(c.duelist, 47, 8, C.gold, { outline: C.ink });
+    p.text(classLabel(h.classId, g.language), 47, 8, C.gold, { outline: C.ink });
     p.text(c.level + " " + h.level, 116, 8, C.gold2, { align: "right", outline: C.ink });
     meter(p, t, 64, 21, { label: c.hp, value: h.hp / h.maxHp, text: `${Math.ceil(h.hp)}/${h.maxHp}`, tone: "hp", width: 108, height: 9, cells: 10 });
     meter(p, t, 64, 32, { label: c.mp, value: h.mp / h.maxMp, text: `${Math.floor(h.mp)}/${h.maxMp}`, tone: "mp", width: 108, height: 8, cells: 10 });
@@ -258,7 +259,7 @@ export class UI {
       p.text(skillLabel(g, s).slice(0, 6), x + 2, 143, C.text, { align: "center", outline: C.ink, font: "mini" });
     });
     p.text("SKILLS", 18, 160, C.gold2, { outline: C.ink });
-    SKILL_META.forEach((s, i) => {
+    SKILL_META.filter((s) => h.canUseSkill(s.id)).slice(0, 7).forEach((s, i) => {
       const x = 10 + i * 42;
       const selected = this.inventorySkillPick != null && h.skillSlots[this.inventorySkillPick] === s.id;
       p.rect(x, 166, 36, 26, selected ? C.gold : C.muted, selected ? 0.3 : 0.1);
@@ -291,7 +292,7 @@ export class UI {
     }
     if (y >= 162 && y <= 192 && this.inventorySkillPick != null) {
       const i = Math.floor((x - 10) / 42);
-      const s = SKILL_META[i];
+      const s = SKILL_META.filter((s) => h.canUseSkill(s.id))[i];
       if (s) {
         h.swapSkill(this.inventorySkillPick, s.id);
         this.toast(uiCopy(g).skillReady(skillLabel(g, s)), "gold");
@@ -322,7 +323,7 @@ export class UI {
     }
     if ((key === "z" || key === "x") && this.inventorySkillPick != null) {
       const d = key === "x" ? 1 : -1;
-      const ids = SKILL_META.map((s) => s.id);
+      const ids = SKILL_META.filter((s) => h.canUseSkill(s.id)).map((s) => s.id);
       const at = Math.max(0, ids.indexOf(h.skillSlots[this.inventorySkillPick]));
       h.swapSkill(this.inventorySkillPick, ids[(at + d + ids.length) % ids.length]);
       g.audio.play("ui");

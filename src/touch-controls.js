@@ -91,7 +91,7 @@ export function createTouchControls(game) {
     pressed.set(event.pointerId, button);
     button.classList.add("is-pressed");
     button.setPointerCapture(event.pointerId);
-    if (button.hasAttribute("data-touch-slot") && game.hero.skillSlots[Number(button.dataset.touchSlot)] === "j") game.touchAttackHeld = true;
+    if (button.hasAttribute("data-touch-slot") && ["j", "mage:bolt"].includes(game.hero.skillSlots[Number(button.dataset.touchSlot)])) game.touchAttackHeld = true;
     if (button.hasAttribute("data-touch-slot")) game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
     else if (button.dataset.touchAction === "quick") game.hero.tryQuickMove(game);
     else if (button.dataset.touchAction === "dodge") game.hero.tryDash(game);
@@ -100,7 +100,7 @@ export function createTouchControls(game) {
     root.addEventListener(type, (event) => {
       const button = pressed.get(event.pointerId);
       if (button) { button.classList.remove("is-pressed"); pressed.delete(event.pointerId); }
-      game.touchAttackHeld = [...pressed.values()].some((b) => b.hasAttribute("data-touch-slot") && game.hero.skillSlots[Number(b.dataset.touchSlot)] === "j");
+      game.touchAttackHeld = [...pressed.values()].some((b) => b.hasAttribute("data-touch-slot") && ["j", "mage:bolt"].includes(game.hero.skillSlots[Number(b.dataset.touchSlot)]));
     });
   }
 

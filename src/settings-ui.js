@@ -6,6 +6,9 @@ import { weaponEquipKind } from "./weapons-util.js";
 import { artUrl, weaponArtUrl, stashPickupArtUrl, installUiFrames } from "./ui-art.js";
 import { drawHeroPortrait } from "./hero.js";
 import { UPGRADE_STATS, upgradeCost } from "./upgrades.js";
+import { HERO_CLASSES, classLabel } from "./classes.js";
+import { HERO_COLOR_PRESETS } from "./hero-wardrobe.js";
+import { heroPalette, spriteLook } from "./hero-sprites.js";
 
 const LANG = {
   zh: {
@@ -160,8 +163,10 @@ export function createSettingsUI(game) {
     if (!labels) return id;
     return game.language === "zh" ? labels.zh : game.language === "ja" ? labels.ja : labels.en;
   };
-  const attrsWithSkills = () => SKILL_ATTR_ORDER.filter((id) => SKILL_META.some((s) => inTheme(s) && skillAttr(s) === id));
+  const classSkills = () => SKILL_META.filter((s) => game.hero.canUseSkill(s.id));
+  const attrsWithSkills = () => SKILL_ATTR_ORDER.filter((id) => classSkills().some((s) => inTheme(s) && skillAttr(s) === id));
   const localized = (value) => value?.[game.language] ?? value?.en ?? "";
+  const classPicker = () => `<section class="hero-class-picker" aria-label="${game.language === "zh" ? "职业" : game.language === "ja" ? "職業" : "Class"}">${HERO_CLASSES.map((job) => `<button type="button" class="hero-class-card ${game.hero.classId === job.id ? "is-active" : ""}" data-hero-class="${job.id}" aria-pressed="${game.hero.classId === job.id}"><strong>${localized(job.name)}</strong><span>${localized(job.desc)}</span></button>`).join("")}</section>`;
   installUiFrames(panel.parentElement);
   document.documentElement.lang = game.language === "zh" ? "zh-CN" : game.language;
 
@@ -223,7 +228,7 @@ export function createSettingsUI(game) {
       const active = skillAttrTab === id;
       return `<button type="button" class="skill-attr-tab ${active ? "is-active" : ""}" data-skill-attr="${id}" role="tab" aria-selected="${active}">${escapeHtml(attrLabel(id))}</button>`;
     }).join("");
-    const pool = SKILL_META.filter((s) => inTheme(s) && skillAttr(s) === skillAttrTab);
+    const pool = classSkills().filter((s) => inTheme(s) && skillAttr(s) === skillAttrTab);
     const skills = pool.map((s) => {
       const selected = activeSlot != null && h.skillSlots[activeSlot] === s.id;
       const equipped = h.skillSlots.includes(s.id);
@@ -238,7 +243,7 @@ export function createSettingsUI(game) {
       return `<button class="item-card ${selected ? "is-selected" : ""}" data-slot="${i}" data-kind="${s.icon}" aria-pressed="${selected}" aria-label="${t(game.language, "loadout.slot")} ${i + 1}: ${escapeHtml(skillName(s))}">
         <span class="item-icon">${skillIcon(s.icon, selected)}</span><span class="item-name">${i + 1}. ${escapeHtml(skillName(s))}</span><span class="item-meta">${SKILL_KEYS[i] ?? i + 1}</span></button>`;
     }).join("");
-    skillsPanel.innerHTML = `<section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.skills")} <span class="section-caption">${t(game.language, "loadout.skillHint")}</span></h2><div class="skill-grid">${slots}</div></section>
+    skillsPanel.innerHTML = `${classPicker()}<section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.skills")} <span class="section-caption">${t(game.language, "loadout.skillHint")}</span></h2><div class="skill-grid">${slots}</div></section>
       <section class="loadout-section"><h2 class="section-title">${escapeHtml(attrLabel(skillAttrTab))} <span class="section-caption">${t(game.language, "loadout.skillPick")}</span></h2>
       ${themePicker()}<div class="skill-attr-tabs" role="tablist">${attrTabs}</div><div class="skill-grid">${skills || `<p class="settings-note">${t(game.language, "loadout.skillEmpty")}</p>`}</div></section>`;
   }
@@ -287,7 +292,7 @@ export function createSettingsUI(game) {
     campHero.innerHTML = `<div class="camp-hero-card">
       <div class="camp-portrait"><canvas data-camp-portrait width="112" height="88" aria-hidden="true"></canvas></div>
       <h2 class="camp-name">${escapeHtml(lookName(look))}</h2>
-      <p class="camp-role">${escapeHtml(look.role ?? "")}</p>
+      <p class="camp-role">${classLabel(h.classId, game.language)} · ${escapeHtml(look.role ?? "")}</p>
       <div class="camp-meta">
         <span class="camp-ember">✦ ${h.embers ?? 0}</span>
         <span class="camp-ranks">${t(game.language, "camp.ranked")} ${h.upgradeTotal()}</span>
@@ -301,7 +306,7 @@ export function createSettingsUI(game) {
       <p class="camp-hint">${t(game.language, "camp.hint")}</p>
       <button class="primary-button camp-enter" type="button" data-action="enter-battle" data-i18n="${departKey}">${enterLabel}</button>
     </div>`;
-    drawHeroPortrait(campHero.querySelector("[data-camp-portrait]"), h.meleeWeapon.rigWeapon, h.look);
+    drawHeroPortrait(campHero.querySelector("[data-camp-portrait]"), h.meleeWeapon.rigWeapon, h.look, h.appearance);
   }
 
   function renderSettings() {
@@ -361,7 +366,7 @@ export function createSettingsUI(game) {
     const h = game.hero;
     const weapon = h.meleeWeapon;
     const current = HERO_LOOKS.find((look) => look.id === h.look) ?? HERO_LOOKS[0];
-    const looks = HERO_LOOKS.filter(inTheme).map((look) => {
+    const looks = HERO_LOOKS.filter((look) => inTheme(look) && (!look.classId || look.classId === h.classId)).map((look) => {
       const equipped = h.look === look.id;
       return `<button type="button" class="item-card hero-look-card ${equipped ? "is-equipped" : ""}" data-hero-look="${look.id}" data-kind="look-${look.id}" aria-pressed="${equipped}" aria-label="${escapeHtml(lookName(look))}">
         <span class="item-icon"><canvas class="hero-look-preview" width="112" height="88" aria-hidden="true"></canvas></span>
@@ -369,14 +374,16 @@ export function createSettingsUI(game) {
         <span class="item-meta">${escapeHtml(look.role)}</span>
         ${equipped ? `<span class="item-badge">${t(game.language, "loadout.equipped")}</span>` : ""}</button>`;
     }).join("");
-    appearance.innerHTML = `<section class="appearance-overview">
+    const presetButtons = HERO_COLOR_PRESETS.map((preset) => `<button type="button" class="appearance-preset ${h.appearance?.preset === preset.id ? "is-active" : ""}" data-appearance-preset="${preset.id}">${escapeHtml(localized(preset.name))}</button>`).join("");
+    const paletteEditor = spriteLook(h.look) ? `<details class="appearance-colors"><summary>${game.language === "zh" ? "精确调色（所有动作同步）" : game.language === "ja" ? "パレット編集（全動作）" : "Edit palette (all animations)"}</summary><div class="appearance-swatches">${Object.entries(heroPalette(h.look, h.appearance)).map(([key, color]) => `<label title="${key}: ${color}"><input type="color" value="${color.slice(0, 7)}" data-palette-color="${key}" aria-label="${game.language === "zh" ? "颜色" : "Color"} ${key}"><span>${key}</span></label>`).join("")}</div></details>` : "";
+    appearance.innerHTML = `${classPicker()}<section class="appearance-overview">
       <canvas class="appearance-portrait" data-hero-portrait role="img" aria-label="${escapeHtml(lookName(current))}"></canvas>
       <div class="appearance-copy"><span>${t(game.language, "loadout.equipped")}</span><strong>${escapeHtml(lookName(current))}</strong><small>${escapeHtml(current.role)}</small></div>
     </section>
-    <section class="loadout-section"><h2 class="section-title">${t(game.language, "profile.appearance")} <span class="section-caption">${t(game.language, "profile.appearanceHint")}</span></h2>${themePicker()}<div class="item-grid hero-look-grid">${looks}</div></section>`;
-    drawHeroPortrait(appearance.querySelector("[data-hero-portrait]"), weapon.rigWeapon, h.look);
+    <section class="loadout-section"><h2 class="section-title">${t(game.language, "profile.appearance")} <span class="section-caption">${t(game.language, "profile.appearanceHint")}</span></h2><div class="appearance-presets" aria-label="${game.language === "zh" ? "颜色预设" : "Color presets"}">${presetButtons}<button type="button" class="appearance-preset" data-appearance-reset>${game.language === "zh" ? "恢复原貌" : game.language === "ja" ? "リセット" : "Reset"}</button></div>${paletteEditor}${themePicker()}<div class="item-grid hero-look-grid">${looks}</div></section>`;
+    drawHeroPortrait(appearance.querySelector("[data-hero-portrait]"), weapon.rigWeapon, h.look, h.appearance);
     appearance.querySelectorAll(".hero-look-card").forEach((card) => {
-      drawHeroPortrait(card.querySelector("canvas"), weapon.rigWeapon, card.dataset.heroLook);
+      drawHeroPortrait(card.querySelector("canvas"), weapon.rigWeapon, card.dataset.heroLook, h.appearance);
     });
   }
 
@@ -386,7 +393,7 @@ export function createSettingsUI(game) {
     const weapon = h.meleeWeapon;
     const active = SKILL_META.find((s) => s.id === h.skillSlots[0]) ?? SKILL_META[0];
     const stat = (icon, key, value, accent = "") => `<div class="profile-stat"><span class="profile-stat-icon ${accent}">${icon}</span><span class="profile-stat-label">${t(game.language, key)}</span><strong>${value}</strong></div>`;
-    profile.innerHTML = `<section class="profile-panel">
+    profile.innerHTML = `${classPicker()}<section class="profile-panel">
       <div class="profile-heading"><span class="profile-kicker">${t(game.language, "profile.title")}</span><span class="profile-level">${t(game.language, "profile.level")} ${h.level}</span></div>
       <div class="profile-body">
         <div class="profile-portrait"><canvas data-hero-portrait role="img" aria-label="${t(game.language, "profile.title")}"></canvas></div>
@@ -406,7 +413,7 @@ export function createSettingsUI(game) {
         </div>
       </div>
     </section>`;
-    drawHeroPortrait(profile.querySelector("[data-hero-portrait]"), weapon.rigWeapon, h.look);
+    drawHeroPortrait(profile.querySelector("[data-hero-portrait]"), weapon.rigWeapon, h.look, h.appearance);
   }
 
   function visibleTabs() { return mode === "camp" ? TAB_ORDER.camp : TAB_ORDER.battle; }
@@ -472,7 +479,7 @@ export function createSettingsUI(game) {
     const scroller = panel.querySelector(".settings-content:not([hidden])");
     const scrollTop = scroller?.scrollTop ?? 0;
     const focused = document.activeElement;
-    const focusId = focused?.closest("button, input")?.getAttributeNames().find(name => ["data-weapon", "data-skill", "data-slot", "data-language", "data-skill-attr", "data-content-theme", "data-hero-look", "data-upgrade", "data-audio-volume", "data-audio-mute"].includes(name));
+    const focusId = focused?.closest("button, input")?.getAttributeNames().find(name => ["data-weapon", "data-skill", "data-slot", "data-language", "data-skill-attr", "data-content-theme", "data-hero-look", "data-hero-class", "data-upgrade", "data-audio-volume", "data-audio-mute"].includes(name));
     const focusValue = focusId ? focused.getAttribute(focusId) : null;
     renderCampHero();
     renderLoadout(); renderStash(); renderSkills();
@@ -589,6 +596,23 @@ export function createSettingsUI(game) {
     }
     const tabButton = event.target.closest("[data-tab]");
     if (tabButton) { tab = tabButton.dataset.tab; render(); return; }
+    const classButton = event.target.closest("[data-hero-class]");
+    if (classButton) {
+      game.hero.setClass(classButton.dataset.heroClass, game);
+      game.ui.inventorySkillPick = null;
+      contentTheme = "all";
+      game.audio.play("ui");
+      render();
+      return;
+    }
+    const appearancePreset = event.target.closest("[data-appearance-preset]");
+    if (appearancePreset) {
+      game.hero.setAppearance({ preset: appearancePreset.dataset.appearancePreset }, game);
+      game.audio.play("ui");
+      render();
+      return;
+    }
+    if (event.target.closest("[data-appearance-reset]")) { game.hero.resetAppearance(game); render(); return; }
     const themeButton = event.target.closest("[data-content-theme]");
     if (themeButton) { contentTheme = themeButton.dataset.contentTheme; render(); return; }
     const attrButton = event.target.closest("[data-skill-attr]");
@@ -641,6 +665,12 @@ export function createSettingsUI(game) {
     if (out) out.textContent = `${pct}%`;
   });
   panel.addEventListener("change", (event) => {
+    const paletteInput = event.target.closest?.("[data-palette-color]");
+    if (paletteInput) {
+      game.hero.setAppearance({ palette: { [paletteInput.dataset.paletteColor]: paletteInput.value } }, game);
+      render();
+      return;
+    }
     const slider = event.target.closest?.("[data-audio-volume]");
     if (!slider) return;
     const kind = slider.dataset.audioVolume;

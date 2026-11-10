@@ -10,7 +10,8 @@ test("DNF combat catalog excludes showcase characters and placed equipment", () 
     assert.ok(!skill.module.meta.tags.some(tag => ["character", "weapon"].includes(tag)), skill.id);
     assert.notEqual(skill.name, skill.nameEn);
   }
-  assert.equal(HERO_LOOKS.filter(look => look.theme === "dnf").length, 2);
+  assert.equal(HERO_LOOKS.filter(look => look.sprite).length, 5);
+  assert.ok(HERO_LOOKS.filter(look => look.sprite).every(look => look.theme === "dnf"));
 });
 
 test("DNF equipment resolves its own attack module for every combo beat", () => {

@@ -1,6 +1,5 @@
-// Six verbs for the duelist. J is a three-stroke blade string; the other five are spells with a cost,
-// a cooldown and a deliberate cast. Every visual is a pixelfx effect module; this file only decides where
-// it goes and when it hurts.
+// Class-specific combat: blade strings and sword arts for swordsmen, bolts and spells for mages.
+// pixelfx supplies the effects; these adapters own targeting, resource costs, and contact timing.
 
 import { createFx, clamp } from "../../pixelfx/src/core/index.js";
 import { FX, SKILL_META } from "./data.js";
@@ -10,8 +9,66 @@ import { castActSpell, interruptSpellActs } from "./spell-act.js";
 import { ATTACK_BUFFER, meleeBeat } from "./combat-feel.js";
 import * as meleeSwing from "./fx/melee-swing.js";
 import { meleeArt, meleePoseTrack } from "./melee-arts.js";
+import { canUseSkill } from "./classes.js";
 
 export const SKILLS = SKILL_META.map((s) => ({ ...s, cast: null }));
+
+function afterHero(g, time, fn) {
+  const revision = g.hero.classRevision;
+  g.after(time, () => {
+    if (g.hero.alive && g.hero.classRevision === revision) fn();
+  });
+}
+
+function castMageBolt(g) {
+  const h = g.hero, aim = aimPoint(g, 240);
+  faceTo(h, aim.x);
+  h.startAnim("castK", HERO_TRACKS.castK, false);
+  const x = h.x + h.facing * size(12), y = h.y - size(28);
+  const dx = aim.x - x, dy = aim.y - y, length = Math.hypot(dx, dy) || 1;
+  g.projectiles.push({
+    x, y, prevX: x, prevY: y, vx: dx / length * 220, vy: dy / length * 220,
+    r: size(4), dmg: 14 * h.dmgMul, team: "hero", life: 1.35, kind: "magic-bolt", color: "#c6a0ff", knock: 12,
+    fx: createFx(FX.plasmaShot, { x, y, flip: dx < 0, seed: 950, palette: ["#33145f", "#6136a0", "#a479ef", "#d5b6ff", "#f0e4ff", "#ffffff"] }),
+  });
+  g.audio.play("cast", { gain: 0.45, pitch: 1.2 });
+}
+
+function castSwordArt(g, sk) {
+  const h = g.hero;
+  if (sk.art === "guard") {
+    h.startAnim("castI", HERO_TRACKS.castI, false);
+    h.addShield(g, 36, 6);
+    g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 0.5 }, { life: 1.2, follow: () => h });
+    g.audio.play("shield");
+    return;
+  }
+  const aim = nearest(g, 170);
+  if (aim) faceTo(h, aim.x);
+  const rush = sk.art === "rush", awakening = sk.art === "awakening";
+  const range = sk.art === "rise" ? 74 : awakening ? 108 : rush ? 84 : 92;
+  const origin = { x: h.x, y: h.y, facing: h.facing };
+  const combo = sk.art === "rise" ? 1 : 2;
+  const beat = { ...meleeBeat(h, combo), hit: rush ? 0.13 : 0.2, duration: awakening ? 0.8 : 0.5 };
+  const art = meleeArt(h.meleeWeapon, combo, rush);
+  h.startAnim("attack" + (combo + 1), meleePoseTrack(art, beat, h.meleeWeapon, combo), false);
+  if (rush) h.vx = h.facing * size(330);
+  const strike = (index) => {
+    const at = rush ? h : origin;
+    g.addFx(meleeSwing, { x: at.x, y: at.y, flip: origin.facing < 0, combo: (combo + index) % 3, art, beat, weapon: h.meleeWeapon, range, seed: 740 + index, light: 0.75 }, { split: true, melee: true });
+    const hit = g.weaponStrike({ kind: "arc", range, radius: awakening ? 26 : 20, pierce: true, maxHits: 8 }, {
+      origin: { x: at.x, y: at.y, facing: origin.facing }, dmg: sk.power * h.dmgMul, knock: rush ? 28 : 50,
+      impact: "heavy", status: sk.art === "rise" ? "stun" : undefined, statusTime: 0.9,
+    });
+    if (hit) { g.shake(2.4, 0.18); g.hitStop = Math.max(g.hitStop, 0.055); }
+    g.audio.play("slash2", { pitch: awakening ? 0.8 + index * 0.15 : 0.85 });
+  };
+  afterHero(g, beat.hit, () => strike(0));
+  if (awakening) {
+    afterHero(g, 0.4, () => strike(1));
+    afterHero(g, 0.62, () => strike(2));
+  }
+}
 
 function faceTo(hero, x) {
   if (Math.abs(x - hero.x) > 2) hero.facing = x > hero.x ? 1 : -1;
@@ -131,7 +188,7 @@ function castJ(g) {
   }, { follow: () => attack.landed || attack.cancelled ? attack : h, split: true, melee: true });
   h.attackFx = attackFx;
   g.audio.play(c === 1 ? "slash2" : "slash", { pitch: c === 2 ? 0.72 : 1, gain: c === 2 ? 0.85 : 0.7 });
-  g.after(beat.hit, () => {
+  afterHero(g, beat.hit, () => {
     if (!h.alive || attack.cancelled || h.melee !== attack) return;
     attack.x = h.x; attack.y = h.y; attack.landed = true;
     const finisher = c === 2 || dashAttack;
@@ -153,7 +210,7 @@ function castK(g) {
   faceTo(h, aim.x);
   h.startAnim("castK", HERO_TRACKS.castK, false);
   g.audio.play("cast");
-  g.after(0.18, () => {
+  afterHero(g, 0.18, () => {
     if (!h.alive) return;
     const sx = h.x + h.facing * size(12), sy = h.y - size(24);
     const dx = aim.x - sx, dy = aim.y - sy;
@@ -188,7 +245,7 @@ function castL(g) {
   h.startAnim("castL", HERO_TRACKS.castL, false);
   g.addFx(FX.frostNova, { x: h.x, y: h.y, light: 1, seed: 44 + Math.floor(Math.random() * 7) }, { layer: "ground" });
   g.audio.play("ice");
-  g.after(0.45, () => {
+  afterHero(g, 0.45, () => {
     const hit = g.hitEnemies((e) => Math.hypot(e.x - h.x, (e.y - h.y) * 1.4) < size(74), {
       dmg: 20 * h.dmgMul, knock: 10, status: "freeze", statusTime: 2.1, crit: rollCrit(),
     });
@@ -211,11 +268,11 @@ function castU(g) {
   g.audio.play("cast");
   const tx = g.clampX(aim.x, 26), ty = clamp(aim.y, 138, 168);
   g.telegraph(tx, ty, 40, 0.95, "#c9a8ff");
-  g.after(0.18, () => {
+  afterHero(g, 0.18, () => {
     g.addFx(FX.lightningStrike, { x: tx, y: ty, light: 1.25, seed: 51 + Math.floor(Math.random() * 11) });
     g.audio.play("thunder");
   });
-  g.after(0.18 + 0.76, () => {
+  afterHero(g, 0.18 + 0.76, () => {
     const hit = g.hitEnemies((e) => Math.hypot(e.x - tx, (e.y - ty) * 1.4) < size(43), {
       dmg: 34 * h.dmgMul, knock: 30, status: "stun", statusTime: 1.6, crit: rollCrit(0.08),
     });
@@ -236,7 +293,7 @@ function castI(g) {
   g.addFx(FX.healAoe, { x: h.x, y: h.y, light: 0.9, seed: 61 }, { layer: "ground" });
   g.addFx(FX.blessing, { x: h.x, y: h.y - size(12), seed: 62, light: 0.8 }, { life: 3.4, follow: () => h });
   g.audio.play("heal");
-  g.after(0.18, () => {
+  afterHero(g, 0.18, () => {
     h.heal(g, Math.min(48, h.maxHp * 0.32), { linger: 4 });
     h.addShield(g, 30, 6.5);
     g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 1, seed: 63 }, { life: 6.5, follow: () => h });
@@ -262,10 +319,10 @@ function castO(g) {
   ];
   spots.forEach(([x, y], i) => {
     g.telegraph(x, y, 38, 1.15 + i * 0.16, "#ffa050");
-    g.after(0.22 + i * 0.15, () => {
+    afterHero(g, 0.22 + i * 0.15, () => {
       g.addFx(FX.meteor, { x, y, light: 1.35, seed: 70 + i });
       g.audio.play("meteor");
-      g.after(0.62, () => {
+      afterHero(g, 0.62, () => {
         const hit = g.hitEnemies((e) => Math.hypot(e.x - x, (e.y - y) * 1.3) < size(52), {
           dmg: (i === 0 ? 46 : 30) * h.dmgMul, knock: 60, status: "burn", statusTime: 4, crit: rollCrit(0.06),
         });
@@ -286,7 +343,7 @@ function castE(g) {
   g.addFx(FX.manaBurst, { x: h.x, y: h.y - size(12), light: 1.2, seed: 88 });
   g.addFx(FX.thunderclap, { x: h.x, y: h.y, light: 0.85, seed: 89 }, { layer: "ground" });
   g.audio.play("thunder");
-  g.after(0.16, () => {
+  afterHero(g, 0.16, () => {
     const hit = g.hitEnemies((e) => Math.hypot(e.x - h.x, (e.y - h.y) * 1.35) < size(62), {
       dmg: 28 * h.dmgMul, knock: 92, status: "stun", statusTime: 0.8, crit: rollCrit(0.06),
     });
@@ -331,7 +388,7 @@ function castGeneric(g, sk) {
   h.startAnim("castK", HERO_TRACKS.castK, false);
   g.audio.play(sk.category === "fire" ? "fire" : sk.category === "ice" ? "ice" : sk.category === "lightning" ? "thunder" : "cast");
   const hitTime = Math.max(0.06, Math.min(1.6, Number(sk.module.act?.hits?.[0]?.t ?? (mod.meta.loop ? 0.42 : (mod.meta.duration ?? 1) * 0.5))));
-  g.after(hitTime, () => {
+  afterHero(g, hitTime, () => {
     if (!h.alive) return;
     const range = size(sk.category === "melee" || sk.category === "thrown" || sk.category === "moves" ? 76 : 66);
     const status = sk.category === "fire" ? "burn" : sk.category === "ice" ? "freeze" : sk.category === "lightning" ? "stun" : sk.category === "nature" ? "slow" : undefined;
@@ -342,13 +399,13 @@ function castGeneric(g, sk) {
   });
 }
 
-const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO, e: castE, t: castT };
-for (const s of SKILLS) s.cast = CASTS[s.id] ?? ((g) => castGeneric(g, s));
+const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO, e: castE, t: castT, "mage:bolt": castMageBolt };
+for (const s of SKILLS) s.cast = CASTS[s.id] ?? (s.art ? (g) => castSwordArt(g, s) : (g) => castGeneric(g, s));
 
 /** Try to cast. Returns true when the skill actually fired. */
 export function castSkill(g, id) {
   const sk = SKILLS.find((s) => s.id === id);
-  if (!sk || g.state !== "playing" || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
+  if (!sk || !canUseSkill(g.hero.classId, sk) || g.state !== "playing" || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
   const h = g.hero;
   if (id === "j" && (h.cd.j > 0 || g.hitStop > 0 || h.dashT > 0.1)) {
     // One queued press, never a backlog of attacks. Hit-stop does not age this buffer.

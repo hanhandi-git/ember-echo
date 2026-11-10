@@ -182,7 +182,7 @@ test("all action buttons and skill slots have disjoint pointer regions", () => {
   }
   const g = game();
   click(g, SKILL_RECTS[5]);
-  assert.ok(g.hero.cd.o > 0, "sixth skill stays clickable");
+  assert.ok(g.hero.cd[g.hero.skillSlots[5]] > 0, "sixth skill stays clickable");
 });
 
 test("standing portal is animated, deterministic and seamless in every palette", () => {
@@ -211,6 +211,7 @@ test("the full pixelfx armory and spell catalog are playable through the adapter
   for (const path of samples) {
     const skill = SKILL_META.find((s) => s.fxPath === path);
     assert.ok(skill, `catalog includes ${path}`);
+    g.hero.setClass(skill.classId);
     g.hero.cd[skill.id] = 0;
     g.hero.mp = g.hero.maxMp;
     assert.equal(g.cast(skill.id), true, `casts ${path}`);
@@ -298,6 +299,7 @@ test("a target outside the shortened sword range is missed while a closer one is
 
 test("frost damage radius and lightning telegraph shrink with their combat effects", () => {
   const g = game();
+  g.hero.setClass("mage");
   g.hero.x = 100; g.hero.y = 150;
   const near = g.spawnEnemy("slime", 155, 150); near.state = "chase"; near.update = () => {};
   const far = g.spawnEnemy("slime", 169, 150); far.state = "chase"; far.update = () => {};

@@ -1,6 +1,9 @@
 /** Browser persistence for loadout, stash, permanent upgrades, and in-progress runs. */
 
 import { emptyUpgrades } from "./upgrades.js";
+import { normalizeClassSlots } from "./classes.js";
+import { HERO_LOOKS, SKILL_META } from "./data.js";
+import { normalizeAppearance } from "./hero-wardrobe.js";
 
 export const SAVE_KEY = "ember-echo-save";
 export const SAVE_VERSION = 1;
@@ -38,6 +41,10 @@ export function saveToStorage(data) {
 export function heroProfile(hero) {
   return {
     look: hero.look,
+    classId: hero.classId,
+    appearance: { ...(hero.appearance ?? { preset: "original", palette: {} }), palette: { ...(hero.appearance?.palette ?? {}) } },
+    appearances: Object.fromEntries(Object.entries(hero.appearances ?? {}).map(([id, value]) => [id, normalizeAppearance(value)])),
+    classLoadouts: { ...hero.classLoadouts, [hero.classId]: { look: hero.look, skillSlots: [...hero.skillSlots] } },
     meleeWeaponId: hero.meleeWeaponId,
     thrownWeaponId: hero.thrownWeaponId,
     skillSlots: [...hero.skillSlots],
@@ -114,16 +121,24 @@ export function applyGameProfile(game, profile) {
 
 export function applyHeroProfile(hero, profile) {
   if (!profile) return;
+  if (profile.classId) hero.setClass(profile.classId);
+  if (profile.classLoadouts && typeof profile.classLoadouts === "object") hero.classLoadouts = { ...profile.classLoadouts };
   if (profile.upgrades && typeof profile.upgrades === "object") {
     hero.upgrades = { ...emptyUpgrades(), ...profile.upgrades };
   }
   if (Number.isFinite(profile.embers)) hero.embers = Math.max(0, Math.round(profile.embers));
   if (profile.stash && typeof profile.stash === "object") hero.stash = { ...profile.stash };
-  if (profile.look) hero.equipLook(profile.look);
+  if (profile.look) {
+    const look = HERO_LOOKS.find((entry) => entry.id === profile.look);
+    if (look && (!look.classId || look.classId === hero.classId)) hero.equipLook(profile.look);
+  }
+  if (profile.appearances && typeof profile.appearances === "object") {
+    hero.appearances = Object.fromEntries(Object.entries(profile.appearances).filter(([id]) => HERO_LOOKS.some((look) => look.id === id)).map(([id, value]) => [id, normalizeAppearance(value)]));
+  } else if (profile.appearance) hero.setAppearance(profile.appearance);
   if (profile.meleeWeaponId) hero.equipWeapon(profile.meleeWeaponId);
   if (profile.thrownWeaponId) hero.equipWeapon(profile.thrownWeaponId);
   if (Array.isArray(profile.skillSlots) && profile.skillSlots.length === hero.skillSlots.length) {
-    hero.skillSlots = [...profile.skillSlots];
+    hero.skillSlots = normalizeClassSlots(hero.classId, profile.skillSlots, SKILL_META);
   }
   hero.applyUpgrades();
 }

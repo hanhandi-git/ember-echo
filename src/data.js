@@ -7,6 +7,8 @@ import { FX } from "./content/fx-registry.js";
 import { STAGES, ENEMY_TYPES, LOOT } from "./content/compose-content.js";
 import { ATTR_FROM_CATEGORY, buildFxSpellMeta, iconOf } from "./content/spell-catalog.js";
 import { CUSTOM_MELEE_FX } from "./fx/custom-melee-arts.js";
+import { DNF_HERO_LOOKS } from "./hero-sprites.js";
+import { DEFAULT_CLASS_SLOTS, skillClass } from "./classes.js";
 
 import { localizeArmoryWeapon } from "./weapon-i18n.js";
 
@@ -15,17 +17,17 @@ export { STASH_ITEMS, STASH_FX, stashItem, stashLabel } from "./content/stash-ca
 
 export { FX };
 
-export const HERO_LOOK_DEFAULT = "ember-duelist";
+export const HERO_LOOK_DEFAULT = "dnf-blade-master";
 export const HERO_LOOK = HERO_LOOK_DEFAULT;
 export const BOSS_LOOK = "styx-warden";
 
-const HERO_LOOK_BLOCK = new Set(["dummy", "styx-warden"]);
+const HERO_LOOK_BLOCK = new Set(["dummy", "styx-warden", ...DNF_HERO_LOOKS.map((look) => look.id)]);
 const HERO_LOOK_PRIORITY = ["ember-duelist", "naruto", "sasuke", "moon-oracle", "laurel-ranger"];
-export const HERO_LOOKS = [...CHARACTERS.filter((c) => !HERO_LOOK_BLOCK.has(c.id))].sort((a, b) => {
+export const HERO_LOOKS = [...DNF_HERO_LOOKS, ...[...CHARACTERS.filter((c) => !HERO_LOOK_BLOCK.has(c.id))].sort((a, b) => {
   const pa = HERO_LOOK_PRIORITY.indexOf(a.id), pb = HERO_LOOK_PRIORITY.indexOf(b.id);
   const ra = pa === -1 ? 99 : pa, rb = pb === -1 ? 99 : pb;
   return ra - rb || a.label.localeCompare(b.label, "zh");
-});
+})];
 
 export function loadHeroLook() {
   if (typeof localStorage === "undefined") return HERO_LOOK_DEFAULT;
@@ -136,12 +138,24 @@ const BASE_SKILL_META = [
 
 const spellMeta = buildFxSpellMeta();
 
+const SWORD_SKILL_META = [
+  { id: "sword:cleave", name: "裂空斩", nameEn: "Cleave", nameJa: "裂空斬", glyph: "裂", cost: 10, cd: 2.4, note: "蓄力重斩 · 扇形击退", power: 32, art: "cleave" },
+  { id: "sword:rush", name: "破军突进", nameEn: "Blade Rush", nameJa: "破軍突進", glyph: "突", cost: 14, cd: 4.2, note: "向前突进 · 贯穿斩击", power: 27, art: "rush" },
+  { id: "sword:rise", name: "升龙斩", nameEn: "Rising Blade", nameJa: "昇竜斬", glyph: "升", cost: 18, cd: 5.5, note: "上挑剑气 · 震慑敌人", power: 36, art: "rise" },
+  { id: "sword:guard", name: "剑意守护", nameEn: "Blade Guard", nameJa: "剣意守護", glyph: "守", cost: 20, cd: 10, note: "架剑格挡 · 护盾", power: 0, art: "guard" },
+  { id: "sword:awakening", name: "极刃觉醒", nameEn: "Blade Awakening", nameJa: "極刃覚醒", glyph: "极", cost: 38, cd: 14, note: "三重剑弧 · 大范围终结", power: 28, art: "awakening" },
+].map((s) => ({ ...s, classId: "swordsman", icon: "slash", attr: "slash", key: "", tint: "#ffd493", glow: "rgba(255,190,90,.6)", noteEn: s.nameEn, noteJa: s.nameJa }));
+
+const MAGE_ATTACK = { id: "mage:bolt", classId: "mage", key: "J", name: "魔弹", nameEn: "Magic Bolt", nameJa: "魔弾", icon: "burst", glyph: "弹", cost: 0, cd: 0.44, tint: "#c6a0ff", attr: "burst", note: "无消耗 · 远程魔法普攻", noteEn: "Free ranged magic attack", noteJa: "消費なし・遠距離魔法攻撃" };
+
 export const SKILL_META = [
   ...BASE_SKILL_META.map((s) => ({ ...s, attr: s.icon })),
+  ...SWORD_SKILL_META,
+  MAGE_ATTACK,
   ...spellMeta.map((s) => ({ ...s, attr: ATTR_FROM_CATEGORY[s.category] ?? iconOf(s.category) })),
-];
+].map((s) => ({ ...s, classId: skillClass(s) }));
 
-export const DEFAULT_SKILL_SLOTS = ["j", "k", "l", "u", "i", "o", "t"];
+export const DEFAULT_SKILL_SLOTS = DEFAULT_CLASS_SLOTS.swordsman;
 
 export const MELEE_WEAPONS = WEAPONS.filter((w) => w.class !== "thrown");
 export const THROWN_WEAPONS = WEAPONS.filter((w) => w.class === "thrown");

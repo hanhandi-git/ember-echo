@@ -1,10 +1,9 @@
-// The player's duelist. The body is drawn from the pixelfx character rig (a real little skeleton, not a
-// bitmap), so walking, sword swings and spell casts all read as one person holding one sword.
+// Player state and animation. DNF looks use lossless sprite frames; legacy looks use the pixelfx rig.
 
 import { posed, poseAt, READY, hex, clamp } from "../../pixelfx/src/core/index.js";
 import {
   HERO_LOOK_DEFAULT, HERO_LOOKS, loadHeroLook, WEAPONS, DEFAULT_SKILL_SLOTS,
-  DEFAULT_MELEE_WEAPON_ID, DEFAULT_THROWN_WEAPON_ID,
+  DEFAULT_MELEE_WEAPON_ID, DEFAULT_THROWN_WEAPON_ID, SKILL_META,
 } from "./data.js";
 import { uiCopy, weaponLabel } from "./copy.js";
 import { QUICK_MOVE_AP_COST } from "./save.js";
@@ -16,6 +15,9 @@ import { UPGRADE_STATS, emptyUpgrades, spentUpgrades, upgradeById, upgradeCost }
 import { interruptSpellActs } from "./spell-act.js";
 import { meleeArt, meleePoseTrack, isSheathDrawWeapon, sheathedIdlePose, applySheathCarry } from "./melee-arts.js";
 import { meleeBeat } from "./combat-feel.js";
+import { canUseSkill, classOf, DEFAULT_CLASS_SLOTS, normalizeClassSlots } from "./classes.js";
+import { heroSprite, loadHeroSprite, invalidateHeroSprite, spriteLook } from "./hero-sprites.js";
+import { normalizeAppearance } from "./hero-wardrobe.js";
 
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
 const IDLE = { ...GUARD, fx: 10, fy: -20, bx: 7, by: -19, crouch: 1 };
@@ -67,6 +69,11 @@ const P = {
 export class Hero {
   constructor() {
     this.look = loadHeroLook();
+    this.classId = spriteLook(this.look)?.classId ?? "swordsman";
+    this.classLoadouts = {};
+    this.classRevision = 0;
+    this.appearances = {};
+    loadHeroSprite(this.look);
     this.combatScale = COMBAT_SCALE;
     this.renderScale = HERO_RENDER_SCALE;
     this.upgrades = emptyUpgrades();
@@ -106,7 +113,7 @@ export class Hero {
     this.thrownWeapon = thrown ?? melee;
     this.thrownWeaponId = this.thrownWeapon?.id;
     this.inventory = [...WEAPONS];
-    this.skillSlots = [...DEFAULT_SKILL_SLOTS];
+    this.skillSlots = [...(DEFAULT_CLASS_SLOTS[this.classId] ?? DEFAULT_SKILL_SLOTS)];
     this.skillCursor = 0;
     this.dashCd = 0;
     this.dashMax = 1.15;
@@ -258,17 +265,75 @@ export class Hero {
   }
 
   swapSkill(slot, id) {
-    if (slot < 0 || slot >= this.skillSlots.length) return false;
+    if (!Number.isInteger(slot) || slot < 0 || slot >= this.skillSlots.length || !this.canUseSkill(id)) return false;
     this.skillSlots[slot] = id;
     return true;
+  }
+
+  canUseSkill(id) {
+    return canUseSkill(this.classId, SKILL_META.find((skill) => skill.id === id));
+  }
+
+  setClass(id, g = null) {
+    if (!DEFAULT_CLASS_SLOTS[id]) return false;
+    if (id === this.classId) return true;
+    this.classLoadouts[this.classId] = { look: this.look, skillSlots: [...this.skillSlots] };
+    this.classId = id;
+    this.classRevision++;
+    const saved = this.classLoadouts[id];
+    this.skillSlots = normalizeClassSlots(id, saved?.skillSlots, SKILL_META);
+    const savedLook = HERO_LOOKS.find((look) => look.id === saved?.look);
+    this.look = savedLook && (!savedLook.classId || savedLook.classId === id) ? savedLook.id : classOf(id).look;
+    loadHeroSprite(this.look);
+    if (typeof localStorage !== "undefined") localStorage.setItem("ember-echo-look", this.look);
+    this.cancelMelee();
+    this.attackBuffer = this.comboIndex = this.comboTimer = 0;
+    this.clearThrowRig();
+    if (g) {
+      interruptSpellActs(g);
+      g.touchAttackHeld = false;
+      g.keys.clear();
+      g.persistSave?.();
+    }
+    this.startAnim("idle", TRACKS.idle, true);
+    return true;
+  }
+
+  pixelBody() {
+    const sprite = heroSprite(this.look, this.anim, !!this.actPose, this.appearance, this.pose());
+    if (sprite) return sprite;
+    return posed(this.pose(), spriteLook(this.look)?.fallback ?? this.look, { density: 2 });
+  }
+
+  get bodyScale() {
+    return spriteLook(this.look) ? 1 : this.renderScale;
+  }
+
+  setAppearance(patch = {}, g = null) {
+    this.appearances[this.look] = normalizeAppearance({ ...this.appearance, ...patch, palette: { ...this.appearance.palette, ...(patch.palette ?? {}) } });
+    invalidateHeroSprite(this.look);
+    if (g) g.persistSave?.();
+    return this.appearance;
+  }
+
+  get appearance() {
+    return this.appearances[this.look] ?? { preset: "original", palette: {} };
+  }
+
+  resetAppearance(g = null) {
+    delete this.appearances[this.look];
+    invalidateHeroSprite(this.look);
+    if (g) g.persistSave?.();
   }
 
   equipLook(id, g = null) {
     const look = HERO_LOOKS.find((c) => c.id === id);
     if (!look) return false;
+    if (look.classId && look.classId !== this.classId) this.setClass(look.classId, g);
     this.look = look.id;
+    loadHeroSprite(look.id);
     if (typeof localStorage !== "undefined") localStorage.setItem("ember-echo-look", look.id);
-    for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, look.id);
+    if (!spriteLook(look.id)) for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, look.id);
     this.warmMeleePoses();
     if (g) {
       const name = g.language === "zh" ? look.label : look.name;
@@ -498,7 +563,7 @@ export class Hero {
       if (this.melee.echoT >= 0.025) {
         this.melee.echoT = 0;
         this.meleeEchoes.push({ x: this.x, y: this.y, facing: this.melee.facing, age: 0,
-          body: posed(this.pose(), this.look, { density: 2 }), color: hex(this.melee.art.echo) });
+          body: this.pixelBody(), color: hex(this.melee.art.echo) });
         if (this.meleeEchoes.length > 3) this.meleeEchoes.shift();
       }
     }
@@ -517,9 +582,8 @@ export class Hero {
 
   draw(g, p) {
     const x = Math.round(this.x), y = Math.round(this.y);
-    const scale = this.renderScale;
-    const pose = this.pose();
-    const r = posed(pose, this.look, { density: 2 });
+    const scale = this.bodyScale;
+    const r = this.pixelBody();
     const flip = this.facing < 0;
     // a soft contact shadow keeps the feet planted on the flagstones
     p.ellipse(x, y - 1, size(8), size(2.5), P.shadow, 0.55);
@@ -553,7 +617,7 @@ export class Hero {
   // Reassert the real rig above overlapping large spell effects, with a thin dark keyline.
   // The world still owns depth sorting; this pass only protects the player's silhouette.
   drawCombatFocus(p) {
-    const r = posed(this.pose(), this.look, { density: 2 }), scale = this.renderScale;
+    const r = this.pixelBody(), scale = this.bodyScale;
     const cell = scale / r.density, flip = this.facing < 0;
     for (const outline of [true, false]) {
       for (let i = 0; i < r.n; i++) {
@@ -673,6 +737,7 @@ export class Hero {
 
   /** Warm the pose cache so the first swing does not hitch. */
   warmMeleePoses() {
+    if (spriteLook(this.look)) { loadHeroSprite(this.look); return; }
     for (let combo = 0; combo < 3; combo++) {
       const art = meleeArt(this.meleeWeapon, combo), beat = meleeBeat(this, combo);
       for (const [, pose] of meleePoseTrack(art, beat, this.meleeWeapon, combo)) posed(pose, this.look, { density: 2 });
@@ -683,6 +748,7 @@ export class Hero {
     const warm = new Set([HERO_LOOK_DEFAULT, loadHeroLook()]);
     for (const c of HERO_LOOKS) {
       if (!warm.has(c.id)) continue;
+      if (spriteLook(c.id)) { loadHeroSprite(c.id); continue; }
       for (const track of Object.values(TRACKS)) for (const [, pose] of track) posed(pose, c.id);
     }
   }
@@ -691,14 +757,36 @@ export class Hero {
 export { TRACKS as HERO_TRACKS };
 
 /** Draw a small standing portrait into a canvas (used by the HUD card). */
-export function drawHeroPortrait(canvas, weapon = "sword", look = loadHeroLook()) {
+export function drawHeroPortrait(canvas, weapon = "sword", look = loadHeroLook(), appearance = undefined) {
+  if (!canvas) return;
+  canvas.dataset.look = look;
+  const sprite = spriteLook(look);
+  if (sprite) {
+    const body = heroSprite(look, {}, false, appearance, { weapon });
+    if (!body) {
+      loadHeroSprite(look).then((frames) => {
+        if (frames && canvas.dataset.look === look) drawHeroPortrait(canvas, weapon, look, appearance);
+      });
+    } else {
+      // Exactly 1 source pixel per portrait pixel; CSS only uses nearest sampling.
+      canvas.width = 224; canvas.height = 176;
+      const ctx = canvas.getContext("2d"), img = ctx.createImageData(224, 176);
+      const out = new Uint32Array(img.data.buffer);
+      for (let i = 0; i < body.n; i++) {
+        const x = 112 + Math.round(body.xs[i] * body.density), y = 164 + Math.round(body.ys[i] * body.density);
+        if (x >= 0 && x < 224 && y >= 0 && y < 176) out[y * 224 + x] = body.color[i];
+      }
+      ctx.putImageData(img, 0, 0);
+      return;
+    }
+  }
   const density = 2, w = 112 * density, h = 88 * density;
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   const img = ctx.createImageData(w, h);
   const out = new Uint32Array(img.data.buffer);
-  const r = posed({ ...IDLE, weapon }, look, { density });
+  const r = posed({ ...IDLE, weapon }, sprite?.fallback ?? look, { density });
   for (let i = 0; i < r.n; i++) {
     const x = Math.round((42 + r.xs[i]) * density), y = Math.round(h - (14 - r.ys[i]) * density);
     if (x < 0 || y < 0 || x >= w || y >= h) continue;

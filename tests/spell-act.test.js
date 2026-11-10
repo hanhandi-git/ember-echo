@@ -22,6 +22,7 @@ test("pixelfx act spells drive hero pose and forward movement", () => {
   const chidori = SKILL_META.find((s) => s.id === "fx:ninjutsu/chidori-rush");
   assert.ok(chidori?.module?.act, "chidori rush should export act data");
   const g = mockGame();
+  g.hero.setClass("mage");
   g.hero.skillSlots[0] = chidori.id;
   g.hero.mp = 200;
   g.spawnEnemy("slime", g.hero.x + 140, g.hero.y);
@@ -38,6 +39,7 @@ test("pixelfx act spells drive hero pose and forward movement", () => {
 test("chidori rush damages enemies along the dash path", () => {
   const chidori = SKILL_META.find((s) => s.id === "fx:ninjutsu/chidori-rush");
   const g = mockGame();
+  g.hero.setClass("mage");
   g.hero.skillSlots[0] = chidori.id;
   g.hero.mp = 200;
   const hx = g.hero.x, hy = g.hero.y;
