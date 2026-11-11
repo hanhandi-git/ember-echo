@@ -1,3 +1,5 @@
+import { hubSkillsAllowed } from "../../quick-bar.js";
+
 export const loopSystem = {
   addDashTrail(trail) {
     this.dashTrails.push(trail);
@@ -21,7 +23,7 @@ export const loopSystem = {
       }
       if (!this.campMenuOpen && !this._hubDepartPending) this.hero.update(this, dt, this.keys);
       this.updateHub?.(dt);
-      if (this.hubZone === "arena" && !this.campMenuOpen && !this._hubDepartPending) {
+      if (hubSkillsAllowed(this)) {
         if (this.timers.length) {
           const due = [];
           for (const timer of this.timers) { timer.t -= dt; if (timer.t <= 0) due.push(timer); }

@@ -5,6 +5,7 @@ src
 tests
 build.mjs
 server.mjs
+eslint.config.js
 preview.png
 preview-title.png
 preview-boss.png

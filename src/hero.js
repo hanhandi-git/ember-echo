@@ -15,10 +15,11 @@ import { interruptSpellActs } from "./spell-act.js";
 import { isSheathDrawWeapon, sheathedIdlePose, applySheathCarry } from "./melee-arts.js";
 import { canUseSkill, classOf, DEFAULT_CLASS_SLOTS, normalizeClassSlots } from "./classes.js";
 import { heroSprite, heroFrameId, isHeroAction, loadHeroSprite, invalidateHeroSprite, spriteLook } from "./hero-sprites.js";
-import { SKILL_SLOT_KEYS } from "./input/bindings.js";
+import { QUICK_KEYS, quickAttackId } from "./quick-bar.js";
 import { normalizeAppearance } from "./hero-wardrobe.js";
 import { clampDepth } from "./game/depth.js";
 
+const HERO_SPEED_MUL = 1.5;
 const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -21, sa: -0.85 };
 const IDLE = { ...GUARD, fx: 10, fy: -20, bx: 7, by: -19, crouch: 1 };
 const IDLE_B = { ...IDLE, crouch: 2, fx: 9, fy: -19, lean: -0.15 };
@@ -105,7 +106,7 @@ export class Hero {
     this.xp = 0;
     this.xpNext = XP_STEPS[1];
     this.dmgMul = 1;
-    this.speed = 64;
+    this.speed = 64 * HERO_SPEED_MUL;
     this.bindHeroWeapon();
     this.skillSlots = [...(DEFAULT_CLASS_SLOTS[this.classId] ?? DEFAULT_SKILL_SLOTS)];
     this.skillCursor = 0;
@@ -123,6 +124,7 @@ export class Hero {
     this.hitFlash = 0;
     this.shield = 0;
     this.shieldT = 0;
+    this.lastBlockFx = -9;
     this.regen = 0;
     this.regenT = 0;
     this.cd = { j: 0, k: 0, l: 0, u: 0, i: 0, o: 0, t: 0, e: 0 };
@@ -141,6 +143,7 @@ export class Hero {
     this.lunge = 0;
     this.rigWeaponOverride = null;
     this.actPose = null;
+    this.actClip = null;
   }
 
   get weapon() {
@@ -157,7 +160,7 @@ export class Hero {
     const might = this.upgradeRank("might");
     const haste = this.upgradeRank("haste");
     this.dmgMul = weapon.dmgMul * (1 + (this.level - 1) * 0.12) * (1 + might * 0.06);
-    this.speed = weapon.speed + haste * 2;
+    this.speed = (weapon.speed + haste * 2) * HERO_SPEED_MUL;
     this.dashMax = 1.15 * weapon.dashCdMul;
   }
 
@@ -289,7 +292,7 @@ export class Hero {
   }
 
   pixelBody() {
-    return heroSprite(this.look, this.anim, !!this.actPose, this.appearance);
+    return heroSprite(this.look, this.anim, this.actPose ? (this.actClip ?? true) : false, this.appearance);
   }
 
   get bodyScale() {
@@ -403,6 +406,22 @@ export class Hero {
     g.ui.actionPulse = { id: "quick", t: 0.25 };
     g.audio.play("quick");
     return true;
+  }
+
+  /**
+   * One shared move/dodge input. In combat it dodges (i-frames) only while an
+   * attack is actually incoming — enemy windups, telegraphed strikes or live
+   * enemy projectiles — and quick-steps the rest of the time. Around the hub
+   * it is always the free quick step.
+   */
+  tryMoveDodge(g) {
+    if (g.state === "playing") {
+      const threatened = g.telegraphs.length > 0
+        || g.projectiles.some((p) => p.team === "enemy" && !p.dead)
+        || g.enemies.some((e) => e.alive && e.state === "windup");
+      return threatened ? this.tryDash(g) : this.tryQuickMove(g);
+    }
+    return this.tryQuickMove(g);
   }
 
   moveDirection(g) {
@@ -590,11 +609,10 @@ export class Hero {
     } else if (this.anim.t >= this.anim.dur) {
       if (this.rigWeaponOverride && this.anim.kind === "castK") this.clearThrowRig();
       if (isHeroAction(this.anim.kind)) {
-        const primary = this.classId === "mage" ? "mage:bolt" : "j";
+        const primary = quickAttackId(this.classId);
         const autoQueued = g.autoBattle && g.enemies.some((e) => e.alive
           && Math.hypot(e.x - this.x, (e.y - this.y) * 1.35) < size(this.classId === "mage" ? 150 : 58));
-        const queued = this.attackBuffer > 0 || g.touchAttackHeld || autoQueued
-          || Object.entries(SKILL_SLOT_KEYS).some(([key, slot]) => keys.has(key) && this.skillSlots[slot] === primary);
+        const queued = this.attackBuffer > 0 || g.touchAttackHeld || autoQueued || keys.has(QUICK_KEYS[0]);
         // Combat input runs immediately after Hero.update; keep the final release
         // pose available so the next beat does not pass through an idle frame.
         if (queued && (this.cd[primary] ?? 0) <= 1e-8) return;
@@ -607,6 +625,7 @@ export class Hero {
     const x = Math.round(this.x), y = Math.round(this.y);
     const scale = this.bodyScale;
     const r = this.pixelBody();
+    if (!r) return;
     const flip = this.facing < 0;
     // a soft contact shadow keeps the feet planted on the flagstones
     p.ellipse(x, y - 1, size(8), size(2.5), P.shadow, 0.55);
@@ -620,7 +639,9 @@ export class Hero {
       p.glow(x, y - size(14), size(16), hex("#e8ffe0"), 0.12 + 0.28 * k);
     }
     for (const echo of this.meleeEchoes) {
-      const b = echo.body, cell = 1 / b.density, alpha = 0.22 * (1 - echo.age / 0.12) ** 2;
+      const b = echo.body;
+      if (!b) continue;
+      const cell = 1 / b.density, alpha = 0.22 * (1 - echo.age / 0.12) ** 2;
       for (let i = 0; i < b.n; i++) {
         p.rect(echo.x + (echo.facing < 0 ? -b.xs[i] - cell : b.xs[i]) * scale,
           echo.y + b.ys[i] * scale, scale * cell, scale * cell, echo.color, alpha);
@@ -640,7 +661,9 @@ export class Hero {
   // Reassert the real rig above overlapping large spell effects, with a thin dark keyline.
   // The world still owns depth sorting; this pass only protects the player's silhouette.
   drawCombatFocus(p) {
-    const r = this.pixelBody(), scale = this.bodyScale;
+    const r = this.pixelBody();
+    if (!r) return;
+    const scale = this.bodyScale;
     const cell = scale / r.density, flip = this.facing < 0;
     for (const outline of [true, false]) {
       for (let i = 0; i < r.n; i++) {
@@ -684,6 +707,13 @@ export class Hero {
         g.addFx(g.fx.manaBurst, { x: this.x, y: this.y, light: 0.8 });
       }
       g.number(this.x, this.y - 46, "护盾 -" + absorb, { color: "#ffe9a0", small: true });
+      if (g.time - this.lastBlockFx > 0.35) {
+        this.lastBlockFx = g.time;
+        g.addFx(g.fx.shieldBlock, {
+          x: this.x + this.facing * size(8), y: this.y,
+          flip: this.facing < 0, seed: 300 + Math.floor(g.time * 60),
+        }, { life: 1.1 });
+      }
     }
     if (dmg > 0) {
       this.cancelMelee();
@@ -763,8 +793,8 @@ export class Hero {
     loadHeroSprite(this.look);
   }
 
-  static prepare() {
-    for (const id of new Set([HERO_LOOK_DEFAULT, loadHeroLook()])) loadHeroSprite(id);
+  static async prepare() {
+    await Promise.all([...new Set([HERO_LOOK_DEFAULT, loadHeroLook()])].map((id) => loadHeroSprite(id)));
   }
 
 }
@@ -777,6 +807,11 @@ export function drawHeroPortrait(canvas, _weapon = "sword", look = loadHeroLook(
   const chosen = spriteLook(look) ? look : HERO_LOOK_DEFAULT;
   canvas.dataset.look = chosen;
   const body = heroSprite(chosen, {}, false, appearance);
+  if (!body) {
+    // Pixel chunk still in flight; repaint once it lands.
+    loadHeroSprite(chosen, appearance).then((idle) => { if (idle) drawHeroPortrait(canvas, _weapon, look, appearance); });
+    return;
+  }
   canvas.width = 224; canvas.height = 176;
   const ctx = canvas.getContext("2d"), img = ctx.createImageData(224, 176);
   const out = new Uint32Array(img.data.buffer);

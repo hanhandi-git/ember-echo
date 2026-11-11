@@ -15,6 +15,7 @@ export default [
     ignores: [
       "game.js",
       "battle-map-worker.js",
+      "chunks/**",
       "node_modules/**",
       "coverage/**",
       "**/*.tmpdir/**",

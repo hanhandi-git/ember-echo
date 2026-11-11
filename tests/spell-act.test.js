@@ -44,7 +44,9 @@ test("chidori rush damages enemies along the dash path", () => {
   g.hero.mp = 200;
   const hx = g.hero.x, hy = g.hero.y;
   const mid = g.spawnEnemy("slime", hx + 55, hy);
-  const far = g.spawnEnemy("slime", hx + 120, hy);
+  const far = g.spawnEnemy("slime", hx + 90, hy);
+  mid.speed = far.speed = 0; // pinned on the dash lane: the test checks the rush, not the chase
+  mid.hp = far.hp = 1; // fragile stand-ins: a connect is enough to prove the lane hit
   g.hero.facing = 1;
   advance(g, 0.5);
   assert.ok(g.cast(chidori.id));

@@ -4,7 +4,7 @@
  * The authored hub maps are beautiful, but their procedural bake takes several
  * seconds on a mid-range browser. Hub tiles therefore start with a tiny static
  * fallback and swap to pre-rendered PNGs as soon as the browser has decoded
- * them. Battle maps keep the procedural path and remain cached per stage.
+ * them. Battle maps keep the procedural path and remain cached per map.
  */
 
 import { createFx, createFrame, painterFor, hex } from "../../../pixelfx/src/core/index.js";
@@ -15,14 +15,8 @@ import { RENDER_DENSITY } from "./constants.js";
 const MAP_TILE_W = 320;
 const MAP_TILE_H = 180;
 const MAP_TILE_DENSITY = RENDER_DENSITY;
-const HUB_STATIC_ASSETS = [
-  new URL("./assets/hub/starter-camp.png", import.meta.url).href,
-  new URL("./assets/hub/hearth-town.png", import.meta.url).href,
-];
-
-function hubArenaMapFx() {
-  return createFx(HUB_MAPS[2].module, { x: 0, y: 0, seed: 3 });
-}
+const HUB_STATIC_ASSETS = HUB_MAPS.map(({ id }) =>
+  new URL(`./assets/hub/${id}.png`, import.meta.url).href);
 
 /**
  * Hub tiles pair an effect with the frame it draws into. Static PNG tiles draw
@@ -31,13 +25,10 @@ function hubArenaMapFx() {
  * an async artwork swap must never leave a frame slot undefined.
  */
 function hubTiles(staticLayers) {
-  const mapTileFrames = [staticLayers[0], staticLayers[1], newMapTileFrame()];
-  const mapFxTiles = [
-    staticFx(staticLayers[0], HUB_MAPS[0].id),
-    staticFx(staticLayers[1], HUB_MAPS[1].id),
-    hubArenaMapFx(),
-  ];
-  return { mapFxTiles, mapTileFrames };
+  return {
+    mapFxTiles: staticLayers.map((layer, i) => staticFx(layer, HUB_MAPS[i].id)),
+    mapTileFrames: staticLayers.map(() => newMapTileFrame()),
+  };
 }
 
 function newMapTileFrame() {
@@ -83,7 +74,7 @@ let hubAssetPromise = null;
 
 function fallbackHubTiles() {
   if (!hubFallback) {
-    hubFallback = hubTiles([fallbackTile(0), fallbackTile(1)]);
+    hubFallback = hubTiles(HUB_MAPS.map((_, i) => fallbackTile(i)));
   }
   return hubFallback;
 }
@@ -114,17 +105,24 @@ async function decodeHubAsset(url) {
   };
 }
 
+import { dlog } from "./debug.js";
+
 function loadHubAssets() {
   if (hubAssetCache) return Promise.resolve(hubAssetCache);
   if (hubAssetPromise) return hubAssetPromise;
   if (typeof document === "undefined" || typeof fetch !== "function") return null;
   hubAssetPromise = Promise.all(HUB_STATIC_ASSETS.map(decodeHubAsset))
     .then((layers) => {
-      if (layers.some((layer) => !layer)) return null;
+      if (layers.some((layer) => !layer)) {
+        dlog("hub", "hub artwork decoded empty — keeping gradient fallback");
+        return null;
+      }
       hubAssetCache = hubTiles(layers);
+      dlog("hub", "hub artwork ready", { tiles: hubAssetCache.mapFxTiles.length });
       return hubAssetCache;
     })
     .catch((error) => {
+      dlog("hub", "hub artwork failed — keeping gradient fallback", String(error));
       console.warn("Ember Echo: hub artwork could not be loaded", error);
       return null;
     });
@@ -135,29 +133,32 @@ function loadHubAssets() {
 export function acquireHubMapTiles(currentTiles = null) {
   const cached = hubAssetCache;
   if (cached) {
+    dlog("hub", "acquire hub tiles: artwork cache");
     if (currentTiles !== cached.mapFxTiles) rewindMaps(cached.mapFxTiles);
     return { ...cached, ready: null };
   }
   const fallback = fallbackHubTiles();
+  dlog("hub", "acquire hub tiles: gradient fallback while artwork decodes");
   if (currentTiles !== fallback.mapFxTiles) rewindMaps(fallback.mapFxTiles);
   return { ...fallback, ready: loadHubAssets() };
 }
 
-// Every combat stage shares the mossy-ruins backdrop, so they can share one
-// baked pair of tiles. Re-baking per stage cost ~2MB and a hitch on each load.
-let stageTiles = null;
+// Battle tiles are cached per map: stages with different backdrops must not
+// share one baked pair of tiles.
+const stageTilesByKey = new Map();
 
 function stageMapTiles(stage) {
-  if (!stageTiles) {
+  const key = stage.mapKey;
+  if (!stageTilesByKey.has(key)) {
     // A layered map is one continuous scene: both tiles share a seed and each draws
     // the whole window that starts at its world x. Older maps are two seeded scenes.
     const layered = Array.isArray(stage.map.map?.layers);
     const mapFxTiles = [0, MAP_TILE_W].map((x, i) => createFx(stage.map, layered
       ? { x, y: 0, seed: 1, view: { layer: "all", x } }
       : { x, y: 0, seed: 3 + i }));
-    stageTiles = { mapFxTiles, mapTileFrames: mapFxTiles.map(() => newMapTileFrame()) };
+    stageTilesByKey.set(key, { mapFxTiles, mapTileFrames: mapFxTiles.map(() => newMapTileFrame()) });
   }
-  return stageTiles;
+  return stageTilesByKey.get(key);
 }
 
 /** Battle stage tiles for `index`; same caching semantics as the hub. */

@@ -1,3 +1,4 @@
+import { dlog } from "../debug.js";
 import { createFx, clamp } from "../../../../pixelfx/src/core/index.js";
 import { GATE_PALETTES } from "../../fx/stage-portal.js";
 import { uiCopy } from "../../copy.js";
@@ -6,6 +7,32 @@ import { acquireHubMapTiles } from "../map-tile-pool.js";
 import { TrainingDummy } from "../../training-dummy.js";
 import { LEGACY_BAND } from "../depth.js";
 import { DNF, label } from "../../../../pixelfx/src/fx/ui/_dnf.js";
+
+/** Hub zones follow the six-tile strip; boundaries sit just inside each tile's end. */
+const HUB_ZONE_ORDER = ["camp", "town", "arena", "marsh", "peak", "temple"];
+const HUB_ZONE_BOUNDS = [300, 620, 940, 1260, 1580];
+const HUB_ZONE_TILE_X = [0, 320, 640, 960, 1280, 1600];
+const HUB_ZONE_ARRIVE = {
+  camp: "hubCampArrive",
+  town: "hubTownArrive",
+  arena: "hubArenaArrive",
+  marsh: "hubMarshArrive",
+  peak: "hubPeakArrive",
+  temple: "hubTempleArrive",
+};
+const HUB_ZONE_SIGN = {
+  camp: "hubCampSign",
+  town: "hubTownSign",
+  arena: "hubArenaSign",
+  marsh: "hubMarshSign",
+  peak: "hubPeakSign",
+  temple: "hubTempleSign",
+};
+
+function hubZoneAt(x) {
+  const i = HUB_ZONE_BOUNDS.findIndex((b) => x < b);
+  return HUB_ZONE_ORDER[i === -1 ? HUB_ZONE_ORDER.length - 1 : i];
+}
 
 export const hubSystem = {
   hubActive: false,
@@ -24,6 +51,7 @@ export const hubSystem = {
     this.mapTileFrames = built.mapTileFrames;
     this.mapFx = this.mapFxTiles[0];
     this.mapStageIndex = null;
+    dlog("hub", "loadHub", { zone: opts.zone ?? "camp", tiles: this.mapFxTiles.length, artworkPending: !!built.ready });
     this.worldW = HUB_WORLD_W;
     this.walkBand = LEGACY_BAND;
     this.hubZone = opts.zone ?? "camp";
@@ -73,11 +101,13 @@ export const hubSystem = {
     this.scheduleCampPrewarm?.();
     if (built.ready) {
       built.ready.then((tiles) => {
-        if (!tiles || !this.hubActive) return;
+        if (!this.hubActive) { dlog("hub", "artwork settled after leaving camp — skipped"); return; }
+        if (!tiles) { dlog("hub", "artwork decode returned null — staying on gradient"); return; }
         const settled = acquireHubMapTiles(this.mapFxTiles);
         this.mapFxTiles = settled.mapFxTiles;
         this.mapTileFrames = settled.mapTileFrames;
         this.mapFx = this.mapFxTiles[0];
+        dlog("hub", "hub artwork swapped in", { tiles: this.mapFxTiles.length });
       });
     }
   },
@@ -147,14 +177,14 @@ export const hubSystem = {
       if (this.hubAdventureDistance() > HUB_ADVENTURE_GATE.r + 4) this.hubGateArmed = true;
       if (this.hubGateArmed && this.nearHubAdventureGate()) this.openHubDeparture();
     }
-    const nextZone = this.hero.x < 300 ? "camp" : this.hero.x < 620 ? "town" : "arena";
+    const nextZone = hubZoneAt(this.hero.x);
     if (nextZone !== this.hubZone) {
       this.hubZone = nextZone;
       this.enemies = nextZone === "arena"
         ? [new TrainingDummy(HUB_ARENA_DUMMY[0], HUB_ARENA_DUMMY[1])]
         : [];
       const c = uiCopy(this);
-      this.ui.toast(nextZone === "town" ? c.hubTownArrive : nextZone === "arena" ? c.hubArenaArrive : c.hubCampArrive, "gold");
+      this.ui.toast(c[HUB_ZONE_ARRIVE[nextZone]] ?? c.hubCampArrive, "gold");
       this.audio.play("ui");
     }
     if (this.hubDepartHintT > 0) this.hubDepartHintT -= dt;
@@ -176,12 +206,14 @@ export const hubSystem = {
     } else if (this.hubZone === "camp") {
       label(p, c.hubAdventureSign, gate.x, gate.y - 62, dim, { align: "center", outline: ink });
     }
-    if (this.hubZone === "camp" && this.hero.x < 260) {
-      label(p, c.hubTownSign, 310, 132, dim, { align: "center", outline: ink });
-    } else if (this.hubZone === "town" && this.hero.x > 340) {
-      label(p, c.hubCampSign, 330, 132, dim, { align: "center", outline: ink });
-    } else if (this.hubZone === "arena") {
+    if (this.hubZone === "arena") {
       label(p, c.hubArenaSign, HUB_ARENA_DUMMY[0], 74, gold, { align: "center", outline: ink });
+    } else {
+      const zi = HUB_ZONE_ORDER.indexOf(this.hubZone);
+      const sx = HUB_ZONE_TILE_X[zi] + 40;
+      if (this.hero.x > sx - 30 && this.hero.x < sx + 90) {
+        label(p, c[HUB_ZONE_SIGN[this.hubZone]], sx, 132, dim, { align: "center", outline: ink });
+      }
     }
   },
 };

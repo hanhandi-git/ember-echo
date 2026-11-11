@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { HERO_LOOKS } from "../src/data.js";
-import { HERO_PIXEL_DATA } from "../src/hero-pixel-data.js";
-import { heroSprite } from "../src/hero-sprites.js";
+import { HERO_PIXEL_DATA, heroSprite, loadHeroPixelData } from "../src/hero-sprites.js";
+import { HERO_PIXEL_LOADERS } from "../src/hero-data/index.js";
+
+for (const id of Object.keys(HERO_PIXEL_LOADERS)) await loadHeroPixelData(id);
 import { decodeWalkSource, footPath, renderWalkCycleFrame } from "../src/art/hero-walk-cycle.js";
 import { Hero, HERO_TRACKS } from "../src/hero.js";
 

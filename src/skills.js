@@ -12,6 +12,7 @@ import { canUseSkill } from "./classes.js";
 import * as heroProjectile from "./fx/hero-projectile.js";
 import { clampDepth } from "./game/depth.js";
 import { pointFootprintDistance } from "./collision.js";
+import { hubSkillsAllowed } from "./quick-bar.js";
 
 export const SKILLS = SKILL_META.map((s) => ({ ...s, cast: null }));
 
@@ -64,9 +65,12 @@ function castNativeProjectile(g, combo, duration, damage, enhanced = false) {
 function castSwordArt(g, sk) {
   const h = g.hero;
   if (sk.art === "guard") {
-    nativeAnim(h, "guard", 0.6, 0.15);
+    // Swordsmen raise the blade; mages answer with a casting barrier instead.
+    const mage = h.classId === "mage";
+    nativeAnim(h, mage ? "cast" : "guard", 0.6, 0.15);
     h.addShield(g, 36, 6);
-    g.audio.play("shield");
+    g.addFx(FX.divineShield, { x: h.x, y: h.y, light: 1, seed: mage ? 63 : 77 }, { life: 6, follow: () => h, cache: false });
+    g.audio.play(mage ? "cast" : "shield");
     return;
   }
   const aim = nearest(g, 170);
@@ -150,7 +154,9 @@ function castJ(g) {
   if (t) faceTo(h, t.x);
   const profile = h.meleeWeapon?.attack ?? { kind: "line", range: [60, 68, 80][c], radius: 11, pierce: false };
   // Weapon geometry is scaled once by Game.weaponStrike; keep these combo modifiers in art units.
-  const scaledProfile = { ...profile, range: (profile.range ?? 60) * [1, 1.04, 1.12][c], radius: (profile.radius ?? 11) + c * 1.5 };
+  // Basic attacks reach ~15% shorter than the authored blade profile.
+  const BASIC_RANGE_MUL = 0.85;
+  const scaledProfile = { ...profile, range: (profile.range ?? 60) * [1, 1.04, 1.12][c] * BASIC_RANGE_MUL, radius: (profile.radius ?? 11) + c * 1.5 };
   const dashAttack = h.dashAttackT > 0;
   const dmg = beat.damage * (dashAttack ? 1.15 : 1);
   h.cd.j = beat.duration;
@@ -390,10 +396,10 @@ const CASTS = { j: castJ, k: castK, l: castL, u: castU, i: castI, o: castO, e: c
 for (const s of SKILLS) s.cast = CASTS[s.id] ?? (s.classId === "swordsman" ? (g) => castSwordArt(g, s) : (g) => castGeneric(g, s));
 
 /** Try to cast. Returns true when the skill actually fired. */
-export function castSkill(g, id) {
+export function castSkill(g, id, { ignoreClass = false } = {}) {
   const sk = SKILLS.find((s) => s.id === id);
-  const training = g.state === "camp" && g.hubZone === "arena" && !g.campMenuOpen;
-  if (!sk || !canUseSkill(g.hero.classId, sk) || (g.state !== "playing" && !training) || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
+  const hubCast = hubSkillsAllowed(g);
+  if (!sk || (!ignoreClass && !canUseSkill(g.hero.classId, sk)) || (g.state !== "playing" && !hubCast) || g.phase === "travel" || !g.hero.alive || g.hero.dead) return false;
   const h = g.hero;
   if (["j", "mage:bolt"].includes(id) && (h.cd[id] > 0 || g.hitStop > 0 || h.dashT > 0.1 || h.actionBusy)) {
     // One queued press, never a backlog of attacks. Hit-stop does not age this buffer.

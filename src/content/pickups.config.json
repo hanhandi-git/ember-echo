@@ -1,29 +1,54 @@
 {
-  "version": 1,
-  "drops": [
-    {
-      "p": 0.12,
-      "kind": "heart",
-      "pickup": "heart",
-      "label": "HP +18",
-      "color": "#ff7a8a",
-      "heal": 18
-    },
-    {
-      "p": 0.13,
-      "kind": "potion",
-      "pickup": "potion",
-      "label": "MP +24",
-      "color": "#ff86e6",
-      "mp": 24
-    },
-    {
-      "p": 0.5,
-      "kind": "xp",
-      "pickup": "xp",
-      "label": "XP +8",
-      "color": "#c4f060",
-      "xp": 8
-    }
-  ]
+ "version": 1,
+ "drops": [
+  {
+   "p": 0.12,
+   "kind": "heart",
+   "pickup": "heart",
+   "label": "HP +18",
+   "color": "#ff7a8a",
+   "heal": 18
+  },
+  {
+   "p": 0.13,
+   "kind": "potion",
+   "pickup": "potion",
+   "label": "MP +24",
+   "color": "#ff86e6",
+   "mp": 24
+  },
+  {
+   "p": 0.5,
+   "kind": "xp",
+   "pickup": "xp",
+   "label": "XP +8",
+   "color": "#c4f060",
+   "xp": 8
+  },
+  {
+   "p": 0.07,
+   "kind": "gem",
+   "pickup": "gem",
+   "label": "XP +30",
+   "color": "#9ae0ff",
+   "xp": 30
+  },
+  {
+   "p": 0.08,
+   "kind": "elixir",
+   "pickup": "elixir",
+   "label": "HP+MP",
+   "color": "#ffd27a",
+   "heal": 10,
+   "mp": 12
+  },
+  {
+   "p": 0.1,
+   "kind": "ember",
+   "pickup": "ember",
+   "label": "✦ +6",
+   "color": "#ff9a5c",
+   "embers": 6
+  }
+ ]
 }

@@ -17,6 +17,8 @@ const C = {
   boss: hex("#c39bff"), bossLit: hex("#f0d4ff"),
 };
 const rnd = (a, b) => a + Math.random() * (b - a);
+// Global mob tuning: every enemy (and the warden) is tougher, hits harder and moves faster.
+const MOB_TUNE = { hp: 1.5, dmg: 1.3, speed: 2 };
 
 /** Flat armor: final damage = max(1, raw − defense), before crit multipliers. */
 function damageAfterDefense(amount, defense = 0) {
@@ -40,18 +42,23 @@ export class Enemy {
     this.y = y;
     this.prevX = x;
     this.prevY = y;
-    this.maxHp = Math.round(t.hp * (opts.hpScale ?? 1));
+    // Wave specs may flag `elite`: a tankier, harder-hitting variant of any mob.
+    this.elite = !!opts.elite;
+    const hpScale = (opts.hpScale ?? 1) * (this.elite ? 2.4 : 1) * MOB_TUNE.hp;
+    const dmgScale = (opts.dmgScale ?? 1) * (this.elite ? 1.35 : 1) * MOB_TUNE.dmg;
+    this.maxHp = Math.round(t.hp * hpScale);
     this.hp = this.maxHp;
-    this.speed = t.speed;
+    this.speed = t.speed * MOB_TUNE.speed;
     this.combatScale = COMBAT_SCALE;
-    this.reach = size(t.reach);
-    this.dmg = Math.round(t.dmg * (opts.dmgScale ?? 1));
+    this.reach = size(t.reach * (this.elite ? 1.12 : 1));
+    this.dmg = Math.round(t.dmg * dmgScale);
     this.defense = Math.max(0, Math.round(t.defense ?? 0));
-    this.xp = t.xp;
+    this.xp = Math.round(t.xp * (this.elite ? 2 : 1));
     this.w = t.w;
     this.baseBarH = t.barH;
-    this.renderScale = (t.scale ?? 0.58) * COMBAT_SCALE;
+    this.renderScale = (t.scale ?? 0.58) * COMBAT_SCALE * (this.elite ? 1.24 : 1);
     this.barH = t.barH * this.renderScale;
+    this.wantDist = size((t.want ?? 18) * (this.elite ? 1.12 : 1));
     this.facing = -1;
     this.vx = 0;
     this.vy = 0;
@@ -248,7 +255,7 @@ export class Enemy {
       return;
     }
 
-    const want = size(this.type.want ?? 18);
+    const want = this.wantDist ?? size(this.type.want ?? 18);
     const wantDx = this.type.ranged ? want : want - size(2);
     const walkX = this.x, walkY = this.y;
     if (Math.abs(dx) > wantDx) this.x += Math.sign(dx) * this.speed * slowK * dt;
@@ -332,6 +339,7 @@ export class Enemy {
       this.setState(g, "recover");
       this.timer = 0.45;
       this.y = clampDepth(g, this.y, 2, 1);
+      if (this.type.castFxMod) g.addFx(this.type.castFxMod, { x: this.x, y: this.y - size(26), flip: this.facing < 0, light: 1 });
       g.enemyShot(this, hero);
       g.sfxAt("cast", this.x);
       return;
@@ -480,6 +488,13 @@ export class Enemy {
       }
     }
 
+    // elites carry a gold chevron over their heads so they read at a glance
+    if (this.elite) {
+      const top = y - this.barH - 2;
+      p.poly([[x - 2.5, top - 4], [x, top - 6.5], [x + 2.5, top - 4]], C.warnLit);
+      p.glow(x, y - this.barH * 0.5, this.barH * 0.5, C.warnLit, 0.1);
+    }
+
     // the little health bar only appears once it has been scratched
     if (this.hp < this.maxHp) {
       const top = y - this.barH - 2, w = Math.max(size(12), this.type.w * this.renderScale);
@@ -519,21 +534,21 @@ const B_TRACKS = {
 };
 
 export class Boss {
-  constructor(g, x, y) {
-    const t = ENEMY_TYPES.boss;
-    this.typeId = "boss";
+  constructor(g, x, y, typeId = "boss") {
+    const t = ENEMY_TYPES[typeId] ?? ENEMY_TYPES.boss;
+    this.typeId = typeId;
     this.type = t;
-    this.name = "冥河守卫 · 阿刻戎";
-    this.nameEn = "THE WARDEN";
+    this.name = t.name ?? "冥河守卫 · 阿刻戎";
+    this.nameEn = t.nameEn ?? "THE WARDEN";
     this.x = x;
     this.y = y;
-    this.maxHp = t.hp;
-    this.hp = t.hp;
-    this.speed = t.speed;
+    this.maxHp = Math.round(t.hp * MOB_TUNE.hp);
+    this.hp = this.maxHp;
+    this.speed = t.speed * MOB_TUNE.speed;
     this.combatScale = COMBAT_SCALE;
-    this.renderScale = BOSS_RENDER_SCALE;
+    this.renderScale = BOSS_RENDER_SCALE * (t.bossScale ?? 1);
     this.reach = size(t.reach);
-    this.dmg = t.dmg;
+    this.dmg = Math.round(t.dmg * MOB_TUNE.dmg);
     this.defense = Math.max(0, Math.round(t.defense ?? 0));
     this.xp = t.xp;
     this.w = 34;
@@ -869,7 +884,7 @@ export class Boss {
 }
 
 export function spawnEnemy(g, typeId, x, y, opts = {}) {
-  const e = typeId === "boss" ? new Boss(g, x, y) : new Enemy(g, typeId, x, y, opts);
+  const e = ENEMY_TYPES[typeId]?.boss ? new Boss(g, x, y, typeId) : new Enemy(g, typeId, x, y, opts);
   g.enemies.push(e);
   return e;
 }

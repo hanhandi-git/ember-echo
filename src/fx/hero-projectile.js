@@ -8,6 +8,7 @@ export function create(options) {
   const look = spriteLook(options.look);
   const clip = look.clips.enhanced;
   const body = appearanceFrame(look.id, clip[look.contacts.enhanced], options.appearance);
+  if (!body) return { draw() {} };
   let right = -Infinity, top = Infinity, bottom = -Infinity;
   for (let i = 0; i < body.n; i++) right = Math.max(right, body.xs[i]);
   const edge = Math.max(2, right - 20);

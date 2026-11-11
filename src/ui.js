@@ -12,10 +12,11 @@ import * as minimapFx from "../../pixelfx/src/fx/ui/dnf-minimap.js";
 import * as comboFx from "../../pixelfx/src/fx/ui/combo-counter.js";
 import { SKILL_META, STAGES } from "./data.js";
 import { classLabel } from "./classes.js";
+import { QUICK_HUD_KEYS, hubSkillsAllowed, quickSkills } from "./quick-bar.js";
 import { skillLabel, stageName, uiCopy, pick } from "./copy.js";
 import { heroSprite } from "./hero-sprites.js";
 import {
-  RESUME_BUTTON, CAMP_BUTTON, SKILL_KEYS, AUTO_TOGGLE_RECTS, HUD_CONSOLE, HERO_PANEL, contains,
+  RESUME_BUTTON, CAMP_BUTTON, AUTO_TOGGLE_RECTS, HUD_CONSOLE, HERO_PANEL, contains,
 } from "./controls.js";
 
 const SW = 320, SH = 180;
@@ -76,8 +77,11 @@ function heroPortrait(look, appearance, density) {
       for (let dy = 0; dy < span && y + dy < size; dy++) for (let dx = 0; dx < span && x + dx < size; dx++) image[(y + dy) * size + x + dx] = body.color[i];
     }
   }
-  if (portraits.size > 24) portraits.delete(portraits.keys().next().value);
-  portraits.set(key, image);
+  // Don't cache misses: the hero's pixel chunk may still be in flight.
+  if (image) {
+    if (portraits.size > 24) portraits.delete(portraits.keys().next().value);
+    portraits.set(key, image);
+  }
   return image;
 }
 
@@ -166,7 +170,7 @@ export class UI {
     if (g.state === "camp") {
       if (!g.campMenuOpen) {
         this.drawHeroPanel(g, p, t);
-        if (!this.touchLayout(g)) this.drawConsole(g, p, t, g.hubZone !== "arena");
+        if (!this.touchLayout(g)) this.drawConsole(g, p, t, !hubSkillsAllowed(g));
         for (const inst of this.fx) inst.draw(frame);
         this.drawNotices(painterFor(frame));
       }
@@ -227,13 +231,13 @@ export class UI {
     if (boss) {
       const value = Math.max(0, boss.hp) / boss.maxHp;
       if (this.bossTrail.ref !== boss) this.bossTrail = { ref: boss, v: value };
-      withPlace(p, 164, 4, () => bossBarFx.draw(p, t, {
+      withPlace(p, 164, 40, () => bossBarFx.draw(p, t, {
         name: pick(g, boss.nameEn ?? "BOSS", c.bossWarden, boss.nameEn ?? "BOSS"), value, trail: this.bossTrail.v,
         layers: Math.max(2, Math.round(boss.maxHp / 30)), phase: ["PHASE I", "PHASE II", "PHASE III"][boss.phase - 1] ?? "",
       }));
     } else if (this.target && this.target.t > 0) {
       const e = this.target.ref, value = Math.max(0, e.hp) / e.maxHp;
-      withPlace(p, 160, 6, () => bossBarFx.draw(p, t, {
+      withPlace(p, 160, 40, () => bossBarFx.draw(p, t, {
         compact: true, name: pick(g, e.type?.nameEn ?? "", e.name ?? "", e.type?.nameEn ?? ""), value, trail: this.target.trail,
         a: Math.min(1, this.target.t / 0.4),
       }));
@@ -283,14 +287,14 @@ export class UI {
     return false;
   }
 
-  /** Bottom console: life orb, seven slots, action and experience bars, mana orb. */
+  /** Bottom console: life orb, three quick-bar slots, action and experience bars, mana orb. */
   drawConsole(g, p, t, locked) {
     const h = g.hero;
-    const slots = h.skillSlots.map((id, i) => {
+    const slots = quickSkills(h.classId).map((id, i) => {
       const s = SKILL_META.find((skill) => skill.id === id) ?? SKILL_META[0];
       const left = h.cd[s.id] ?? 0, max = s.id === "j" ? h.meleeCooldownMax : s.cd;
       return {
-        ...slotIconOf(s), key: SKILL_KEYS[i] ?? String(i + 1),
+        ...slotIconOf(s), key: QUICK_HUD_KEYS[i] ?? String(i + 1),
         cooldown: max > 0 ? clamp(left / max) : 0,
         cdText: left > 0.05 && max >= 1 ? (left >= 1 ? String(Math.ceil(left)) : left.toFixed(1)) : "",
         mana: h.mp >= (s.cost ?? 0), flash: (this.pulse[s.id] ?? 0) > 0, deny: (this.deny[s.id] ?? 0) > 0,

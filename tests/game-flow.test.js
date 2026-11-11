@@ -12,6 +12,7 @@ import { loadSave } from "../src/save.js";
 import * as stagePortal from "../src/fx/stage-portal.js";
 import { createFrame, clearFrame, createFx } from "../../pixelfx/src/core/index.js";
 import { joystickVector } from "../src/touch-controls.js";
+import { quickSkills } from "../src/quick-bar.js";
 function game() {
   const g = new Game({ getContext: () => ({
     createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
@@ -33,7 +34,7 @@ function clearStage(g) {
 test("small enemies animate without summoning circles; the boss keeps its entrance", () => {
   const g = game();
   const slime = g.spawnEnemy("slime", 200, 150);
-  assert.equal(g.effects.length, 0);
+  assert.equal(g.effects.filter((e) => !e.ambient).length, 0);
   slime.update(g, 0.25);
   assert.ok(slime.fx.t > 0);
   const boss = g.spawnEnemy("boss", 400, 150);
@@ -41,13 +42,46 @@ test("small enemies animate without summoning circles; the boss keeps its entran
   assert.ok(g.effects.some((e) => e.inst.meta.name === "Spawn portal"));
 });
 
-test("every combat stage shares the layered belt-scroll sample backdrop", () => {
-  assert.equal(STAGES.length, 7);
-  for (const stage of STAGES) {
-    assert.equal(stage.map, STAGES[0].map);
-    assert.equal(stage.mapKey, "mosswood", "worker rasterization must use the same backdrop");
+test("elite wave specs spawn tougher, bigger marked variants", () => {
+  const g = game();
+  const plain = g.spawnEnemy("slime", 200, 150);
+  const elite = g.spawnEnemy("slime", 220, 150, { elite: true });
+  assert.equal(elite.elite, true);
+  assert.ok(elite.maxHp > plain.maxHp * 2);
+  assert.ok(elite.dmg > plain.dmg);
+  assert.ok(elite.xp > plain.xp);
+  assert.ok(elite.renderScale > plain.renderScale);
+  // the flag survives the wave queue into the spawned enemy
+  g.spawnQueue = [{ type: "snake", x: 240, y: 150, elite: true, delay: 0 }];
+  g.updateSpawns(0.01);
+  const queued = g.enemies.at(-1);
+  assert.equal(queued.typeId, "snake");
+  assert.equal(queued.elite, true);
+});
+
+test("count packs scatter over the spawn band and only the first member is elite", () => {
+  const g = game();
+  g.stage = { ...g.stage, waves: [[{ type: "slime", x: 200, y: 150, count: 3, elite: true }]] };
+  g.startWave(0);
+  assert.equal(g.spawnQueue.length, 3);
+  assert.equal(g.spawnQueue.filter((q) => q.elite === true).length, 1);
+  for (const q of g.spawnQueue) {
+    assert.ok(q.x >= 30 && q.x <= g.worldW - 30, `spawn x ${q.x} stays in bounds`);
+    assert.ok(q.y >= g.walkBand[0] && q.y <= g.walkBand[1]);
   }
-  assert.ok(Array.isArray(STAGES[0].map.map.layers), "the sample map exports its parallax layers");
+  // entrances run left to right: delay order follows the x sort
+  const sorted = [...g.spawnQueue].sort((a, b) => a.delay - b.delay);
+  for (let k = 1; k < sorted.length; k++) assert.ok(sorted[k].x >= sorted[k - 1].x, "entrance sweeps left to right");
+});
+
+test("every combat stage uses its own configured backdrop map", () => {
+  assert.equal(STAGES.length, 5);
+  const expectedKeys = ["mossy", "marsh", "ember", "aurora", "sunscar"];
+  STAGES.forEach((stage, i) => {
+    assert.equal(stage.mapKey, expectedKeys[i], `${stage.id ?? stage.name} keeps its configured map`);
+    assert.ok(stage.map?.map?.groundY > 0, `${stage.mapKey} exports a playable map layout`);
+  });
+  assert.equal(new Set(STAGES.map((s) => s.mapKey)).size, STAGES.length, "each stage has a distinct backdrop");
 });
 
 test("movement echoes follow actual paths in both directions, expire and reset on restart", () => {
@@ -74,6 +108,26 @@ test("movement echoes follow actual paths in both directions, expire and reset o
   g.startRun();
   assert.equal(g.dashTrails.length, 0);
   assert.equal(g.hero.dashT, 0);
+});
+
+test("the shared move/dodge input quick-steps normally and dodges under attack", () => {
+  const g = game();
+  const ap = g.hero.ap;
+  assert.ok(g.hero.tryMoveDodge(g));
+  assert.equal(g.dashTrails.at(-1)?.kind, "quick", "no attack incoming means quick move");
+  assert.ok(g.hero.ap < ap, "combat quick move still spends AP");
+  advance(g, 1.3);
+  const foe = g.spawnEnemy("bat", 250, 150);
+  foe.state = "windup";
+  foe.timer = 1;
+  g.hero.dashCd = 0;
+  g.hero.ap = g.hero.maxAp;
+  assert.ok(g.hero.tryMoveDodge(g));
+  assert.ok(g.hero.dashT > 0, "an incoming attack triggers the i-frame dodge");
+  advance(g, 0.4);
+  g.enterCamp();
+  assert.ok(g.hero.tryMoveDodge(g));
+  assert.equal(g.dashTrails.at(-1)?.kind, "quick");
 });
 
 test("pause button freezes enemies, timers, projectiles, movement and gates; continue resumes", () => {
@@ -190,8 +244,55 @@ test("all action buttons and skill slots have disjoint pointer regions", () => {
     assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
   }
   const g = game();
-  click(g, SKILL_RECTS[5]);
-  assert.ok(g.hero.cd[g.hero.skillSlots[5]] > 0, "sixth skill stays clickable");
+  click(g, SKILL_RECTS[2]);
+  const rush = quickSkills(g.hero.classId)[2];
+  assert.ok(g.hero.cd[rush] > 0, "quick-bar dash stays clickable");
+});
+
+test("the quick bar casts guard and the Chidori rush across classes", () => {
+  const g = game();
+  g.hero.setClass("swordsman");
+  g.hero.mp = g.hero.maxMp;
+  assert.equal(g.castQuick("fx:ninjutsu/chidori-rush"), true);
+  g.hero.setClass("mage");
+  g.hero.mp = g.hero.maxMp;
+  assert.equal(g.castQuick("sword:guard"), true);
+});
+
+test("the quick bar picks class-appropriate action clips for guard and the Chidori rush", () => {
+  const swordsman = game();
+  swordsman.hero.setClass("swordsman");
+  swordsman.hero.mp = swordsman.hero.maxMp;
+  assert.equal(swordsman.castQuick("fx:ninjutsu/chidori-rush"), true);
+  assert.equal(swordsman.hero.actClip, "rush", "swordsmen dash-slash through the Chidori");
+  const swordsmanGuard = game();
+  swordsmanGuard.hero.setClass("swordsman");
+  swordsmanGuard.hero.mp = swordsmanGuard.hero.maxMp;
+  assert.equal(swordsmanGuard.castQuick("sword:guard"), true);
+  assert.equal(swordsmanGuard.hero.anim.kind, "guard");
+
+  const mage = game();
+  mage.hero.setClass("mage");
+  mage.hero.mp = mage.hero.maxMp;
+  assert.equal(mage.castQuick("fx:ninjutsu/chidori-rush"), true);
+  assert.equal(mage.hero.actClip, "cast", "mages cast through the Chidori glide");
+  const mageGuard = game();
+  mageGuard.hero.setClass("mage");
+  mageGuard.hero.mp = mageGuard.hero.maxMp;
+  assert.equal(mageGuard.castQuick("sword:guard"), true);
+  assert.equal(mageGuard.hero.anim.kind, "cast", "mages answer guard with a casting barrier");
+});
+
+test("guard raises a barrier bubble and absorbed hits play the pixelfx shield dome", () => {
+  const g = game();
+  g.hero.setClass("swordsman");
+  g.hero.mp = g.hero.maxMp;
+  assert.equal(g.castQuick("sword:guard"), true);
+  assert.ok(g.effects.some((ef) => ef.inst?.meta?.name === "Divine shield"), "guard raises the barrier bubble");
+  const hp = g.hero.hp;
+  g.hero.hurt(g, 50);
+  assert.ok(g.hero.hp === hp - 14, "the shield absorbed 36 of the hit");
+  assert.ok(g.effects.some((ef) => ef.inst?.meta?.name === "Shield block"), "the absorbed hit plays the block dome");
 });
 
 test("standing portal is animated, deterministic and seamless in every palette", () => {
@@ -210,9 +311,10 @@ test("standing portal is animated, deterministic and seamless in every palette",
 test("bound hero weapons and the spell catalog are playable through the adapter", () => {
   assert.equal(WEAPONS.length, 13);
   assert.ok(SKILL_META.length >= 190);
-  assert.equal(STAGES.length, 7);
+  assert.equal(STAGES.length, 5);
   const g = game();
-  const enemy = g.spawnEnemy("slime", 220, 150);
+  const enemy = g.spawnEnemy("slime", g.hero.x + 45, g.hero.y);
+  enemy.speed = 0; // pinned in reach: the test checks casts, not the chase
   const weapon = g.hero.weapon;
   assert.ok(g.hero.equipWeapon(weapon.id, g));
   assert.ok(g.cast("j"));
@@ -223,6 +325,10 @@ test("bound hero weapons and the spell catalog are playable through the adapter"
     g.hero.setClass(skill.classId);
     g.hero.cd[skill.id] = 0;
     g.hero.mp = g.hero.maxMp;
+    g.hero.hp = g.hero.maxHp;
+    g.enemies = [enemy]; // faster wave mobs must not pile in between sample casts
+    g.spawnQueue.length = 0;
+    g.hero.dead = false;
     assert.equal(g.cast(skill.id), true, `casts ${path}`);
     const mod = skill.module;
     advance(g, mod?.act ? (mod.meta?.duration ?? 2.2) + 0.15 : 0.12);
@@ -268,7 +374,8 @@ test("weapon paths use moving enemy sweeps and stop or pierce according to the p
 test("actor visuals, hurtboxes and enemy reach use the same smaller combat scale", () => {
   const g = game();
   assert.equal(g.hero.renderScale, HERO_RENDER_SCALE);
-  const enemy = g.spawnEnemy("slime", 220, 150);
+  const enemy = g.spawnEnemy("slime", g.hero.x + 45, g.hero.y);
+  enemy.speed = 0; // pinned in reach: the test checks casts, not the chase
   assert.equal(enemy.renderScale, ENEMY_TYPES.slime.scale * COMBAT_SCALE);
   assert.equal(enemy.reach, ENEMY_TYPES.slime.reach * COMBAT_SCALE);
   const original = hurtbox({ ...enemy, renderScale: 1, combatScale: 1, barH: ENEMY_TYPES.slime.barH });
@@ -316,7 +423,7 @@ test("frost damage radius and lightning telegraph shrink with their combat effec
   advance(g, 0.55);
   assert.ok(near.hp < near.maxHp);
   assert.equal(far.hp, far.maxHp);
-  assert.ok(g.effects.every((effect) => effect.scale === COMBAT_SCALE));
+  assert.ok(g.effects.every((effect) => effect.ambient || effect.scale === COMBAT_SCALE));
   g.hero.mp = g.hero.maxMp;
   assert.ok(g.cast("u"));
   assert.equal(g.telegraphs.at(-1).r, 40 * COMBAT_SCALE);

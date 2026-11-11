@@ -5,6 +5,9 @@ import * as goblinArcher from "../../../pixelfx/src/fx/mobs/goblin-archer.js";
 import * as goblinGiant from "../../../pixelfx/src/fx/mobs/goblin-giant.js";
 import * as goblinMage from "../../../pixelfx/src/fx/mobs/goblin-mage.js";
 import * as goblinWarrior from "../../../pixelfx/src/fx/mobs/goblin-warrior.js";
+import * as emberImp from "../../../pixelfx/src/fx/mobs/ember-imp.js";
+import * as cinderSpitter from "../../../pixelfx/src/fx/mobs/cinder-spitter.js";
+import * as cinderBrute from "../../../pixelfx/src/fx/mobs/cinder-brute.js";
 
 export const MOB_MODS = {
   goblinAgile,
@@ -12,6 +15,9 @@ export const MOB_MODS = {
   goblinGiant,
   goblinMage,
   goblinWarrior,
+  emberImp,
+  cinderSpitter,
+  cinderBrute,
 };
 
 function isRangedMob(mod, atk) {
@@ -94,6 +100,13 @@ const GOBLIN_DEFS = [
   { id: "goblin-giant", mod: goblinGiant, name: "巨人哥布林", nameEn: "GOBLIN GIANT", scale: 0.74 },
 ];
 
+const MOB_DEFS = [
+  ...GOBLIN_DEFS,
+  { id: "ember-imp", mod: emberImp, name: "余烬小鬼", nameEn: "EMBER IMP" },
+  { id: "cinder-spitter", mod: cinderSpitter, name: "熔吐者", nameEn: "CINDER SPITTER" },
+  { id: "cinder-brute", mod: cinderBrute, name: "熔岩巨魔", nameEn: "CINDER BRUTE", scale: 0.7 },
+];
+
 export function buildGoblinEnemyTypes(fxPack) {
-  return Object.fromEntries(GOBLIN_DEFS.map((g) => [g.id, enemyTypeFromMob(g.mod, g, fxPack)]));
+  return Object.fromEntries(MOB_DEFS.map((g) => [g.id, enemyTypeFromMob(g.mod, g, fxPack)]));
 }

@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import { Game } from "../src/game.js";
 import { STAGES } from "../src/data.js";
 import { LEGACY_BAND, clampDepth, mapDepth, planMapSlots } from "../src/game/depth.js";
+import { MAPS } from "../src/content/fx-registry.js";
 import { SKILL_RECTS, RESUME_BUTTON, CAMP_BUTTON, AUTO_TOGGLE_RECTS, HERO_PANEL } from "../src/controls.js";
 import { slotRect } from "../../pixelfx/src/fx/ui/dnf-hud.js";
+import { quickSkills } from "../src/quick-bar.js";
 import { HUD_CONSOLE } from "../src/controls.js";
 
 function game() {
@@ -30,8 +32,8 @@ test("depth helpers keep the legacy band unless a map exports its own", () => {
 
 test("stages adopt the map's depth band; the hub keeps the legacy one", () => {
   const g = game();
-  assert.deepEqual(g.walkBand, STAGES[0].map.map.depth);
-  g.loadStage(0, true);
+  assert.deepEqual(g.walkBand, STAGES[0].map.map.depth ?? LEGACY_BAND);
+  g.loadHub();
   assert.deepEqual(g.walkBand, LEGACY_BAND);
 });
 
@@ -54,7 +56,7 @@ test("authored spawn rows and the portal land inside the walkable band", () => {
 test("layered maps plan one slot per layer tile and skip live layers", () => {
   const legacy = planMapSlots({ groundY: 150 }, 480);
   assert.deepEqual(legacy.map((s) => [s.layer, s.x, s.opaque]), [[null, 0, true], [null, 320, true]]);
-  const slots = planMapSlots(STAGES[0].map.map, 480);
+  const slots = planMapSlots(MAPS.mapMosswood.map, 480);
   const ids = slots.map((s) => `${s.layer}@${s.x}`);
   assert.deepEqual(ids, ["far@0", "far@320", "near@0", "near@320", "fore@0", "fore@320"]);
   assert.ok(slots.every((s) => s.layer !== "air"), "live layers are drawn by the host");
@@ -68,7 +70,7 @@ test("layered maps plan one slot per layer tile and skip live layers", () => {
 
 test("the sample map draws every layer view without throwing", async () => {
   const { createFrame, createFx } = await import("../../pixelfx/src/core/index.js");
-  const mod = STAGES[0].map;
+  const mod = MAPS.mapMosswood;
   for (const layer of ["air", "fore"]) {
     const fx = createFx(mod, { x: 0, y: 0, seed: 1, view: { layer, x: 160 } });
     const frame = createFrame(320, 180, 0, 0, 2);
@@ -86,7 +88,7 @@ test("HUD hit regions stay on screen, apart, and aligned with the console art", 
     assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y, `${i} overlaps ${j}`);
   }
   SKILL_RECTS.forEach((r, i) => {
-    const art = slotRect(i);
+    const art = slotRect(i, SKILL_RECTS.length);
     assert.deepEqual([r.x, r.y, r.w, r.h], [HUD_CONSOLE.x + art.x, HUD_CONSOLE.y + art.y, art.w, art.h]);
   });
 });
@@ -94,7 +96,7 @@ test("HUD hit regions stay on screen, apart, and aligned with the console art", 
 test("clicking a console slot casts on desktop and is ignored while touch controls own the slots", () => {
   const g = game();
   g.phase = "fight";
-  const r = SKILL_RECTS[1], id = g.hero.skillSlots[1];
+  const r = SKILL_RECTS[1], id = quickSkills(g.hero.classId)[1];
   g.touchUi = { active: true };
   assert.equal(g.handlePointer(r.x + 4, r.y + 4), null);
   g.touchUi = { active: false };

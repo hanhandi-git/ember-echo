@@ -29,6 +29,22 @@ const PICKUP_BY_KEY = {
   heart: PICKUP_MODS.heartPickup,
   potion: PICKUP_MODS.potionPickup,
   xp: PICKUP_MODS.xpOrb,
+  gem: PICKUP_MODS.gemSpin,
+  elixir: PICKUP_MODS.elixirGourd,
+  ember: PICKUP_MODS.spiritStone,
+};
+
+/** Projectile/cast visuals a critter caster can borrow from the wider pixelfx library. */
+const SHOT_FX = {
+  "magic-missile": FX.magicMissile,
+  "laser-bolt": FX.laserBolt,
+  "energy-disc": FX.energyDisc,
+  arrow: FX.arrow,
+  flare: FX.flare,
+};
+const CAST_FX = {
+  "mana-burst": FX.manaBurst,
+  "rune-circle": FX.runeCircle,
 };
 
 const MOB_STAT_KEYS = new Set(["hp", "attack", "defense", "speed", "reach", "want", "windup", "cd", "xp", "dmg"]);
@@ -51,9 +67,7 @@ function mobStatPatch(def) {
 }
 
 function resolveStage(raw) {
-  // Every combat stage intentionally shares one backdrop: the layered belt-scroll
-  // sample map. Wave layouts and encounter pacing remain stage-specific.
-  const mapKey = "mosswood";
+  const mapKey = raw.map ?? "mosswood";
   const map = MAP_BY_KEY[mapKey];
   if (!map) throw new Error(`stages.config: unknown map key "${mapKey}" in ${raw.id ?? raw.name}`);
   const { map: _mapKey, id: _id, ...rest } = raw;
@@ -75,6 +89,15 @@ function buildCritterType(id, def) {
     overrides: _overrides,
     ...stats
   } = def;
+  if (stats.shot?.fx) {
+    const fxMod = SHOT_FX[stats.shot.fx];
+    if (!fxMod) throw new Error(`enemies.config: unknown shot fx "${stats.shot.fx}" for ${id}`);
+    stats.shot = { ...stats.shot, fxMod };
+  }
+  if (def.castFx) {
+    stats.castFxMod = CAST_FX[def.castFx];
+    if (!stats.castFxMod) throw new Error(`enemies.config: unknown castFx "${def.castFx}" for ${id}`);
+  }
   return finalizeCombatStats({ mod, deathFx, ...stats });
 }
 
@@ -151,6 +174,7 @@ function buildLootTable() {
       heal: raw.heal,
       mp: raw.mp,
       xp: raw.xp,
+      embers: raw.embers,
     });
   }
   return rows;

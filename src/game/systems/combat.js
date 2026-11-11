@@ -4,14 +4,14 @@ import { explodeFireball } from "../../skills.js";
 import { projectileSweep, groundBox, pathFootprintDistance } from "../../collision.js";
 import { COMBAT_SCALE } from "../../combat-scale.js";
 import { BH } from "../constants.js";
-import { SKILL_SLOT_KEYS } from "../../input/bindings.js";
+import { QUICK_KEYS, quickAttackId } from "../../quick-bar.js";
 
 export const combatSystem = {
   updateCombatInput(dt) {
     const h = this.hero;
     if (!h.alive) { h.attackBuffer = 0; return; }
-    const primary = h.classId === "mage" ? "mage:bolt" : "j";
-    const held = this.touchAttackHeld || Object.entries(SKILL_SLOT_KEYS).some(([key, slot]) => this.keys.has(key) && h.skillSlots[slot] === primary);
+    const primary = quickAttackId(h.classId);
+    const held = this.touchAttackHeld || this.keys.has(QUICK_KEYS[0]);
     if ((held || h.attackBuffer > 0) && (h.cd[primary] ?? 0) <= 0 && h.dashT <= 0.1 && !h.actPose && !h.actionBusy) this.cast(primary);
     if (h.dashT <= 0.1) h.attackBuffer = Math.max(0, h.attackBuffer - dt);
   },
@@ -87,7 +87,7 @@ export const combatSystem = {
     const dx = tx - sx, dy = ty - sy;
     const len = Math.hypot(dx, dy) || 1;
     const speed = enemy.type.shot?.speed ?? 85;
-    const inst = createFx(FX.plasmaShot, {
+    const inst = createFx(enemy.type.shot?.fxMod ?? FX.plasmaShot, {
       x: sx, y: sy, flip: dx < 0, seed: enemy.seed + 7,
       palette: enemy.type.shot?.palette, size: enemy.type.shot?.r ?? 5,
     });

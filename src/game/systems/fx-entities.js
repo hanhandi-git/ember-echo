@@ -59,7 +59,7 @@ export const fxEntitySystem = {
       inst, layer: cfg.layer ?? "front", age: 0, life: cfg.life ?? 0,
       follow: cfg.follow ?? null, offsetY: cfg.offsetY ?? 0,
       scale: cfg.scale ?? COMBAT_SCALE,
-      split: !!cfg.split, melee: !!cfg.melee,
+      split: !!cfg.split, melee: !!cfg.melee, ambient: !!cfg.ambient,
     });
     if (cfg.cache === false) inst.__emberNoCache = true;
     return inst;
@@ -167,7 +167,7 @@ export const fxEntitySystem = {
     const fx = createFx(loot.mod, { x, y, seed: 200 + Math.floor(Math.random() * 400) });
     this.pickups.push({
       x, y, kind: loot.kind, mod: loot.mod, label: loot.label, color: loot.color,
-      heal: loot.heal, mp: loot.mp, xp: loot.xp,
+      heal: loot.heal, mp: loot.mp, xp: loot.xp, embers: loot.embers,
       fx, age: 0, dead: false,
     });
   },
@@ -207,6 +207,16 @@ export const fxEntitySystem = {
       this.hero.mp += n;
       this.number(p.x, p.y - 20, "+" + Math.round(n) + " MP", { color: "#8fd0ff", small: true });
       this.ui.toast(lootLabel(this, "potion"));
+    } else if (p.kind === "gem") {
+      this.hero.gainXp(this, p.xp ?? 30);
+      this.ui.toast(lootLabel(this, "gem"));
+    } else if (p.kind === "elixir") {
+      this.hero.heal(this, p.heal ?? 10);
+      this.hero.mp = Math.min(this.hero.maxMp, this.hero.mp + (p.mp ?? 12));
+      this.ui.toast(lootLabel(this, "elixir"));
+    } else if (p.kind === "ember") {
+      this.hero.earnEmbers(p.embers ?? 6);
+      this.ui.toast(lootLabel(this, "ember"));
     } else {
       this.hero.gainXp(this, p.xp ?? 8);
       this.ui.toast(lootLabel(this, "xp"));

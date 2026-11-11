@@ -32,8 +32,8 @@ test("a fresh boot starts in the walkable camp and departure requires portal pre
   assert.equal(g.state, "camp");
   assert.equal(g.phase, "camp");
   assert.equal(g.hubActive, true);
-  assert.equal(g.worldW, 960);
-  assert.ok(g.mapFxTiles.length === 3);
+  assert.equal(g.worldW, 1920);
+  assert.ok(g.mapFxTiles.length === 6);
   assert.equal(g.hero.hp, g.hero.maxHp);
   assert.equal(g.campMenuOpen, false);
   assert.equal(g.hero.x, HUB_SPAWNS.camp[0]);
@@ -69,6 +69,20 @@ test("quick move works in camp and the training arena exposes a non lethal straw
   for (let i = 0; i < 50; i++) g.tick(1 / 60);
   assert.ok(dummy.totalDamage > 0, "training dummy receives test damage");
   assert.equal(dummy.alive, true, "training dummy is non lethal");
+});
+
+test("the quick bar casts in the camp, town and arena tiles but stays locked in the far hub zones", () => {
+  const g = mockGame();
+  g.hero.mp = g.hero.maxMp;
+  for (const zone of ["camp", "town", "arena"]) {
+    g.loadHub({ zone });
+    assert.equal(g.castQuick("j"), true, `${zone} allows quick-bar casts`);
+    g.hero.cd.j = 0;
+  }
+  for (const zone of ["marsh", "peak", "temple"]) {
+    g.loadHub({ zone });
+    assert.equal(g.castQuick("j"), false, `${zone} keeps the quick bar locked`);
+  }
 });
 
 test("the bag shortcut opens the camp panel anywhere in the hub and closes again", () => {
@@ -151,7 +165,8 @@ test("camp upgrades spend embers, raise real stats and cap out", () => {
   assert.ok(g.hero.buyUpgrade("spirit"));
   assert.equal(g.hero.maxMp, baseMp + UPGRADE_STATS.find((u) => u.id === "spirit").per);
   assert.ok(g.hero.buyUpgrade("haste"));
-  assert.equal(g.hero.speed, baseSpeed + 2);
+  // Haste adds 2 before the global 1.5x move-speed multiplier lands.
+  assert.equal(g.hero.speed, baseSpeed + 3);
   const before = g.hero.dmgMul;
   assert.ok(g.hero.buyUpgrade("might"));
   assert.ok(g.hero.dmgMul > before);

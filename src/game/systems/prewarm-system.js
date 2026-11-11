@@ -2,6 +2,7 @@ import { canContinue, loadSave } from "../../save.js";
 import { warmAudioTemplates } from "../../audio.js";
 import { acquireStageMapTiles } from "../map-tile-pool.js";
 import { STAGES } from "../../data.js";
+import { dlog } from "../debug.js";
 
 export const prewarmSystem = {
   _stagePrewarm: null,
@@ -10,27 +11,35 @@ export const prewarmSystem = {
   prewarmResumeStage() {
     if (this.state !== "camp") return;
     // Workers rasterize the stage off-thread; the main-thread bake is only a fallback.
-    if (this.battleMapWorkers?.available) return;
+    if (this.battleMapWorkers?.available) { dlog("prewarm", "workers own raster — skipping main-thread bake"); return; }
     const data = loadSave();
     const index = canContinue(data) ? (data.run.stageIndex ?? 0) : 0;
     if (this._stagePrewarm?.index === index) return;
     // Hub backdrop tiles are not battle maps — always bake the real stage into prewarm.
     if (!this.hubActive && this.stageIndex === index && this.mapFxTiles?.length) {
       this._stagePrewarm = { index, mapFxTiles: this.mapFxTiles, mapTileFrames: this.mapTileFrames };
+      dlog("prewarm", "stashed live battle tiles", { index });
       return;
     }
     const built = acquireStageMapTiles(index);
-    if (built) this._stagePrewarm = built;
+    if (built) {
+      this._stagePrewarm = built;
+      dlog("prewarm", "baked stage tiles into prewarm", { index });
+    }
   },
 
   adoptStagePrewarm(index) {
     const prewarm = this._stagePrewarm;
-    if (!prewarm || prewarm.index !== index) return false;
+    if (!prewarm || prewarm.index !== index) {
+      if (prewarm) dlog("prewarm", "adopt miss", { wanted: index, have: prewarm.index });
+      return false;
+    }
     this._stagePrewarm = null;
     this.mapFxTiles = prewarm.mapFxTiles;
     this.mapTileFrames = prewarm.mapTileFrames;
     this.mapFx = prewarm.mapFxTiles[0];
     this.mapStageIndex = index;
+    dlog("prewarm", "adopted prewarmed stage tiles", { index });
     return true;
   },
 
@@ -50,7 +59,10 @@ export const prewarmSystem = {
       const data = loadSave();
       const index = canContinue(data) ? (data.run.stageIndex ?? 0) : 0;
       const mapKey = STAGES[index]?.mapKey;
-      if (mapKey) this.battleMapWorkers?.prepareStage(index, mapKey, STAGES[index].map);
+      if (mapKey) {
+        dlog("prewarm", "camp idle: preparing stage raster", { index, mapKey });
+        this.battleMapWorkers?.prepareStage(index, mapKey, STAGES[index].map);
+      }
       this.prewarmResumeStage();
     };
     if (typeof requestIdleCallback === "function") {

@@ -1,13 +1,12 @@
-import { HERO_LOOKS, SKILL_META, SKILL_ATTR_ORDER, SKILL_ATTR_LABELS, skillAttr, STASH_ITEMS } from "./data.js";
+import { HERO_LOOKS, SKILL_META, SKILL_ATTR_ORDER, SKILL_ATTR_LABELS, skillAttr, STASH_ITEMS, STAGES } from "./data.js";
 import { stashLabel } from "./content/stash-catalog.js";
-import { skillLabel, weaponLabel } from "./copy.js";
-import { SKILL_KEYS } from "./controls.js";
+import { skillLabel, weaponLabel, stageName } from "./copy.js";
 import { artUrl, stashPickupArtUrl, installUiFrames } from "./ui-art.js";
 import { drawHeroPortrait } from "./hero.js";
 import { UPGRADE_STATS, upgradeCost } from "./upgrades.js";
 import { HERO_CLASSES, classLabel } from "./classes.js";
 import { HERO_COLOR_PRESETS } from "./hero-wardrobe.js";
-import { heroPalette, spriteLook } from "./hero-sprites.js";
+import { heroPalette, heroPixelDataFailed, heroPixelDataLoaded, loadHeroPixelData, spriteLook } from "./hero-sprites.js";
 
 const LANG = {
   zh: {
@@ -248,7 +247,7 @@ function buildSettingsUI(game) {
       const s = SKILL_META.find((skill) => skill.id === id) ?? SKILL_META[0];
       const selected = activeSlot === i;
       return `<button class="item-card ${selected ? "is-selected" : ""}" data-slot="${i}" data-kind="${s.icon}" aria-pressed="${selected}" aria-label="${t(game.language, "loadout.slot")} ${i + 1}: ${escapeHtml(skillName(s))}">
-        <span class="item-icon">${skillIcon(s.icon, selected)}</span><span class="item-name">${i + 1}. ${escapeHtml(skillName(s))}</span><span class="item-meta">${SKILL_KEYS[i] ?? i + 1}</span></button>`;
+        <span class="item-icon">${skillIcon(s.icon, selected)}</span><span class="item-name">${i + 1}. ${escapeHtml(skillName(s))}</span><span class="item-meta">#${i + 1}</span></button>`;
     }).join("");
     skillsPanel.innerHTML = `${classPicker()}<section class="loadout-section"><h2 class="section-title">${t(game.language, "loadout.skills")} <span class="section-caption">${t(game.language, "loadout.skillHint")}</span></h2><div class="skill-grid">${slots}</div></section>
       <section class="loadout-section"><h2 class="section-title">${escapeHtml(attrLabel(skillAttrTab))} <span class="section-caption">${t(game.language, "loadout.skillPick")}</span></h2>
@@ -311,6 +310,9 @@ function buildSettingsUI(game) {
         ${row("camp.speed", String(h.speed))}
       </dl>
       <p class="camp-hint">${t(game.language, "camp.hint")}</p>
+      <label class="camp-stage-pick">${escapeHtml(t(game.language, "stagePick"))}
+        <select data-stage-pick>${STAGES.map((st, i) => `<option value="${i}"${i === (game.stagePick ?? 0) ? " selected" : ""}>${escapeHtml(stageName(game, st))}</option>`).join("")}</select>
+      </label>
       <button class="primary-button camp-enter" type="button" data-action="enter-battle" data-i18n="${departKey}">${enterLabel}</button>
     </div>`;
     drawHeroPortrait(campHero.querySelector("[data-camp-portrait]"), h.meleeWeapon.rigWeapon, h.look, h.appearance);
@@ -392,6 +394,11 @@ function buildSettingsUI(game) {
     appearance.querySelectorAll(".hero-look-card").forEach((card) => {
       drawHeroPortrait(card.querySelector("canvas"), weapon.rigWeapon, card.dataset.heroLook, h.appearance);
     });
+    // Pixel chunks still in flight: repaint once every portrait has its data.
+    const missing = HERO_LOOKS.filter((look) => spriteLook(look.id) && !heroPixelDataLoaded(look.id) && !heroPixelDataFailed(look.id));
+    if (missing.length) {
+      Promise.all(missing.map((look) => loadHeroPixelData(look.id))).then(() => { if (appearance.isConnected) render(); });
+    }
   }
 
   function renderProfile() {
@@ -587,7 +594,7 @@ function buildSettingsUI(game) {
         return;
       }
       if (action === "enter-battle") {
-        game.enterBattle();
+        game.enterBattle({ stage: game.stagePick ?? 0 });
         return;
       }
       if (action === "new-run") {
@@ -669,6 +676,15 @@ function buildSettingsUI(game) {
     if (out) out.textContent = `${pct}%`;
   });
   panel.addEventListener("change", (event) => {
+    const pick = event.target.closest?.("[data-stage-pick]");
+    if (pick) {
+      game.stagePick = Number(pick.value) || 0;
+      // Warm the chosen stage's worker raster while still in camp so the
+      // departure does not black-screen waiting on a cold bake.
+      const picked = STAGES[game.stagePick];
+      if (picked) game.battleMapWorkers?.prepareStage(game.stagePick, picked.mapKey, picked.map);
+      return;
+    }
     const paletteInput = event.target.closest?.("[data-palette-color]");
     if (paletteInput) {
       game.hero.setAppearance({ palette: { [paletteInput.dataset.paletteColor]: paletteInput.value } }, game);

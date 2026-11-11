@@ -1,4 +1,6 @@
 import { STASH_ITEMS } from "../../content/stash-catalog.js";
+import { STAGES as RUN_STAGES } from "../../data.js";
+import { dlog } from "../debug.js";
 import { HUB_SPAWNS } from "../../content/hub-worlds.js";
 import {
   canContinue,
@@ -41,13 +43,14 @@ export const saveSystem = {
     if (!opts.uiClosed) this.domUi?.close?.();
     this.keys.clear();
     const fresh = opts === true || opts?.fresh;
-    if (!fresh && resumeRun(this, loadSave())) return;
+    dlog("run", "startRun", { fresh, stage: opts.stage ?? 0 });
+    if (!fresh && resumeRun(this, loadSave())) { dlog("run", "resumed saved run instead"); return; }
     this.audio.unlock();
     this.hero.reset();
     applyHeroProfile(this.hero, loadSave()?.profile);
     this.kills = 0;
     this.runTime = 0;
-    this.loadStage(0, false);
+    this.loadStage(Math.min(opts.stage ?? 0, RUN_STAGES.length - 1), false);
     clearRunSave(this);
   },
 
@@ -58,6 +61,7 @@ export const saveSystem = {
     if (this.state === "playing") this.togglePause();
     if (this.state === "inventory") this.domUi?.close?.();
     this.persistSave?.();
+    dlog("run", "retreatToCamp");
     const enter = () => this.enterCamp({ synced: true });
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(enter);
     else enter();
@@ -65,6 +69,7 @@ export const saveSystem = {
 
   /** Leave the fight (defeat/victory) and open the camp hub. */
   enterCamp(opts = {}) {
+    dlog("run", "enterCamp", { from: this.state, stageIndex: this.stageIndex });
     if (!opts.synced) this.persistSave?.();
     this.keys.clear();
     this.loadHub?.();
@@ -88,7 +93,8 @@ export const saveSystem = {
     const begin = () => {
       if (this.state !== "camp" || !this.hubActive || !this._hubDepartPending) return;
       this._hubDepartPending = false;
-      this.startRun({ uiClosed: true, fresh: !!opts.fresh });
+      dlog("run", "enterBattle -> startRun", { stage: opts.stage ?? 0, fresh: !!opts.fresh });
+      this.startRun({ uiClosed: true, fresh: !!opts.fresh, stage: opts.stage });
     };
     const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (fn) => fn();
     frame(() => frame(begin));

@@ -1,18 +1,18 @@
 import { SKILL_META } from "./data.js";
-import { SKILL_KEYS } from "./controls.js";
 import { skillLabel } from "./copy.js";
+import { QUICK_HUD_KEYS, hubSkillsAllowed, quickSkills } from "./quick-bar.js";
 import { paintUiArt } from "./ui-art.js";
 
 const COPY = {
-  zh: { quick: "快移", dodge: "闪避", pause: "暂停", resume: "继续", bag: "背包" },
-  en: { quick: "Move", dodge: "Dodge", pause: "Pause", resume: "Resume", bag: "Bag" },
-  ja: { quick: "移動", dodge: "回避", pause: "一時停止", resume: "続ける", bag: "装備" },
+  zh: { pause: "暂停", resume: "继续", bag: "背包", moveDodge: "闪避" },
+  en: { pause: "Pause", resume: "Resume", bag: "Bag", moveDodge: "Dodge" },
+  ja: { pause: "一時停止", resume: "続ける", bag: "装備", moveDodge: "回避" },
 };
 const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 // Circular deadzone and magnitude clamp preserve slow movement and equal diagonal speed.
-export function joystickVector(clientX, clientY, rect, deadzone = 0.2) {
-  const radius = Math.min(rect.width, rect.height) * 0.42;
+export function joystickVector(clientX, clientY, rect, deadzone = 0.15) {
+  const radius = Math.min(rect.width, rect.height) * 0.45;
   if (radius <= 0) return { x: 0, y: 0 };
   const x = (clientX - rect.left - rect.width / 2) / radius;
   const y = (clientY - rect.top - rect.height / 2) / radius;
@@ -32,19 +32,18 @@ export function createTouchControls(game) {
   const coarsePointer = window.matchMedia("(pointer: coarse)");
   // A public preview switch also lets desktop users try the touch layout.
   const forceTouch = new URLSearchParams(window.location.search).get("controls") === "touch";
-  let lastInputWasTouch = false, joystickId = null, renderedKit = "", renderedLanguage = "";
-  let slotButtons = [];
+  let lastInputWasTouch = false, joystickId = null, renderedKit = "";
+  let slotButtons = [], moveButton = null;
   const menuButtons = [...(tools?.querySelectorAll("button") ?? [])];
-  const actionButtons = [...root.querySelectorAll("[data-touch-action]")];
   const pressed = new Map();
   const active = () => forceTouch || coarsePointer.matches || lastInputWasTouch;
   const playing = () => game.state === "playing"
     && game.hero.alive && game.phase !== "travel";
-  const trainingArena = () => game.state === "camp" && game.hubZone === "arena" && game.hubActive
-    && !game.campMenuOpen && !game._hubDepartPending;
   const walking = () => playing() || (game.state === "camp" && game.hubActive
     && !game.campMenuOpen && !game._hubDepartPending);
-  const arenaCombat = () => playing() || trainingArena();
+  const arenaCombat = () => playing() || hubSkillsAllowed(game);
+  const barSkills = () => quickSkills(game.hero.classId);
+  const barSkillAt = (slot) => barSkills()[slot];
 
   function resetJoystick() {
     const id = joystickId;
@@ -62,7 +61,7 @@ export function createTouchControls(game) {
   function move(event) {
     const vector = joystickVector(event.clientX, event.clientY, joystick.getBoundingClientRect());
     game.touchMove = vector;
-    knob.style.transform = `translate(calc(-50% + ${vector.x * 28}px), calc(-50% + ${vector.y * 28}px))`;
+    knob.style.transform = `translate(calc(-50% + ${vector.x * 34}px), calc(-50% + ${vector.y * 34}px))`;
   }
   joystick.addEventListener("pointerdown", (event) => {
     if (!walking() || joystickId != null || event.button !== 0) return;
@@ -81,30 +80,32 @@ export function createTouchControls(game) {
 
   root.addEventListener("click", event => {
     // Keyboard activation generates a click without pointerdown.
-    const button = event.target.closest("[data-touch-slot]");
-    if (event.detail === 0 && button && !button.disabled && arenaCombat()) {
-      game.audio.unlock(); game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
-    }
+    const button = event.target.closest("[data-touch-slot], [data-touch-move]");
+    if (event.detail !== 0 || !button || button.disabled) return;
+    game.audio.unlock();
+    if (button.hasAttribute("data-touch-move")) { if (walking()) game.hero.tryMoveDodge(game); }
+    else if (arenaCombat()) game.castQuick(barSkillAt(Number(button.dataset.touchSlot)));
   });
   root.addEventListener("pointerdown", (event) => {
     const button = event.target.closest("button");
-    const touchHub = walking();
-    if (!button || button.disabled || event.button !== 0 || (!arenaCombat() && !touchHub)) return;
+    if (!button || button.disabled || event.button !== 0) return;
+    const canAct = button.hasAttribute("data-touch-move") ? walking() : arenaCombat();
+    if (!canAct) return;
     event.preventDefault();
     game.audio.unlock();
     pressed.set(event.pointerId, button);
     button.classList.add("is-pressed");
     button.setPointerCapture(event.pointerId);
-    if (button.hasAttribute("data-touch-slot") && ["j", "mage:bolt"].includes(game.hero.skillSlots[Number(button.dataset.touchSlot)])) game.touchAttackHeld = true;
-    if (button.hasAttribute("data-touch-slot") && arenaCombat()) game.cast(game.hero.skillSlots[Number(button.dataset.touchSlot)]);
-    else if (button.dataset.touchAction === "quick" && walking()) game.hero.tryQuickMove(game);
-    else if (button.dataset.touchAction === "dodge" && playing()) game.hero.tryDash(game);
+    const slot = Number(button.dataset.touchSlot);
+    if (button.hasAttribute("data-touch-move")) game.hero.tryMoveDodge(game);
+    if (button.hasAttribute("data-touch-slot") && slot === 0) game.touchAttackHeld = true;
+    if (button.hasAttribute("data-touch-slot")) game.castQuick(barSkillAt(slot));
   });
   for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
     root.addEventListener(type, (event) => {
       const button = pressed.get(event.pointerId);
       if (button) { button.classList.remove("is-pressed"); pressed.delete(event.pointerId); }
-      game.touchAttackHeld = [...pressed.values()].some((b) => b.hasAttribute("data-touch-slot") && ["j", "mage:bolt"].includes(game.hero.skillSlots[Number(b.dataset.touchSlot)]));
+      game.touchAttackHeld = [...pressed.values()].some((b) => b.hasAttribute("data-touch-slot") && Number(b.dataset.touchSlot) === 0);
     });
   }
 
@@ -142,11 +143,8 @@ export function createTouchControls(game) {
   function sync() {
     const language = game.language ?? "zh", copy = COPY[language] ?? COPY.zh;
     root.hidden = !walking();
-    skills.hidden = game.state === "camp" && !trainingArena();
-    for (const button of actionButtons) {
-      const action = button.dataset.touchAction;
-      button.hidden = game.state === "camp" && (action !== "quick" ? !trainingArena() : false);
-    }
+    // The shared move/dodge button stays available for hub walking; skill buttons hide instead.
+    skills.classList.toggle("is-camp", game.state === "camp" && !hubSkillsAllowed(game));
     root.classList.toggle("is-touch", active());
     tools?.classList.toggle("is-touch", active());
     if (!walking() || !active()) reset();
@@ -161,35 +159,33 @@ export function createTouchControls(game) {
       const bag = tools.querySelector('[data-game-action="bag"]');
       bag.disabled = !(playing() || hub); bag.title = `${copy.bag} · Tab/B`; bag.setAttribute("aria-label", copy.bag);
     }
-    if (language !== renderedLanguage) {
-      root.querySelectorAll("[data-touch-action]").forEach((button) => {
-        const label = copy[button.dataset.touchAction];
-        button.setAttribute("aria-label", label); button.querySelector("small").textContent = label;
-      });
-      renderedLanguage = language;
-    }
-    const kit = `${language}:${game.hero.skillSlots.join("|")}`;
+    const kit = `${language}:${game.hero.classId}`;
     if (kit !== renderedKit) {
+      // Rebuilt buttons detach any pressed pointers; drop stale hold state first.
+      reset();
       renderedKit = kit;
-      skills.innerHTML = game.hero.skillSlots.map((id, index) => {
+      skills.innerHTML = barSkills().map((id, index) => {
         const skill = SKILL_META.find((s) => s.id === id) ?? SKILL_META[0];
         const name = skillLabel(game, skill);
-        const key = SKILL_KEYS[index] ?? String(index + 1);
+        const key = QUICK_HUD_KEYS[index] ?? String(index + 1);
         return `<button type="button" class="touch-skill" style="--skill-color:${skill.tint ?? "#ffe7a5"}" data-touch-slot="${index}" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)} · ${key}"><canvas class="ui-art" aria-hidden="true"></canvas><small class="touch-glyph">${escapeHtml(skill.glyph ?? name.slice(0, 1))}</small><span class="touch-key" aria-hidden="true">${key}</span><span class="touch-cooldown" aria-hidden="true"></span></button>`;
-      }).join("");
-      slotButtons = [...skills.querySelectorAll("button")];
+      }).join("") + `<button type="button" class="touch-skill touch-move" data-touch-move aria-label="${escapeHtml(copy.moveDodge)}"><canvas class="ui-art" aria-hidden="true"></canvas><small class="touch-glyph">${escapeHtml(copy.moveDodge)}</small><span class="touch-key" aria-hidden="true">空格</span><span class="touch-cooldown" aria-hidden="true"></span></button>`;
+      slotButtons = [...skills.querySelectorAll("[data-touch-slot]")];
+      moveButton = skills.querySelector("[data-touch-move]");
     }
     slotButtons.forEach((button, index) => {
-      const id = game.hero.skillSlots[index], skill = SKILL_META.find((s) => s.id === id);
+      const id = barSkillAt(index), skill = SKILL_META.find((s) => s.id === id);
       const left = game.hero.cd[id] ?? 0;
-      // Slash must keep receiving pointerdown during recovery so taps can enter its buffer.
-      button.disabled = !arenaCombat() || (id !== "j" && left > 0) || game.hero.mp < (skill?.cost ?? 0);
+      // Attack must keep receiving pointerdown during recovery so taps can enter its buffer.
+      button.disabled = !arenaCombat() || (index !== 0 && left > 0) || game.hero.mp < (skill?.cost ?? 0);
       button.classList.toggle("is-cooling", left > 0);
       button.querySelector(".touch-cooldown").textContent = left > 0 ? (left >= 1 ? String(Math.ceil(left)) : left.toFixed(1)) : "";
     });
-    const dodge = root.querySelector('[data-touch-action="dodge"]');
-    // A tap during cooldown is buffered for the next ready frame, so mobile timing is forgiving.
-    dodge.disabled = !playing() || game.hero.dashT > 0;
+    if (moveButton) {
+      moveButton.disabled = !walking() || game.hero.dashT > 0;
+      const dashLeft = game.hero.dashCd;
+      moveButton.querySelector(".touch-cooldown").textContent = dashLeft > 0 ? (dashLeft >= 1 ? String(Math.ceil(dashLeft)) : dashLeft.toFixed(1)) : "";
+    }
     // Shared cached artwork animates at 10 fps; input continues at the game's full frame rate.
     const time = game.ui.t;
     for (const button of menuButtons) {
@@ -197,9 +193,16 @@ export function createTouchControls(game) {
       const icon = button.dataset.gameAction === "pause" && game.state === "paused" ? "resume" : button.dataset.gameAction;
       paintUiArt(button.querySelector("canvas"), "action", { icon, disabled: button.disabled, hud: true }, time);
     }
-    if (root.hidden || (game.state === "camp" && !trainingArena())) return;
+    if (root.hidden) return;
+    if (moveButton) paintUiArt(moveButton.querySelector("canvas"), "action", {
+      icon: "dodge", hud: true,
+      cooldown: Math.round(game.hero.dashCd / game.hero.dashMax * 20) / 20,
+      disabled: moveButton.disabled, pressed: moveButton.classList.contains("is-pressed"),
+      flash: game.ui.actionPulse.id === "dodge" && game.ui.actionPulse.t > 0,
+    }, time);
+    if (game.state === "camp" && !hubSkillsAllowed(game)) return;
     slotButtons.forEach((button, index) => {
-      const id = game.hero.skillSlots[index], s = SKILL_META.find(s => s.id === id) ?? SKILL_META[0];
+      const id = barSkillAt(index), s = SKILL_META.find(s => s.id === id) ?? SKILL_META[0];
       const left = game.hero.cd[id] ?? 0, lacksMana = game.hero.mp < s.cost;
       paintUiArt(button.querySelector("canvas"), "skill", {
         icon: s.icon, hud: true, cooldown: Math.round(Math.min(1, left / (id === "j" ? game.hero.meleeCooldownMax : s.cd)) * 20) / 20,
@@ -207,14 +210,6 @@ export function createTouchControls(game) {
         selected: (game.ui.pulse[id] ?? 0) > 0,
       }, time);
     });
-    if (active()) for (const button of actionButtons) {
-      const icon = button.dataset.touchAction;
-      paintUiArt(button.querySelector("canvas"), "action", {
-        icon, hud: true, cooldown: icon === "dodge" ? Math.round(game.hero.dashCd / game.hero.dashMax * 20) / 20 : 0,
-        disabled: button.disabled, pressed: button.classList.contains("is-pressed"),
-        flash: game.ui.actionPulse.id === icon && game.ui.actionPulse.t > 0,
-      }, time);
-    }
   }
   window.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "touch") { lastInputWasTouch = true; sync(); }

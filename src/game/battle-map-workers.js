@@ -4,6 +4,7 @@
 
 import { createFx } from "../../../pixelfx/src/core/index.js";
 import { planMapSlots } from "./depth.js";
+import { dlog } from "./debug.js";
 
 const MAP_TILE_W = 320;
 const SLOTS_PER_STAGE = 16;
@@ -165,6 +166,7 @@ export function createBattleMapWorkers(game) {
   }
 
   function initSlots(list, mapKey, stageIndex) {
+    dlog("map", "initSlots: rasterizing", { stageIndex, mapKey, slots: list.length });
     for (const slot of list) {
       if (slot.started) continue;
       slot.started = true;
@@ -172,8 +174,8 @@ export function createBattleMapWorkers(game) {
       const seed = slot.layer ? 1 : 3 + stageIndex + slot.tileIndex;
       const extra = slot.layer ? { view: { layer: slot.layer, x: slot.x }, fps: slot.fps, still: slot.static } : {};
       pool.init(slot.id, mapKey, seed, slot.x, extra)
-        .then((res) => applyRaster(slot, res))
-        .catch(() => { slot.ready = false; slot.started = false; });
+        .then((res) => { applyRaster(slot, res); dlog("map", "slot raster ready", { stageIndex, slot: slot.id, ready: slot.ready }); })
+        .catch((err) => { slot.ready = false; slot.started = false; dlog("map", "slot raster failed", { stageIndex, slot: slot.id, err: String(err) }); });
     }
   }
 
@@ -206,6 +208,7 @@ export function createBattleMapWorkers(game) {
   }
 
   function unmount() {
+    dlog("map", "unmount", { was: activeStageIndex, prepared: [...prepared.keys()] });
     active = false;
     activeStageIndex = -1;
     activeMapKey = null;
@@ -227,7 +230,8 @@ export function createBattleMapWorkers(game) {
       // same map key can serve the next stage without a re-bake.
       if (active && activeMapKey === mapKey) return;
       const p = ensurePool();
-      if (!p) return;
+      if (!p) { dlog("map", "prepareStage: no worker pool", { stageIndex, mapKey }); return; }
+      dlog("map", "prepareStage", { stageIndex, mapKey });
       for (const [index, list] of prepared) {
         if (index === stageIndex) continue;
         disposeSlots(list);
@@ -241,21 +245,25 @@ export function createBattleMapWorkers(game) {
     mountStage(stageIndex, mapKey, mapModule) {
       if (stageIndex < 0 || !mapKey) return false;
       const p = ensurePool();
-      if (!p) return false;
+      if (!p) { dlog("map", "mountStage: no worker pool", { stageIndex, mapKey }); return false; }
 
       if (activeStageIndex === stageIndex && active) return true;
       if (active && activeMapKey === mapKey) {
         activeStageIndex = stageIndex;
+        dlog("map", "mountStage: reuse raster for same mapKey", { stageIndex, mapKey });
         return true;
       }
+      const cold = !prepared.has(stageIndex);
       disposeSlots(slots);
       slots = prepared.get(stageIndex) ?? createSlots(stageIndex, mapModule);
+      dlog("map", "mountStage", { stageIndex, mapKey, prewarmed: !cold });
       live = createLive(mapModule);
       prepared.delete(stageIndex);
       activeStageIndex = stageIndex;
       activeMapKey = mapKey;
       active = true;
       if (!slots.every((slot) => slot.ready && slot.tile)) initSlots(slots, mapKey, stageIndex);
+      else dlog("map", "mountStage: all slots already rastered", { stageIndex });
       return true;
     },
 

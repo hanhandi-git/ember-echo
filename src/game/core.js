@@ -2,14 +2,16 @@
 
 import { createFrame } from "../../../pixelfx/src/core/index.js";
 import { acquireStageMapTiles } from "./map-tile-pool.js";
-import { STAGES, FX } from "../data.js";
+import { STAGES, FX, WEATHER_MODS } from "../data.js";
 import { Hero } from "../hero.js";
 import { castSkill } from "../skills.js";
 import { UI } from "../ui.js";
 import { AudioEngine } from "../audio.js";
 import { SKILL_RECTS, RESUME_BUTTON, CAMP_BUTTON, contains } from "../controls.js";
+import { hubSkillsAllowed, quickSkills } from "../quick-bar.js";
 import { stageAct, stageName, stageSub } from "../copy.js";
 import { SW, SH, WORLD_W, PALETTE, RENDER_DENSITY } from "./constants.js";
+import { dlog } from "./debug.js";
 import { createBattleMapWorkers } from "./battle-map-workers.js";
 import { LEGACY_BAND } from "./depth.js";
 
@@ -78,6 +80,7 @@ export class Game {
 
   loadStage(index, camp = false) {
     if (camp) {
+      dlog("stage", "loadStage(camp): unmount workers, load hub");
       this.battleMapWorkers?.unmount();
       this.loadHub?.();
       return;
@@ -91,6 +94,7 @@ export class Game {
     // first raster arrives avoids blocking the main thread or exposing a blank frame.
     this.walkBand = this.stage.map.map.depth ?? LEGACY_BAND;
     const workerMounted = this.battleMapWorkers?.mountStage(index, this.stage.mapKey, this.stage.map) === true;
+    dlog("stage", "loadStage", { index, mapKey: this.stage.mapKey, workerMounted, fromHub: previousHub });
     const nextStage = STAGES[index + 1];
     if (workerMounted && nextStage) this.battleMapWorkers?.prepareStage(index + 1, nextStage.mapKey, nextStage.map);
     if (workerMounted && previousHub) {
@@ -103,6 +107,7 @@ export class Game {
       this.mapStageIndex = null;
     } else if (!workerMounted && !this.adoptStagePrewarm?.(index)) {
       const baked = acquireStageMapTiles(index, this.hubActive ? null : this.mapFxTiles);
+      dlog("stage", "main-thread bake fallback", { index, tiles: baked?.mapFxTiles?.length });
       this.mapFxTiles = baked?.mapFxTiles ?? [];
       this.mapFx = this.mapFxTiles[0] ?? null;
       this.mapTileFrames = baked?.mapTileFrames ?? [];
@@ -132,6 +137,12 @@ export class Game {
     this.portal = null;
     this.bossRef = null;
     this.bossDefeated = false;
+    // Ambient stage weather (weather/rain, fog, aurora…) pinned to the camera.
+    const wmod = this.stage.weather ? WEATHER_MODS[this.stage.weather] : null;
+    if (wmod) {
+      const pin = () => ({ x: this.cameraX + SW / 2, y: 170 });
+      this.addFx(wmod, pin(), { layer: "front", scale: 1, follow: pin, cache: false, ambient: true });
+    }
     this.waveIndex = 0;
     this.phaseT = 0;
     this.clearT = 0;
@@ -187,11 +198,10 @@ export class Game {
       return "resume";
     }
     if (this.ui.handleAutoPointer(x, y)) return "auto";
-    const training = this.state === "camp" && this.hubZone === "arena" && !this.campMenuOpen;
-    if (this.state !== "playing" && !training) return null;
+    if (this.state !== "playing" && !hubSkillsAllowed(this)) return null;
     const slot = this.touchUi?.active ? -1 : SKILL_RECTS.findIndex((rect) => contains(rect, x, y));
     if (slot >= 0) {
-      this.cast(this.hero.skillSlots[slot]);
+      this.castQuick(quickSkills(this.hero.classId)[slot]);
       return "skill";
     }
     return null;
@@ -219,12 +229,17 @@ export class Game {
   cast(id) {
     return castSkill(this, id);
   }
+
+  /** Quick-bar commands ignore class ownership so guard and the Chidori rush work for both jobs. */
+  castQuick(id) {
+    return castSkill(this, id, { ignoreClass: true });
+  }
 }
 
 export function boot() {
   const canvas = document.querySelector("#game");
   const game = new Game(canvas);
   window.__EMBER__ = game;
-  Hero.prepare();
+  game.heroReady = Hero.prepare();
   return game;
 }

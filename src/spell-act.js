@@ -8,6 +8,12 @@ import { groundBox, pointFootprintDistance } from "./collision.js";
 export const ACT_POS_SCALE = COMBAT_SCALE;
 const ACT_POSE_Y_SCALE = 0.52;
 
+/** Sprite clip played while an act spell owns the hero, per class. Default stays "cast". */
+const ACT_CLIPS = {
+  "fx:ninjutsu/chidori-rush": { swordsman: "rush", mage: "cast" },
+};
+const ACT_CLIP_DUR = 0.85;
+
 function heroCharacter(look) {
   try {
     return characterOf(look).id;
@@ -83,6 +89,7 @@ export function interruptSpellActs(g) {
   }
   if (cut) {
     g.hero.actPose = null;
+    g.hero.actClip = null;
     g.effects = g.effects.filter((ef) => !ef.dead);
   }
   return cut;
@@ -144,6 +151,7 @@ export function updateSpellActs(g, dt) {
     sweepAlongActPath(g, ef, prevX, g.hero.x);
     if (ef.act.done()) {
       g.hero.actPose = null;
+      g.hero.actClip = null;
       ef.dead = true;
     }
   }
@@ -162,8 +170,11 @@ export function castActSpell(g, sk, mod) {
   };
   const act = createAct(mod, opts);
   h.actPose = act.pose;
+  h.actClip = ACT_CLIPS[sk.id]?.[h.classId] ?? null;
   h.vx = h.vy = 0;
   h.startAnim(`act:${sk.id}`, [[0, h.actPose]], false);
+  // The sprite clip must advance over the act instead of freezing on its last frame.
+  h.anim.dur = ACT_CLIP_DUR;
   const pathSweep = actPoseTravel(mod.act) >= PATH_SWEEP_TRAVEL;
   const ef = {
     act,

@@ -6,8 +6,10 @@ import { Game } from "../src/game.js";
 import { Hero } from "../src/hero.js";
 import { SKILL_META, HERO_LOOKS } from "../src/data.js";
 import { heroProfile, applyHeroProfile } from "../src/save.js";
-import { HERO_PIXEL_DATA } from "../src/hero-pixel-data.js";
-import { appearanceFrame, composePixelFrame, heroSprite } from "../src/hero-sprites.js";
+import { HERO_PIXEL_DATA, appearanceFrame, composePixelFrame, heroSprite, loadHeroPixelData } from "../src/hero-sprites.js";
+import { HERO_PIXEL_LOADERS } from "../src/hero-data/index.js";
+
+for (const id of Object.keys(HERO_PIXEL_LOADERS)) await loadHeroPixelData(id);
 
 const game = () => {
   const g = new Game({ getContext: () => ({ createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) });

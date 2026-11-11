@@ -1,10 +1,9 @@
 // Canvas controls use the 320×180 viewport. Movement and touch actions are DOM controls.
-export const SKILL_SLOT_COUNT = 7;
-export const SKILL_KEYS = ["J", "K", "L", "U", "I", "O", "T"];
-/** Bottom-centre console anchor; the slot geometry mirrors pixelfx ui/dnf-hud. */
-export const HUD_CONSOLE = { x: 160, y: 180 };
+export const SKILL_SLOT_COUNT = 3;
+/** Top-centre console anchor; the slot geometry mirrors pixelfx ui/dnf-hud. */
+export const HUD_CONSOLE = { x: 160, y: 36 };
 export const SKILL_RECTS = Array.from({ length: SKILL_SLOT_COUNT }, (_, i) => ({
-  x: HUD_CONSOLE.x - 59 + i * 17, y: HUD_CONSOLE.y - 23, w: 15, h: 15,
+  x: HUD_CONSOLE.x - 24.5 + i * 17, y: HUD_CONSOLE.y - 23, w: 15, h: 15,
 }));
 export const RESUME_BUTTON = { x: 105, y: 88, w: 110, h: 14 };
 export const CAMP_BUTTON = { x: 105, y: 106, w: 110, h: 14 };

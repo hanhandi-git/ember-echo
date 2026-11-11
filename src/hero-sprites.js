@@ -1,10 +1,14 @@
-// Native pixel data is bundled as code. No Image, Canvas decode, fetch, or PNG is required.
+// Native pixel data ships as per-hero chunks fetched on demand; no PNG decode is required.
 import manifest from "../assets/heroes/manifest.json" with { type: "json" };
-import { HERO_PIXEL_DATA } from "./hero-pixel-data.js";
+import { HERO_PIXEL_LOADERS } from "./hero-data/index.js";
 import { HERO_PIXEL_EDITS, normalizeAppearance, presetColor } from "./hero-wardrobe.js";
 
 export const SPRITE_HERO_LOOKS = manifest;
 export const spriteLook = (id) => manifest.find((look) => look.id === id);
+// Populated by loadHeroPixelData(); synchronous readers return null/{} until a hero's chunk lands.
+export const HERO_PIXEL_DATA = {};
+const pending = new Map();
+const failed = new Set();
 const cache = new Map();
 const paletteCache = new Map();
 const revision = new Map();
@@ -15,7 +19,10 @@ const packed = (value) => {
 
 export function heroPalette(id, appearance) {
   const source = HERO_PIXEL_DATA[id];
-  if (!source) return {};
+  if (!source) {
+    if (spriteLook(id)) loadHeroPixelData(id);
+    return {};
+  }
   const style = normalizeAppearance(appearance);
   return Object.fromEntries(source.editable.map((index, i) => {
     const key = i.toString(16).padStart(2, "0");
@@ -55,8 +62,13 @@ export function composePixelFrame(frame, palette, extraLayers = [], density = 2)
 }
 
 function frameFor(id, frameId, appearance) {
-  const source = HERO_PIXEL_DATA[id], look = spriteLook(id);
-  if (!source || !look) return null;
+  const look = spriteLook(id);
+  if (!look) return null;
+  const source = HERO_PIXEL_DATA[id];
+  if (!source) {
+    loadHeroPixelData(id);
+    return null;
+  }
   const style = normalizeAppearance(appearance);
   const key = `${id}:${revision.get(id) ?? 0}:${JSON.stringify(style)}:${frameId}`;
   if (cache.has(key)) return cache.get(key);
@@ -87,12 +99,33 @@ function frameFor(id, frameId, appearance) {
   return body;
 }
 
-/** Synchronous warm-up from code; retained as a Promise for existing portrait call sites. */
-export function loadHeroSprite(id, appearance) {
+/** Fetch a hero's pixel payload on demand; resolves null when unavailable or failed. */
+export function loadHeroPixelData(id) {
+  if (HERO_PIXEL_DATA[id] || failed.has(id)) return Promise.resolve(HERO_PIXEL_DATA[id] ?? null);
+  if (!pending.has(id)) {
+    const loader = HERO_PIXEL_LOADERS[id];
+    const job = Promise.resolve()
+      .then(() => loader?.())
+      .then((mod) => {
+        if (mod) HERO_PIXEL_DATA[id] = mod.default ?? mod;
+        return HERO_PIXEL_DATA[id] ?? null;
+      })
+      .catch(() => { failed.add(id); return null; });
+    pending.set(id, job.finally(() => pending.delete(id)));
+  }
+  return pending.get(id);
+}
+
+export const heroPixelDataLoaded = (id) => !!HERO_PIXEL_DATA[id];
+export const heroPixelDataFailed = (id) => failed.has(id);
+
+/** Decode the selected source frames before the next render. */
+export async function loadHeroSprite(id, appearance) {
+  await loadHeroPixelData(id);
   const look = spriteLook(id);
   const idle = frameFor(id, look?.clips.idle[0], appearance);
   for (const frame of look?.walkSource?.frames ?? []) frameFor(id, frame, appearance);
-  return Promise.resolve(idle);
+  return idle;
 }
 
 export function invalidateHeroSprite(id) {
@@ -115,7 +148,7 @@ function weightedIndex(weights, progress) {
 
 /** Weighted source-frame timing; contact always starts exactly on the hit clock. */
 export function heroFrameId(look, anim = {}, casting = false) {
-  let kind = casting ? "cast" : anim.kind ?? "idle";
+  let kind = typeof casting === "string" ? casting : casting ? "cast" : anim.kind ?? "idle";
   if (kind.startsWith("cast")) kind = "cast";
   const clip = look.clips[kind] ?? look.clips.idle;
   const t = Math.max(0, anim.t ?? 0);

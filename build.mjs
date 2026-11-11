@@ -2,7 +2,7 @@
 //   node build.mjs           one-shot build
 //   node build.mjs --watch   rebuild on source change
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,17 +15,37 @@ const ESBUILD = existsSync(LOCAL)
     ? join(PIXELFX, "node_modules/.bin/esbuild")
     : "esbuild";
 
+const COMMON = [
+  "--bundle",
+  "--format=esm",
+  "--platform=browser",
+  "--target=es2020",
+  "--loader:.js=js",
+  "--loader:.json=json",
+  "--log-level=warning",
+];
+
 function bundle(entry, outfile, minify, watch) {
   const args = [
     entry,
-    "--bundle",
-    "--format=esm",
-    "--platform=browser",
-    "--target=es2020",
+    ...COMMON,
     "--outfile=" + outfile,
-    "--loader:.js=js",
-    "--loader:.json=json",
-    "--log-level=warning",
+    ...(minify ? ["--minify"] : []),
+    ...(watch ? ["--watch"] : []),
+  ];
+  execFileSync(ESBUILD, args, { stdio: "inherit", cwd: HERE });
+}
+
+// The app entry code-splits: hero pixel payloads become hashed chunks fetched on demand.
+function bundleApp(minify, watch) {
+  const args = [
+    join(HERE, "src/main.js"),
+    ...COMMON,
+    "--outdir=" + HERE,
+    "--outbase=" + join(HERE, "src"),
+    "--entry-names=game",
+    "--chunk-names=chunks/[name]-[hash]",
+    "--splitting",
     ...(minify ? ["--minify"] : []),
     ...(watch ? ["--watch"] : []),
   ];
@@ -33,9 +53,15 @@ function bundle(entry, outfile, minify, watch) {
 }
 
 const watch = process.argv.includes("--watch");
+const CHUNKS = join(HERE, "chunks");
 console.log("bundling with", ESBUILD);
 execFileSync(process.execPath, [join(HERE, "scripts/build-ui-frames.mjs")], { stdio: "inherit", cwd: HERE });
-bundle(join(HERE, "src/main.js"), join(HERE, "game.js"), !watch, watch);
+if (!watch) {
+  // Hashed chunk names change every build; drop leftovers from previous runs.
+  rmSync(CHUNKS, { recursive: true, force: true });
+}
+mkdirSync(CHUNKS, { recursive: true });
+bundleApp(!watch, watch);
 if (!watch) bundle(join(HERE, "src/game/battle-map-worker.mjs"), join(HERE, "battle-map-worker.js"), true, false);
 else {
   console.warn("watch mode: restart build once to refresh battle-map-worker.js after worker-only edits");

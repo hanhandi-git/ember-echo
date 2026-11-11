@@ -1,6 +1,6 @@
-import { castSkill } from "../skills.js";
 import { uiCopy } from "../copy.js";
-import { MOVE_KEYS, SKILL_SLOT_KEYS } from "./bindings.js";
+import { MOVE_KEYS } from "./bindings.js";
+import { QUICK_KEYS, hubSkillsAllowed, quickSkills } from "../quick-bar.js";
 
 /**
  * Registers keyboard listeners. Input is routed through small handlers so main.js
@@ -31,19 +31,14 @@ export function installKeyboard(game) {
     else if (game.state === "camp" && game.hubActive) game.toggleHubBag?.();
   };
 
-  const handleDash = () => {
-    if (game.state === "playing") game.hero.tryDash(game);
-  };
-
-  const handleQuickMove = () => {
-    const hubWalk = game.state === "camp" && game.hubActive && !game.campMenuOpen && !game._hubDepartPending;
-    if (game.state === "playing" || hubWalk) game.hero.tryQuickMove(game);
-  };
-
   const handleConfirm = () => {
     if (game.state === "camp" && game.hubActive) game.tryHubDepart?.();
     else if (game.state === "gameover" || game.state === "victory") game.enterCamp();
     else if (game.state === "paused") game.togglePause();
+  };
+
+  const handleMoveDodge = () => {
+    if (game.state === "playing" || game.state === "camp") game.hero.tryMoveDodge(game);
   };
 
   const handleRestart = () => {
@@ -62,9 +57,10 @@ export function installKeyboard(game) {
   };
 
   const castSlotKey = (key) => {
-    if (game.state === "camp" && game.hubZone !== "arena") return;
-    const id = game.hero.skillSlots[SKILL_SLOT_KEYS[key]];
-    castSkill(game, id);
+    if (game.state === "camp" && !hubSkillsAllowed(game)) return;
+    const slot = QUICK_KEYS.indexOf(key);
+    if (slot < 0) return;
+    game.castQuick(quickSkills(game.hero.classId)[slot]);
   };
 
   window.addEventListener("keydown", (e) => {
@@ -98,18 +94,12 @@ export function installKeyboard(game) {
       handleEscape();
       return;
     }
-    if ((key === "q" || key === "shift") && !e.repeat) {
-      e.preventDefault();
-      unlock();
-      handleDash();
-      return;
-    }
-    if (key === " " && !e.repeat) {
+    if ((key === "q" || key === "shift" || key === " ") && !e.repeat) {
       // Let a focused menu button receive Space as its native activation.
-      if (e.target?.closest?.("button, a, input, select, textarea")) return;
+      if (key === " " && e.target?.closest?.("button, a, input, select, textarea")) return;
       e.preventDefault();
       unlock();
-      handleQuickMove();
+      handleMoveDodge();
       return;
     }
     if (key === "enter") {
@@ -154,10 +144,11 @@ export function installKeyboard(game) {
       game.retreatToCamp?.();
       return;
     }
-    if (SKILL_SLOT_KEYS[key] != null && !e.repeat) {
+    const quickSlot = QUICK_KEYS.indexOf(key);
+    if (quickSlot >= 0 && !e.repeat) {
       e.preventDefault();
       unlock();
-      if (game.state === "playing") game.keys.add(key);
+      if (game.state === "playing" || hubSkillsAllowed(game)) game.keys.add(key);
       castSlotKey(key);
     }
   });

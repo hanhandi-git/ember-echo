@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { Game } from "../src/game.js";
 import { HERO_LOOKS } from "../src/data.js";
 import { heroProfile, applyHeroProfile } from "../src/save.js";
-import { heroFrameId } from "../src/hero-sprites.js";
+import { heroFrameId, loadHeroPixelData } from "../src/hero-sprites.js";
+import { HERO_PIXEL_LOADERS } from "../src/hero-data/index.js";
+
+for (const id of Object.keys(HERO_PIXEL_LOADERS)) await loadHeroPixelData(id);
 
 function arena() {
   const g = new Game({ getContext: () => ({

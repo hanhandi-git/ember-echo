@@ -30,7 +30,8 @@ game.cast = (id) => castSkill(game, id);
 game.begin = () => game.enterBattle();
 window.__EMBER__ = game;
 
-let last = performance.now(), bootSplashDismissed = false;
+let last = performance.now(), bootSplashDismissed = false, heroReady = false;
+Promise.resolve(game.heroReady).catch(() => {}).then(() => { heroReady = true; });
 function frame(now) {
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
   last = now;
@@ -38,7 +39,7 @@ function frame(now) {
   game.tick(dt);
   game.touchUi?.sync();
   game.render();
-  if (!bootSplashDismissed) {
+  if (!bootSplashDismissed && heroReady) {
     bootSplashDismissed = true;
     const splash = document.querySelector("#boot-splash");
     splash?.classList.add("is-done");
