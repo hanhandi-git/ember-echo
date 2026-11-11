@@ -32,6 +32,9 @@ window.__EMBER__ = game;
 
 let last = performance.now(), bootSplashDismissed = false, heroReady = false;
 Promise.resolve(game.heroReady).catch(() => {}).then(() => { heroReady = true; });
+// Slow networks can leave a hero chunk fetch pending indefinitely; never let the
+// splash outlive the game itself — camp renders with a fallback silhouette instead.
+setTimeout(() => { heroReady = true; }, 8000);
 function frame(now) {
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
   last = now;

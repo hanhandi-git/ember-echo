@@ -158,8 +158,7 @@
       "y": 150
      }
     ]
-   ],
-   "weather": "leaves"
+   ]
   },
   {
    "id": "wisp-marsh",
@@ -319,8 +318,7 @@
       "y": 150
      }
     ]
-   ],
-   "weather": "fog"
+   ]
   },
   {
    "id": "ember-depths",
@@ -465,8 +463,7 @@
       "count": 2
      }
     ]
-   ],
-   "weather": "fireflies"
+   ]
   },
   {
    "id": "aurora-pass",
@@ -638,8 +635,7 @@
       "y": 150
      }
     ]
-   ],
-   "weather": "aurora"
+   ]
   },
   {
    "id": "sunscar-temple",
@@ -772,8 +768,7 @@
       "count": 2
      }
     ]
-   ],
-   "weather": "rays"
+   ]
   }
  ]
 }

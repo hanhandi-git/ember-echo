@@ -2,7 +2,7 @@
 
 import { createFrame } from "../../../pixelfx/src/core/index.js";
 import { acquireStageMapTiles } from "./map-tile-pool.js";
-import { STAGES, FX, WEATHER_MODS } from "../data.js";
+import { STAGES, FX } from "../data.js";
 import { Hero } from "../hero.js";
 import { castSkill } from "../skills.js";
 import { UI } from "../ui.js";
@@ -137,12 +137,6 @@ export class Game {
     this.portal = null;
     this.bossRef = null;
     this.bossDefeated = false;
-    // Ambient stage weather (weather/rain, fog, aurora…) pinned to the camera.
-    const wmod = this.stage.weather ? WEATHER_MODS[this.stage.weather] : null;
-    if (wmod) {
-      const pin = () => ({ x: this.cameraX + SW / 2, y: 170 });
-      this.addFx(wmod, pin(), { layer: "front", scale: 1, follow: pin, cache: false, ambient: true });
-    }
     this.waveIndex = 0;
     this.phaseT = 0;
     this.clearT = 0;

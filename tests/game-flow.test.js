@@ -34,7 +34,7 @@ function clearStage(g) {
 test("small enemies animate without summoning circles; the boss keeps its entrance", () => {
   const g = game();
   const slime = g.spawnEnemy("slime", 200, 150);
-  assert.equal(g.effects.filter((e) => !e.ambient).length, 0);
+  assert.equal(g.effects.length, 0);
   slime.update(g, 0.25);
   assert.ok(slime.fx.t > 0);
   const boss = g.spawnEnemy("boss", 400, 150);
@@ -423,7 +423,7 @@ test("frost damage radius and lightning telegraph shrink with their combat effec
   advance(g, 0.55);
   assert.ok(near.hp < near.maxHp);
   assert.equal(far.hp, far.maxHp);
-  assert.ok(g.effects.every((effect) => effect.ambient || effect.scale === COMBAT_SCALE));
+  assert.ok(g.effects.every((effect) => effect.scale === COMBAT_SCALE));
   g.hero.mp = g.hero.maxMp;
   assert.ok(g.cast("u"));
   assert.equal(g.telegraphs.at(-1).r, 40 * COMBAT_SCALE);

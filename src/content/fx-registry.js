@@ -75,11 +75,6 @@ import * as shadowTendrils from "../../../pixelfx/src/fx/shadow/shadow-tendrils.
 import * as gemSpin from "../../../pixelfx/src/fx/pickups/gem-spin.js";
 import * as elixirGourd from "../../../pixelfx/src/fx/pickups/elixir-gourd.js";
 import * as spiritStone from "../../../pixelfx/src/fx/pickups/spirit-stone.js";
-import * as weatherLeaves from "../../../pixelfx/src/fx/weather/falling-leaves.js";
-import * as weatherFog from "../../../pixelfx/src/fx/weather/fog.js";
-import * as weatherFireflies from "../../../pixelfx/src/fx/weather/fireflies.js";
-import * as weatherAurora from "../../../pixelfx/src/fx/weather/aurora.js";
-import * as weatherRays from "../../../pixelfx/src/fx/weather/god-rays.js";
 import * as stagePortal from "../fx/stage-portal.js";
 
 export const FX = {
@@ -92,15 +87,6 @@ export const FX = {
   holyResurrection, shadowTendrils,
   gemSpin, elixirGourd, spiritStone,
   stagePortal,
-};
-
-/** Ambient weather loops keyed by the stage config's `weather` field. */
-export const WEATHER_MODS = {
-  leaves: weatherLeaves,
-  fog: weatherFog,
-  fireflies: weatherFireflies,
-  aurora: weatherAurora,
-  rays: weatherRays,
 };
 
 /** Re-export map modules for stage definitions. */

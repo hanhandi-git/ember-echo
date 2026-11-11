@@ -165,6 +165,10 @@ function stageMapTiles(stage) {
 export function acquireStageMapTiles(index, currentTiles = null) {
   const stage = STAGES[index];
   if (!stage) return null;
+  // Pure headless runtimes (Node tests) have no canvas to show the raster on;
+  // baking the procedural map would only burn time. Browser workers keep `self`,
+  // and old browsers without Worker keep `window`, so real fallbacks still bake.
+  if (typeof window === "undefined" && typeof self === "undefined") return null;
   const tiles = stageMapTiles(stage);
   if (currentTiles !== tiles.mapFxTiles) rewindMaps(tiles.mapFxTiles);
   return { index, ...tiles };

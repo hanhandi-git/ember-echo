@@ -8,6 +8,7 @@ import { SKILL_META, HERO_LOOKS } from "../src/data.js";
 import { heroProfile, applyHeroProfile } from "../src/save.js";
 import { HERO_PIXEL_DATA, appearanceFrame, composePixelFrame, heroSprite, loadHeroPixelData } from "../src/hero-sprites.js";
 import { HERO_PIXEL_LOADERS } from "../src/hero-data/index.js";
+const HERO_PROVENANCE = JSON.parse(readFileSync(new URL("../assets/heroes/manifest-source.json", import.meta.url)));
 
 for (const id of Object.keys(HERO_PIXEL_LOADERS)) await loadHeroPixelData(id);
 
@@ -150,7 +151,7 @@ test("all extracted code frames match their generated RGBA atlas hashes", () => 
   let checked = 0;
   for (const look of HERO_LOOKS) {
     const source = HERO_PIXEL_DATA[look.id];
-    for (const record of look.source.files) {
+    for (const record of HERO_PROVENANCE[look.id].files) {
       const frame = source.frames[record.frame], indices = Buffer.from(frame.pixels, "base64");
       const bytes = Buffer.alloc(frame.width * frame.height * 4);
       for (let i = 0; i < frame.width * frame.height; i++) {

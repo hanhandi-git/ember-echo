@@ -59,7 +59,7 @@ export const fxEntitySystem = {
       inst, layer: cfg.layer ?? "front", age: 0, life: cfg.life ?? 0,
       follow: cfg.follow ?? null, offsetY: cfg.offsetY ?? 0,
       scale: cfg.scale ?? COMBAT_SCALE,
-      split: !!cfg.split, melee: !!cfg.melee, ambient: !!cfg.ambient,
+      split: !!cfg.split, melee: !!cfg.melee,
     });
     if (cfg.cache === false) inst.__emberNoCache = true;
     return inst;

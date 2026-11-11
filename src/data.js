@@ -4,7 +4,6 @@ import { effects as PIXELFX_EFFECTS } from "../../pixelfx/src/fx/index.js";
 import { ARMORY as PIXELFX_ARMORY } from "../../pixelfx/src/core/weapons.js";
 import { FX } from "./content/fx-registry.js";
 import { STAGES, ENEMY_TYPES, LOOT } from "./content/compose-content.js";
-import { WEATHER_MODS } from "./content/fx-registry.js";
 import { ATTR_FROM_CATEGORY, buildFxSpellMeta, iconOf } from "./content/spell-catalog.js";
 import { CUSTOM_MELEE_FX } from "./fx/custom-melee-arts.js";
 import { SPRITE_HERO_LOOKS } from "./hero-sprites.js";
@@ -12,7 +11,7 @@ import { DEFAULT_CLASS_SLOTS, skillClass } from "./classes.js";
 
 import { localizeArmoryWeapon } from "./weapon-i18n.js";
 
-export { STAGES, ENEMY_TYPES, LOOT, WEATHER_MODS };
+export { STAGES, ENEMY_TYPES, LOOT };
 export { STASH_ITEMS, STASH_FX, stashItem, stashLabel } from "./content/stash-catalog.js";
 
 export { FX };

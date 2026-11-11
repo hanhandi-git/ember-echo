@@ -317,6 +317,10 @@ def main():
             preview.save(PREVIEW / (id_ + ".png"))
             print(id_, len(selected), "frames;", len(colors), "palette colors")
     append_dnf(manifest, code)
+    # Frame provenance (source sheets, hashes) is authoring metadata, not runtime
+    # data — keep it beside the manifest so the runtime bundle stays slim.
+    provenance = {look["id"]: look.pop("source") for look in manifest if look.get("source")}
+    (OUT / "manifest-source.json").write_text(json.dumps(provenance, ensure_ascii=False, indent=2) + "\n")
     (OUT / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     data_dir = ROOT / "src/hero-data"
     data_dir.mkdir(exist_ok=True)
